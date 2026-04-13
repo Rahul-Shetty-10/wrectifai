@@ -1,28 +1,23 @@
 # Wrectifai Requirements
 
-## Product Vision
-- Define the product mission and target users.
-- Clarify the core problem Wrectifai solves.
-- Capture the expected business impact.
+This folder contains implementation-ready requirements derived from `WRECTIFAI PRD V_0.1.pdf`.
 
-## Features
-- List MVP features for API, web, and mobile.
-- Mark each feature with priority (P0/P1/P2).
-- Add acceptance criteria for every feature.
+## Source of Truth
+- PRD reviewed twice: `WRECTIFAI PRD V_0.1.pdf`
+- Scope: US launch, mobile-first with web support
 
-## Tech Decisions
-- Nx monorepo with `apps/api`, `apps/web`, and `apps/mobile`.
-- Backend: Node.js + Express.
-- Web: Next.js App Router + Tailwind + shadcn-ready components.
-- Mobile: Expo managed workflow + NativeWind.
+## Documents
+- `SPEC.md`: full product and engineering specification
+- `APP_FLOW.md`: detailed user and system flows
+- `ARCHITECTURE.md`: system architecture and component architecture
+- `DATA_API.md`: API contracts and RBAC matrix
+- `schema.md`: database schema, relations, and constraints
+- `PHASE_SCOPE.md`: MVP and phased roadmap
 
-## Milestones
-- Milestone 1: Workspace and base architecture setup.
-- Milestone 2: Authentication, user module, and dashboard foundations.
-- Milestone 3: Production hardening, observability, deployment.
-
-## Open Questions
-- Authentication strategy (JWT, OAuth, or both).
-- Database and ORM selection.
-- Role and permission model.
-- Deployment environments and CI/CD strategy.
+## Mandatory Platform Rules
+- Strict RBAC across all APIs and admin actions
+- Component-first frontend architecture
+- Reusable UI primitives in common component folders only
+- No unsafe DIY guidance for high-risk diagnosis
+- Reviews only by verified post-booking users
+- Payments must happen inside platform (no off-platform settlement)
