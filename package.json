@@ -52,6 +52,7 @@
   "dependencies": {
     "@expo/metro-config": "~0.19.4",
     "@expo/metro-runtime": "~4.0.0",
+    "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "expo": "~52.0.11",
