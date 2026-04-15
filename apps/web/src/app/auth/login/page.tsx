@@ -3,6 +3,8 @@ import { AuthShell } from '@/components/auth/auth-shell';
 import { LoginForm } from '@/components/auth/login-form';
 import { getAuthPageContent } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LoginPage() {
   const ui = await getAuthPageContent('login');
 
@@ -10,7 +12,7 @@ export default async function LoginPage() {
     <AuthShell
       hideHeroOnMobile
       appName={ui.appName}
-      authModeLabel={ui.authModeLabel}
+      authModeLabel=""
       heroKicker={ui.hero.kicker}
       heroTitle={ui.hero.title}
       heroBody={ui.hero.body}
@@ -29,6 +31,9 @@ export default async function LoginPage() {
             phonePlaceholder={ui.form.phonePlaceholder}
             sendOtpLabel={ui.form.sendOtpLabel}
             sendingOtpLabel={ui.form.sendingOtpLabel}
+            socialDividerLabel={ui.form.socialDividerLabel}
+            continueWithGoogleLabel={ui.form.continueWithGoogleLabel}
+            continueWithAppleLabel={ui.form.continueWithAppleLabel}
             invalidPhoneMessage={ui.errors.phoneInvalid}
             sendOtpFailedMessage={ui.errors.sendOtpFailed}
             unexpectedErrorMessage={ui.errors.unexpected}

@@ -3,10 +3,12 @@ import { Router } from 'express';
 import {
   createOtpChallenge,
   loginWithOtp,
+  loginOrRegisterWithSocial,
   refreshSession,
   registerWithOtp,
   revokeByAccessToken,
   revokeByRefreshToken,
+  validateSocialProviderOrThrow,
 } from './auth.service';
 import { requireAuth } from './auth.middleware';
 
@@ -157,6 +159,35 @@ authRouter.post('/login/verify', async (req, res, next) => {
     setSessionCookies(res, session);
     return res.json({
       message: 'Login successful',
+      roleCode: session.roleCode,
+      redirectPath: session.redirectPath,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+authRouter.post('/social/:provider', async (req, res, next) => {
+  try {
+    const provider = req.params.provider;
+    validateSocialProviderOrThrow(provider);
+    const { socialSubject, fullName, roleCode } = req.body as {
+      socialSubject?: string;
+      fullName?: string;
+      roleCode?: 'user' | 'garage' | 'vendor';
+    };
+
+    const session = await loginOrRegisterWithSocial({
+      provider: provider as 'google' | 'apple',
+      socialSubject,
+      fullName,
+      roleCode,
+      ipAddress: getClientIp(req),
+      userAgent: req.headers['user-agent'] ?? undefined,
+    });
+    setSessionCookies(res, session);
+    return res.json({
+      message: 'Social auth successful',
       roleCode: session.roleCode,
       redirectPath: session.redirectPath,
     });

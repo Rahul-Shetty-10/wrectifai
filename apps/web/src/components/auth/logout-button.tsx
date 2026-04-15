@@ -1,10 +1,25 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
+import type { ComponentProps } from 'react';
 import { Button } from '@/components/ui/button';
 import { API_BASE_URL } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
-export function LogoutButton() {
+type LogoutButtonProps = {
+  className?: string;
+  variant?: ComponentProps<typeof Button>['variant'];
+  withIcon?: boolean;
+  label?: string;
+};
+
+export function LogoutButton({
+  className,
+  variant = 'secondary',
+  withIcon = false,
+  label = 'Logout',
+}: LogoutButtonProps) {
   const router = useRouter();
 
   async function logout() {
@@ -21,8 +36,9 @@ export function LogoutButton() {
   }
 
   return (
-    <Button variant="secondary" onClick={logout}>
-      Logout
+    <Button variant={variant} onClick={logout} className={cn(className)}>
+      {withIcon ? <LogOut className="h-4 w-4 shrink-0" /> : null}
+      {label}
     </Button>
   );
 }

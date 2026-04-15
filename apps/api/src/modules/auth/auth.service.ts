@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { query } from '../../db/postgres';
 
 export type RoleCode = 'user' | 'garage' | 'vendor' | 'admin';
+export type SocialProvider = 'google' | 'apple';
 
 const OTP_CODE = '123456';
 const ACCESS_TTL_MS = 15 * 60 * 1000;
@@ -32,6 +33,12 @@ export function validatePhoneOrThrow(phone: string) {
 export function validateRegisterRoleOrThrow(roleCode: string) {
   if (!['user', 'garage', 'vendor'].includes(roleCode)) {
     throw new Error('Invalid role for registration');
+  }
+}
+
+export function validateSocialProviderOrThrow(provider: string) {
+  if (!['google', 'apple'].includes(provider)) {
+    throw new Error('Invalid social provider');
   }
 }
 
@@ -209,6 +216,120 @@ export async function loginWithOtp(input: {
   return createSession({
     userId: account.id,
     roleCode: account.role_code,
+    ipAddress: input.ipAddress,
+    userAgent: input.userAgent,
+  });
+}
+
+function normalizeSocialSubject(provider: SocialProvider, socialSubject?: string) {
+  const trimmed = socialSubject?.trim();
+  if (trimmed) return trimmed;
+  return `dev-${provider}`;
+}
+
+function derivePhoneFromSocial(provider: SocialProvider, socialSubject: string) {
+  const hash = crypto
+    .createHash('sha256')
+    .update(`${provider}:${socialSubject}`)
+    .digest('hex');
+  const numeric = BigInt(`0x${hash.slice(0, 15)}`) % 9000000000n;
+  return `9${numeric.toString().padStart(9, '0')}`;
+}
+
+async function findRoleOrThrow(roleCode: RoleCode) {
+  const role = await query<{ id: string; code: RoleCode }>(
+    `SELECT id, code FROM roles WHERE code = $1 LIMIT 1`,
+    [roleCode]
+  );
+  if (!role.rows[0]) throw new Error('Role not configured');
+  return role.rows[0];
+}
+
+export async function loginOrRegisterWithSocial(input: {
+  provider: SocialProvider;
+  socialSubject?: string;
+  fullName?: string;
+  roleCode?: 'user' | 'garage' | 'vendor';
+  userAgent?: string;
+  ipAddress?: string;
+}) {
+  validateSocialProviderOrThrow(input.provider);
+  if (input.roleCode) {
+    validateRegisterRoleOrThrow(input.roleCode);
+  }
+
+  const socialSubject = normalizeSocialSubject(input.provider, input.socialSubject);
+  const roleCode: RoleCode = input.roleCode ?? 'user';
+
+  const existing = await query<{ user_id: string; role_code: RoleCode }>(
+    `
+      SELECT usa.user_id, r.code AS role_code
+      FROM user_social_accounts usa
+      JOIN user_roles ur ON ur.user_id = usa.user_id
+      JOIN roles r ON r.id = ur.role_id
+      WHERE usa.provider = $1
+        AND usa.social_subject = $2
+      ORDER BY ur.created_at ASC
+      LIMIT 1;
+    `,
+    [input.provider, socialSubject]
+  );
+
+  const mapped = existing.rows[0];
+  if (mapped) {
+    return createSession({
+      userId: mapped.user_id,
+      roleCode: mapped.role_code,
+      ipAddress: input.ipAddress,
+      userAgent: input.userAgent,
+    });
+  }
+
+  const userId = crypto.randomUUID();
+  const fullName = input.fullName?.trim() || `${input.provider[0].toUpperCase()}${input.provider.slice(1)} User`;
+  let phone = derivePhoneFromSocial(input.provider, socialSubject);
+
+  const existingPhone = await query<{ id: string }>(
+    `SELECT id FROM users WHERE phone = $1 LIMIT 1`,
+    [phone]
+  );
+  if (existingPhone.rows[0]) {
+    phone = derivePhoneFromSocial(
+      input.provider,
+      `${socialSubject}-${crypto.randomUUID().slice(0, 8)}`
+    );
+  }
+
+  await query(
+    `
+      INSERT INTO users (id, phone, full_name)
+      VALUES ($1, $2, $3);
+    `,
+    [userId, phone, fullName]
+  );
+
+  const role = await findRoleOrThrow(roleCode);
+  await query(
+    `
+      INSERT INTO user_roles (id, user_id, role_id)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (user_id, role_id) DO NOTHING;
+    `,
+    [crypto.randomUUID(), userId, role.id]
+  );
+
+  await query(
+    `
+      INSERT INTO user_social_accounts (id, user_id, provider, social_subject)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (provider, social_subject) DO NOTHING;
+    `,
+    [crypto.randomUUID(), userId, input.provider, socialSubject]
+  );
+
+  return createSession({
+    userId,
+    roleCode,
     ipAddress: input.ipAddress,
     userAgent: input.userAgent,
   });

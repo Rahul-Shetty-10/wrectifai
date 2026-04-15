@@ -5,6 +5,8 @@
   "scripts": {
     "api": "nx serve api",
     "web": "nx dev web",
+    "serve:all": "nx run-many -t serve -p api,web --parallel",
+    "build:all": "nx run-many -t build -p api,web",
     "mobile": "nx start mobile",
     "lint": "nx run-many -t lint --all"
   },
@@ -52,6 +54,7 @@
   "dependencies": {
     "@expo/metro-config": "~0.19.4",
     "@expo/metro-runtime": "~4.0.0",
+    "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.4",
     "@types/pg": "^8.20.0",
     "class-variance-authority": "^0.7.1",

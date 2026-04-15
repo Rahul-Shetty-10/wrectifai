@@ -3,6 +3,8 @@ import { AuthShell } from '@/components/auth/auth-shell';
 import { VerifyForm } from '@/components/auth/verify-form';
 import { getAuthPageContent } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 export default async function VerifyPage({
   searchParams,
 }: {
@@ -28,7 +30,7 @@ export default async function VerifyPage({
   return (
     <AuthShell
       appName={ui.appName}
-      authModeLabel={ui.authModeLabel}
+      authModeLabel=""
       heroKicker={ui.hero.kicker}
       heroTitle={ui.hero.title}
       heroBody={ui.hero.body}

@@ -3,6 +3,8 @@ import { AuthShell } from '@/components/auth/auth-shell';
 import { RegisterForm } from '@/components/auth/register-form';
 import { getAuthPageContent } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 export default async function VendorRegisterPage() {
   const ui = await getAuthPageContent('register');
 
@@ -23,8 +25,7 @@ export default async function VendorRegisterPage() {
             </Link>
           </p>
           <RegisterForm
-            roleCode="vendor"
-            registerPath="/auth/vendor/register"
+            initialRoleCode="vendor"
             title={ui.form.title}
             subtitle={ui.form.subtitle}
             fullNameLabel={ui.form.fullNameLabel}
@@ -34,6 +35,9 @@ export default async function VendorRegisterPage() {
             termsLabel={ui.form.termsLabel}
             createAccountLabel={ui.form.createAccountLabel}
             sendingOtpLabel={ui.form.sendingOtpLabel}
+            socialDividerLabel={ui.form.socialDividerLabel}
+            continueWithGoogleLabel={ui.form.continueWithGoogleLabel}
+            continueWithAppleLabel={ui.form.continueWithAppleLabel}
             fullNameRequiredMessage={ui.errors.fullNameRequired}
             invalidPhoneMessage={ui.errors.phoneInvalid}
             termsRequiredMessage={ui.errors.termsRequired}

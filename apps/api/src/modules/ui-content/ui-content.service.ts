@@ -1,5 +1,6 @@
 import { query } from '../../db/postgres';
 import { validateAuthPageContent } from './ui-content.validation';
+import { validateUserContent } from './ui-content.validation';
 import type { AuthPage, UIContentQueryInput } from './ui-content.types';
 
 type DBRow = { content: unknown };
@@ -36,13 +37,24 @@ export async function getUIContent(input: UIContentQueryInput) {
 }
 
 function validateContent(module: string, page: string, content: unknown) {
-  if (module !== 'auth') return content;
-  if (page !== 'login' && page !== 'register' && page !== 'verify') {
-    throw new Error(`Invalid auth page requested: ${page}`);
+  if (module === 'auth') {
+    if (page !== 'login' && page !== 'register' && page !== 'verify') {
+      throw new Error(`Invalid auth page requested: ${page}`);
+    }
+    const ok = validateAuthPageContent(page as AuthPage, content);
+    if (!ok) {
+      throw new Error(`Invalid ui_content JSON shape for auth/${page}`);
+    }
+    return content;
   }
-  const ok = validateAuthPageContent(page as AuthPage, content);
-  if (!ok) {
-    throw new Error(`Invalid ui_content JSON shape for auth/${page}`);
+
+  if (module === 'user') {
+    const ok = validateUserContent(page, content);
+    if (!ok) {
+      throw new Error(`Invalid ui_content JSON shape for user/${page}`);
+    }
+    return content;
   }
+
   return content;
 }
