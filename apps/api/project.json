@@ -54,6 +54,17 @@
           "buildTarget": "api:build:production"
         }
       }
+    },
+    "seed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          {
+            "command": "node -r @swc-node/register src/db/seed.ts"
+          }
+        ],
+        "cwd": "apps/api"
+      }
     }
   }
 }

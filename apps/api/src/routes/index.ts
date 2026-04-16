@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authRouter } from '../modules/auth/auth.routes';
+import { adminRouter } from '../modules/admin/admin.routes';
 import { appConfigRouter } from '../modules/app-config/app-config.routes';
 import { diagnosisRouter } from '../modules/diagnosis/diagnosis.routes';
 import { marketplaceRouter } from '../modules/marketplace/marketplace.routes';
@@ -19,6 +20,7 @@ apiRouter.use('/ui-content', uiContentRouter);
 apiRouter.use('/app-config', appConfigRouter);
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/users', usersRouter);
+apiRouter.use('/admin', adminRouter);
 apiRouter.use('/vehicles', vehiclesRouter);
 apiRouter.use('/diagnosis', diagnosisRouter);
 apiRouter.use('/marketplace', marketplaceRouter);

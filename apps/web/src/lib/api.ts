@@ -1828,3 +1828,157 @@ export async function placePartOrder(partId: string, qty = 1) {
   if (!response.ok) throw new Error(data.message ?? 'Failed to place order');
   return data;
 }
+
+// Admin API functions
+export type AdminUser = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: string;
+  joined: string;
+  location: string;
+};
+
+export type AdminBooking = {
+  id: string;
+  customer: string;
+  vehicle: string;
+  garage: string;
+  service: string;
+  date: string;
+  time: string;
+  status: string;
+  amount: string;
+  location: string;
+};
+
+export type AdminQuote = {
+  id: string;
+  customer: string;
+  vehicle: string;
+  garage: string;
+  service: string;
+  amount: string;
+  fairPrice: string;
+  comparison: string;
+  status: string;
+  submitted: string;
+};
+
+export type AdminPayment = {
+  id: string;
+  customer: string;
+  bookingId: string;
+  garage: string;
+  amount: string;
+  commission: string;
+  status: string;
+  date: string;
+  method: string;
+};
+
+export type AdminComplaint = {
+  id: string;
+  customer: string;
+  garage: string;
+  type: string;
+  description: string;
+  status: string;
+  submitted: string;
+  bookingId: string;
+};
+
+export type AdminApproval = {
+  id: string;
+  name: string;
+  location: string;
+  phone: string;
+  specializations?: string[];
+  inventory?: string[];
+  status: string;
+  submittedAt: string;
+  documents: string[];
+};
+
+export type AdminApprovalsData = {
+  garages: AdminApproval[];
+  vendors: AdminApproval[];
+};
+
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  const response = await fetch(`${API_BASE_URL}/admin/users`, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  const data = (await response.json()) as { message?: string; users?: AdminUser[] };
+  if (!response.ok) throw new Error(data.message ?? 'Failed to load users');
+  return data.users ?? [];
+}
+
+export async function updateUserStatus(userId: string, status: 'Active' | 'Suspended'): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/status`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status }),
+  });
+  const data = (await response.json()) as { message?: string };
+  if (!response.ok) throw new Error(data.message ?? 'Failed to update user status');
+}
+
+export async function fetchAdminBookings(): Promise<AdminBooking[]> {
+  const response = await fetch(`${API_BASE_URL}/admin/bookings`, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  const data = (await response.json()) as { message?: string; bookings?: AdminBooking[] };
+  if (!response.ok) throw new Error(data.message ?? 'Failed to load bookings');
+  return data.bookings ?? [];
+}
+
+export async function fetchAdminQuotes(): Promise<AdminQuote[]> {
+  const response = await fetch(`${API_BASE_URL}/admin/quotes`, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  const data = (await response.json()) as { message?: string; quotes?: AdminQuote[] };
+  if (!response.ok) throw new Error(data.message ?? 'Failed to load quotes');
+  return data.quotes ?? [];
+}
+
+export async function fetchAdminPayments(): Promise<AdminPayment[]> {
+  const response = await fetch(`${API_BASE_URL}/admin/payments`, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  const data = (await response.json()) as { message?: string; payments?: AdminPayment[] };
+  if (!response.ok) throw new Error(data.message ?? 'Failed to load payments');
+  return data.payments ?? [];
+}
+
+export async function fetchAdminComplaints(): Promise<AdminComplaint[]> {
+  const response = await fetch(`${API_BASE_URL}/admin/complaints`, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  const data = (await response.json()) as { message?: string; complaints?: AdminComplaint[] };
+  if (!response.ok) throw new Error(data.message ?? 'Failed to load complaints');
+  return data.complaints ?? [];
+}
+
+export async function fetchAdminApprovals(): Promise<AdminApprovalsData> {
+  const response = await fetch(`${API_BASE_URL}/admin/approvals`, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  const data = (await response.json()) as { message?: string; garages?: AdminApproval[]; vendors?: AdminApproval[] };
+  if (!response.ok) throw new Error(data.message ?? 'Failed to load approvals');
+  return {
+    garages: data.garages ?? [],
+    vendors: data.vendors ?? [],
+  };
+}
