@@ -1,14 +1,27 @@
 # Wrectifai
 
-## Vercel Deployment (Web + API)
+## Production Deployment
 
-Recommended setup:
+### Build and Serve Commands
 
-- Create one Vercel project for `apps/web` (Root Directory = `apps/web`).
-- Create one Vercel project for `apps/api` (Root Directory = `apps/api`).
-- API project uses serverless catch-all handler at `apps/api/api/[...path].ts`.
+- **Build both API and Web:** `pnpm build:all`
+  - Builds API to `dist/apps/api/main.js`
+  - Builds Web to `apps/web/.next`
 
-Set these environment variables in Vercel:
+- **Serve both in production:** `pnpm serve:prod`
+  - Runs API on port 3000 (or `PORT` env var)
+  - Runs Web on port 4200
+  - Requires both projects to be built first
+
+- **Build and serve in one command:**
+  ```bash
+  pnpm build:all
+  pnpm serve:prod
+  ```
+
+### Environment Variables
+
+Required environment variables for production:
 
 - `DATABASE_URL`: Postgres connection string for the API.
 - `WEB_ORIGINS`: Comma-separated list of allowed web origins for CORS.
@@ -18,10 +31,32 @@ Set these environment variables in Vercel:
   - If API is on another domain, set that full `/api` URL.
 - `COOKIE_SAME_SITE`: `lax` for same-site deployments, `none` for cross-site web/api.
 - `COOKIE_DOMAIN` (optional): Shared cookie domain when needed (example: `.yourdomain.com`).
+- `HOST` (optional): Server host (defaults to `0.0.0.0` for Render).
+- `PORT` (optional): API port (defaults to `3000`).
 
 Notes:
 - `COOKIE_SAME_SITE=none` requires HTTPS and secure cookies.
 - CORS now supports an explicit allowlist via `WEB_ORIGINS`.
+
+### Render Deployment
+
+For Render deployment:
+1. Connect the repository to Render
+2. Set the environment variables listed above
+3. Build command: `pnpm build:all`
+4. Start command: `pnpm serve:prod`
+5. The API will be accessible on the configured port
+6. The Web app will be accessible on port 4200
+
+## Vercel Deployment (Alternative)
+
+Recommended setup for Vercel:
+
+- Create one Vercel project for `apps/web` (Root Directory = `apps/web`).
+- Create one Vercel project for `apps/api` (Root Directory = `apps/api`).
+- API project uses serverless catch-all handler at `apps/api/api/[...path].ts`.
+
+Set the same environment variables in Vercel as listed above.
 
 ---
 

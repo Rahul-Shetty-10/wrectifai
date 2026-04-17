@@ -11,7 +11,7 @@
       "defaultConfiguration": "production",
       "options": {
         "platform": "node",
-        "outputPath": "dist/api",
+        "outputPath": "dist/apps/api",
         "format": ["cjs"],
         "bundle": true,
         "main": "apps/api/src/main.ts",
