@@ -19,7 +19,7 @@ export function getEnv() {
   return {
     host: process.env.HOST ?? '0.0.0.0',
     port: process.env.PORT ? Number(process.env.PORT) : 3000,
-    databaseUrl: process.env.DATABASE_URL ?? '',
+    databaseUrl: process.env.DATABASE_URL,
     webOrigins,
     cookieSameSite: parseCookieSameSite(process.env.COOKIE_SAME_SITE),
     cookieDomain: process.env.COOKIE_DOMAIN?.trim() || undefined,
