@@ -1,9 +1,10 @@
 import { getEnv } from './config/env';
 import { createApp } from './app';
 
-const { host, port } = getEnv();
+const env = getEnv();
+const { host, port, appEnv } = env;
 const app = createApp();
 
 app.listen(port, host, () => {
-  console.log(`[api] listening on http://${host}:${port}`);
+  console.log(`[api] (${appEnv}) listening on http://${host}:${port}`);
 });

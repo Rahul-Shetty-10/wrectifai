@@ -480,7 +480,7 @@ adminRouter.patch('/approvals/garages/:userId', async (req, res, next) => {
             trust_score
           )
           VALUES (
-            gen_random_uuid(),
+            $5::uuid,
             $1::uuid,
             $2,
             'N/A',
@@ -494,7 +494,7 @@ adminRouter.patch('/approvals/garages/:userId', async (req, res, next) => {
             0
           )
         `,
-        [userId, userRow.rows[0].full_name, verificationStatus, isApproved]
+        [userId, userRow.rows[0].full_name, verificationStatus, isApproved, crypto.randomUUID()]
       );
     }
 

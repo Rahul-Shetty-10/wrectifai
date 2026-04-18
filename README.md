@@ -23,6 +23,8 @@ Set these variables:
   - `WEB_ORIGINS=https://<web-domain>,https://<preview-domain>`
   - `COOKIE_SAME_SITE` (`lax` same-site, `none` cross-site)
   - `COOKIE_SECURE=true`
+  - `AUTH_SOCIAL_ENABLED=false` (unless real provider validation is integrated)
+  - `AUTH_SOCIAL_ALLOW_DEV_SUBJECT_FALLBACK=false`
   - `AUTH_OTP_DEBUG_ECHO=false`
   - Optional: `COOKIE_DOMAIN=.yourdomain.com`
 - Web project:
@@ -34,8 +36,8 @@ Set these variables:
 
 - API on Render:
   - Root directory: `apps/api`
-  - Build command: `npm install && npx nx build api --configuration=production`
-  - Start command: `node dist/api/main.js`
+  - Build command: `npm ci && npm run build:api`
+  - Start command: `npm run start:api`
   - Env: same API vars as above (`APP_ENV=production`, `DATABASE_URL`, `WEB_ORIGINS`, etc.)
 - Web:
   - Deploy separately (Vercel recommended for Next.js), or Render Web Service with standard Next.js build/start.
@@ -43,6 +45,7 @@ Set these variables:
 
 Notes:
 - Keep `AUTH_OTP_FIXED_CODE` set only for local/dev.
+- Keep `AUTH_SOCIAL_ALLOW_DEV_SUBJECT_FALLBACK=true` only for local/dev.
 - `COOKIE_SAME_SITE=none` requires HTTPS and `COOKIE_SECURE=true`.
 
 ---

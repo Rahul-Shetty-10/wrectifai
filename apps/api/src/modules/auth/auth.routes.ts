@@ -173,6 +173,11 @@ authRouter.post('/login/verify', async (req, res, next) => {
 
 authRouter.post('/social/:provider', async (req, res, next) => {
   try {
+    const { socialAuthEnabled } = getEnv();
+    if (!socialAuthEnabled) {
+      return res.status(503).json({ message: 'Social authentication is disabled' });
+    }
+
     const provider = req.params.provider;
     validateSocialProviderOrThrow(provider);
     const { socialSubject, fullName, roleCode } = req.body as {

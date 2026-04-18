@@ -1,5 +1,20 @@
 type CookieSameSite = 'lax' | 'strict' | 'none';
 type AppEnv = 'local' | 'production';
+type EnvConfig = {
+  appEnv: AppEnv;
+  host: string;
+  port: number;
+  databaseUrl: string;
+  webOrigins: string[];
+  cookieSameSite: CookieSameSite;
+  cookieDomain?: string;
+  cookieSecure: boolean;
+  otpFixedCode?: string;
+  otpTtlSeconds: number;
+  otpDebugEcho: boolean;
+  socialAuthEnabled: boolean;
+  socialDevSubjectFallbackAllowed: boolean;
+};
 
 function parseAppEnv(raw: string | undefined): AppEnv {
   const value = raw?.trim().toLowerCase();
@@ -43,7 +58,49 @@ function parseOtpFixedCode(raw: string | undefined) {
   return /^\d{6}$/.test(value) ? value : undefined;
 }
 
-export function getEnv() {
+function isLocalOrigin(origin: string) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin.trim());
+}
+
+function validateEnvOrThrow(config: EnvConfig) {
+  const errors: string[] = [];
+
+  if (!config.databaseUrl) {
+    errors.push('DATABASE_URL is required.');
+  }
+
+  if (config.cookieDomain && /^https?:\/\//i.test(config.cookieDomain)) {
+    errors.push('COOKIE_DOMAIN must be a domain value (for example ".example.com"), not a URL.');
+  }
+
+  if (config.cookieSameSite === 'none' && !config.cookieSecure) {
+    errors.push('COOKIE_SAME_SITE=none requires COOKIE_SECURE=true.');
+  }
+
+  if (config.appEnv === 'production') {
+    if (config.webOrigins.length === 0) {
+      errors.push('WEB_ORIGINS must be set in production.');
+    }
+    if (config.webOrigins.some((origin) => isLocalOrigin(origin))) {
+      errors.push('WEB_ORIGINS cannot include localhost/127.0.0.1 in production.');
+    }
+    if (config.otpFixedCode) {
+      errors.push('AUTH_OTP_FIXED_CODE must not be set in production.');
+    }
+    if (config.otpDebugEcho) {
+      errors.push('AUTH_OTP_DEBUG_ECHO must be false in production.');
+    }
+    if (config.socialDevSubjectFallbackAllowed) {
+      errors.push('AUTH_SOCIAL_ALLOW_DEV_SUBJECT_FALLBACK must be false in production.');
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Invalid environment configuration:\n- ${errors.join('\n- ')}`);
+  }
+}
+
+function resolveEnv(): EnvConfig {
   const appEnv = parseAppEnv(process.env.APP_ENV);
   const cookieSameSite = parseCookieSameSite(process.env.COOKIE_SAME_SITE);
   const cookieSecure = parseBoolean(
@@ -52,7 +109,7 @@ export function getEnv() {
   );
 
   const webOrigins = parseOrigins(process.env.WEB_ORIGINS ?? process.env.WEB_ORIGIN, appEnv);
-  return {
+  const config: EnvConfig = {
     appEnv,
     host: process.env.HOST ?? (appEnv === 'production' ? '0.0.0.0' : 'localhost'),
     port: parsePositiveInt(process.env.PORT, 3000),
@@ -64,5 +121,19 @@ export function getEnv() {
     otpFixedCode: parseOtpFixedCode(process.env.AUTH_OTP_FIXED_CODE),
     otpTtlSeconds: parsePositiveInt(process.env.AUTH_OTP_TTL_SECONDS, 300),
     otpDebugEcho: parseBoolean(process.env.AUTH_OTP_DEBUG_ECHO, appEnv === 'local'),
+    socialAuthEnabled: parseBoolean(process.env.AUTH_SOCIAL_ENABLED, appEnv === 'local'),
+    socialDevSubjectFallbackAllowed: parseBoolean(
+      process.env.AUTH_SOCIAL_ALLOW_DEV_SUBJECT_FALLBACK,
+      appEnv === 'local'
+    ),
   };
+  validateEnvOrThrow(config);
+  return config;
+}
+
+let cachedEnv: EnvConfig | null = null;
+
+export function getEnv() {
+  if (!cachedEnv) cachedEnv = resolveEnv();
+  return cachedEnv;
 }

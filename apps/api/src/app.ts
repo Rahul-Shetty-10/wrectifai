@@ -6,7 +6,7 @@ import { ensureDbBootstrap } from './db/bootstrap';
 
 export function createApp() {
   const app = express();
-  const { webOrigins } = getEnv();
+  const { webOrigins, appEnv } = getEnv();
   const originAllowlist = new Set(webOrigins);
 
   const vercelUrl = process.env.VERCEL_URL?.trim();
@@ -43,6 +43,9 @@ export function createApp() {
     res.header('X-Content-Type-Options', 'nosniff');
     res.header('X-Frame-Options', 'DENY');
     res.header('Referrer-Policy', 'no-referrer');
+    if (appEnv === 'production') {
+      res.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     return next();
   });

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: wrectifai-api
+    runtime: node
+    plan: starter
+    rootDir: .
+    buildCommand: npm ci && npm run build:api
+    startCommand: npm run start:api
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000

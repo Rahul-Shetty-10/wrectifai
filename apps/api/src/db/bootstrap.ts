@@ -6,6 +6,8 @@ export function ensureDbBootstrap() {
   if (bootstrapPromise) return bootstrapPromise;
 
   bootstrapPromise = (async () => {
+    await query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+
     await query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY,

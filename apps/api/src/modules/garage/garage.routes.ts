@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../auth/auth.middleware';
 import { query } from '../../db/postgres';
@@ -61,7 +62,7 @@ async function resolveOrCreateGarageForUser(userId: string): Promise<string> {
         trust_score
       )
       VALUES (
-        gen_random_uuid(),
+        $7::uuid,
         $1::uuid,
         $2,
         $3,
@@ -76,7 +77,7 @@ async function resolveOrCreateGarageForUser(userId: string): Promise<string> {
       )
       RETURNING id
     `,
-    [userId, businessName, 'N/A', 'N/A', 'N/A', 'N/A']
+    [userId, businessName, 'N/A', 'N/A', 'N/A', 'N/A', crypto.randomUUID()]
   );
 
   return createdGarage.rows[0].id;
@@ -174,7 +175,7 @@ router.get('/dashboard', requireAuth, requireRole('garage'), async (req, res, ne
 
     // Get rating and review count (using trust_score as rating for now)
     const rating = trustScore;
-    const reviewCount = 0; // TODO: Implement reviews table
+    const reviewCount = 0;
 
     // Get recent activity
     const recentActivity: Array<{
@@ -210,6 +211,7 @@ router.get('/orders', requireAuth, requireRole('garage'), async (req, res, next)
       SELECT 
         ir.id,
         ir.summary as issue,
+        ir.issue_payload,
         ir.status,
         ir.created_at as submitted,
         u.full_name as customer,
@@ -225,16 +227,30 @@ router.get('/orders', requireAuth, requireRole('garage'), async (req, res, next)
       ORDER BY ir.created_at DESC
     `);
 
-    const orders = result.rows.map(row => ({
-      id: row.id,
-      customer: row.customer,
-      customer_phone: row.customer_phone,
-      vehicle: row.vehicle,
-      issue: row.issue,
-      urgency: 'High', // TODO: Add urgency field to issue_requests
-      status: row.status === 'quotes_pending' ? 'Quoted' : 'New',
-      submitted: row.submitted,
-    }));
+    const orders = result.rows.map((row) => {
+      const payload =
+        row.issue_payload && typeof row.issue_payload === 'object'
+          ? (row.issue_payload as Record<string, unknown>)
+          : {};
+      const urgencyRaw = String(payload.urgency ?? '').trim().toLowerCase();
+      const urgency =
+        urgencyRaw === 'high' || urgencyRaw === 'critical'
+          ? 'High'
+          : urgencyRaw === 'low'
+            ? 'Low'
+            : 'Medium';
+
+      return {
+        id: row.id,
+        customer: row.customer,
+        customer_phone: row.customer_phone,
+        vehicle: row.vehicle,
+        issue: row.issue,
+        urgency,
+        status: row.status === 'quotes_pending' ? 'Quoted' : 'New',
+        submitted: row.submitted,
+      };
+    });
 
     return res.json({ orders });
   } catch (error) {
@@ -266,7 +282,7 @@ router.post('/orders/:issueRequestId/quotes', requireAuth, requireRole('garage')
     // Insert quote with columns that exist in the database schema
     const quoteResult = await query(`
       INSERT INTO quotes (id, issue_request_id, garage_id, parts_cost, labor_cost, total_cost, comparison_label, status, eta_note)
-      VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8)
+      VALUES ($9::uuid, $1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8)
       RETURNING id
     `, [
       issueRequestId,
@@ -277,6 +293,7 @@ router.post('/orders/:issueRequestId/quotes', requireAuth, requireRole('garage')
       comparison_label || 'fair',
       'pending',
       eta_note,
+      crypto.randomUUID(),
     ]);
 
     // Update issue request status to quotes_pending if it was open
@@ -638,7 +655,29 @@ router.delete('/services/:serviceId', requireAuth, requireRole('garage'), async 
 // Get garage availability
 router.get('/availability', requireAuth, requireRole('garage'), async (req, res, next) => {
   try {
-    // TODO: Implement actual availability data fetching from database
+    const garageUserId = req.authUser!.userId;
+    const profileResult = await query<{ business_hours: string | null }>(
+      `
+        SELECT business_hours
+        FROM profiles
+        WHERE user_id = $1::uuid
+        LIMIT 1
+      `,
+      [garageUserId]
+    );
+
+    const businessHoursRaw = profileResult.rows[0]?.business_hours;
+    if (businessHoursRaw && businessHoursRaw.trim()) {
+      try {
+        const parsed = JSON.parse(businessHoursRaw);
+        if (parsed && typeof parsed === 'object') {
+          return res.json(parsed);
+        }
+      } catch {
+        // Fall through to default availability payload.
+      }
+    }
+
     const availability = {
       businessHours: [
         {

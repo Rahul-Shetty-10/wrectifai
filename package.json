@@ -6,6 +6,9 @@
     "api": "nx serve api",
     "web": "nx dev web",
     "serve:all": "concurrently -n api,web -c blue,green \"nx run api:serve\" \"nx run web:dev\"",
+    "build:api": "nx run api:build:production",
+    "start:api": "node dist/api/main.js",
+    "build:web": "nx build web",
     "build:all": "nx run-many -t build -p api,web",
     "mobile": "nx start mobile",
     "lint": "nx run-many -t lint --all"

@@ -3,6 +3,7 @@ import { query } from './postgres';
 
 export async function seedDatabase() {
   console.log('Seeding database with sample data...');
+  await query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
 
   // Check if roles exist, if not insert them
   const roleIds = {

@@ -236,7 +236,10 @@ export async function loginWithOtp(input: {
 function normalizeSocialSubject(provider: SocialProvider, socialSubject?: string) {
   const trimmed = socialSubject?.trim();
   if (trimmed) return trimmed;
-  return `dev-${provider}`;
+  if (getEnv().socialDevSubjectFallbackAllowed) {
+    return `dev-${provider}`;
+  }
+  throw new Error('socialSubject is required for social auth');
 }
 
 function derivePhoneFromSocial(provider: SocialProvider, socialSubject: string) {
@@ -296,7 +299,7 @@ async function ensurePendingGarageRegistration(userId: string, businessName: str
         trust_score
       )
       VALUES (
-        gen_random_uuid(),
+        $3::uuid,
         $1::uuid,
         $2,
         'N/A',
@@ -311,7 +314,7 @@ async function ensurePendingGarageRegistration(userId: string, businessName: str
       )
       ON CONFLICT (owner_user_id) DO NOTHING
     `,
-    [userId, businessName]
+    [userId, businessName, crypto.randomUUID()]
   );
 }
 
