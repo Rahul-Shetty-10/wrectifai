@@ -534,6 +534,86 @@ router.get('/bookings', requireAuth, requireRole('garage'), async (req, res, nex
   }
 });
 
+// Update garage booking status
+router.patch('/bookings/:bookingId', requireAuth, requireRole('garage'), async (req, res, next) => {
+  try {
+    const userId = req.authUser!.userId;
+    const { bookingId } = req.params;
+    const normalizedStatus = String(req.body?.status ?? '').trim().toLowerCase();
+
+    const allowedStatuses = new Set(['booked', 'in_service', 'completed', 'cancelled']);
+    if (!allowedStatuses.has(normalizedStatus)) {
+      return res.status(400).json({ message: 'Invalid booking status' });
+    }
+
+    const garageId = await resolveOrCreateGarageForUser(userId);
+
+    let hasGarageIdColumn = false;
+    try {
+      const garageIdColumnCheck = await query<{ exists: boolean }>(
+        `
+          SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'bookings'
+              AND column_name = 'garage_id'
+          ) AS exists
+        `
+      );
+      hasGarageIdColumn = garageIdColumnCheck.rows[0]?.exists === true;
+    } catch {
+      hasGarageIdColumn = false;
+    }
+
+    const result = hasGarageIdColumn
+      ? await query(
+          `
+            UPDATE bookings b
+            SET status = $1
+            WHERE b.id = $2::uuid
+              AND b.garage_id = $3::uuid
+            RETURNING b.id, b.status
+          `,
+          [normalizedStatus, bookingId, garageId]
+        )
+      : await query(
+          `
+            UPDATE bookings b
+            SET status = $1
+            FROM quotes q
+            WHERE b.id = $2::uuid
+              AND b.quote_id = q.id
+              AND q.garage_id = $3::uuid
+            RETURNING b.id, b.status
+          `,
+          [normalizedStatus, bookingId, garageId]
+        );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    const formatBookingStatus = (status: string): string => {
+      const normalized = String(status ?? '').trim().toLowerCase();
+      if (normalized === 'booked') return 'Confirmed';
+      if (normalized === 'in_service') return 'Pending';
+      if (normalized === 'completed') return 'Completed';
+      if (normalized === 'cancelled') return 'Cancelled';
+      return 'Pending';
+    };
+
+    return res.json({
+      booking: {
+        id: result.rows[0].id,
+        status: formatBookingStatus(result.rows[0].status),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 // Get garage services
 router.get('/services', requireAuth, requireRole('garage'), async (req, res, next) => {
   try {

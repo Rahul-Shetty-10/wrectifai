@@ -2008,7 +2008,9 @@ export async function fetchAdminUsers(): Promise<AdminUser[]> {
   });
   const data = (await response.json()) as { message?: string; users?: AdminUser[] };
   if (!response.ok) throw new Error(data.message ?? 'Failed to load users');
-  return data.users ?? [];
+  return (data.users ?? []).filter(
+    (user) => (user.role ?? '').trim().toLowerCase() !== 'admin'
+  );
 }
 
 export async function updateUserStatus(userId: string, status: 'Active' | 'Suspended'): Promise<void> {
@@ -2267,6 +2269,27 @@ export async function fetchGarageBookings(): Promise<GarageBooking[]> {
   const data = (await response.json()) as { message?: string; bookings?: GarageBooking[] };
   if (!response.ok) throw new Error(data.message ?? 'Failed to load bookings');
   return data.bookings ?? [];
+}
+
+export async function updateGarageBookingStatus(
+  bookingId: string,
+  status: 'booked' | 'in_service' | 'completed' | 'cancelled'
+): Promise<{ id: string; status: string }> {
+  const response = await withSessionRefreshRetry(() =>
+    fetch(`${API_BASE_URL}/garage/bookings/${encodeURIComponent(bookingId)}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+  );
+  const data = (await response.json()) as {
+    message?: string;
+    booking?: { id: string; status: string };
+  };
+  if (!response.ok) throw new Error(data.message ?? 'Failed to update booking');
+  if (!data.booking) throw new Error('Booking update failed');
+  return data.booking;
 }
 
 export async function fetchGarageServices(): Promise<GarageService[]> {

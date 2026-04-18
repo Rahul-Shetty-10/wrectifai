@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, Calendar, Clock, Car, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchGarageBookings, type GarageBooking } from '@/lib/api';
+import { fetchGarageBookings, updateGarageBookingStatus, type GarageBooking } from '@/lib/api';
 
 export function BookingsClient() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -14,6 +14,8 @@ export function BookingsClient() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled'>('all');
   const [bookings, setBookings] = useState<GarageBooking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingBookingId, setUpdatingBookingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const itemsPerPage = 9;
 
   useEffect(() => {
@@ -46,6 +48,23 @@ export function BookingsClient() {
   const currentBookings = filteredBookings.slice(startIndex, endIndex);
 
   const resetPage = () => setCurrentPage(1);
+
+  const handleMarkComplete = async (bookingId: string) => {
+    try {
+      setActionError(null);
+      setUpdatingBookingId(bookingId);
+      const updated = await updateGarageBookingStatus(bookingId, 'completed');
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === bookingId ? { ...booking, status: updated.status ?? 'Completed' } : booking
+        )
+      );
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Failed to update booking status');
+    } finally {
+      setUpdatingBookingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -212,9 +231,15 @@ export function BookingsClient() {
                   </>
                 )}
                 {booking.status === 'Confirmed' && (
-                  <Button type="button" size="sm" className="w-full gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => handleMarkComplete(booking.id)}
+                    disabled={updatingBookingId === booking.id}
+                  >
                     <CheckCircle className="h-4 w-4" />
-                    Mark Complete
+                    {updatingBookingId === booking.id ? 'Updating...' : 'Mark Complete'}
                   </Button>
                 )}
               </div>
@@ -262,6 +287,8 @@ export function BookingsClient() {
           <p className="text-slate-500">No bookings found matching your search or filters.</p>
         </div>
       )}
+
+      {actionError ? <p className="text-sm text-red-600">{actionError}</p> : null}
     </div>
   );
 }

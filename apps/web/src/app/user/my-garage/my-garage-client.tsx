@@ -420,18 +420,82 @@ export function MyGarageClient({ sidebar, content }: Props) {
 
             <div className="rounded-xl border border-border/40 bg-card p-4">
               <div className="mb-3 grid gap-3 md:grid-cols-2">
-                <LabeledInput id="make" label={content.forms.makeLabel} value={form.make} required error={formErrors.make} onChange={(value) => setForm((prev) => ({ ...prev, make: value }))} />
-                <LabeledInput id="model" label={content.forms.modelLabel} value={form.model} required error={formErrors.model} onChange={(value) => setForm((prev) => ({ ...prev, model: value }))} />
-                <LabeledInput id="year" label={content.forms.yearLabel} value={form.year} required error={formErrors.year} type="number" onChange={(value) => setForm((prev) => ({ ...prev, year: value }))} />
-                <LabeledInput id="fuelType" label={content.forms.fuelTypeLabel} value={form.fuelType} required error={formErrors.fuelType} onChange={(value) => setForm((prev) => ({ ...prev, fuelType: value }))} />
+                <LabeledInput
+                  id="make"
+                  label={content.forms.makeLabel}
+                  value={form.make}
+                  placeholder="e.g., Toyota"
+                  required
+                  error={formErrors.make}
+                  onChange={(value) => setForm((prev) => ({ ...prev, make: value }))}
+                />
+                <LabeledInput
+                  id="model"
+                  label={content.forms.modelLabel}
+                  value={form.model}
+                  placeholder="e.g., Corolla"
+                  required
+                  error={formErrors.model}
+                  onChange={(value) => setForm((prev) => ({ ...prev, model: value }))}
+                />
+                <LabeledInput
+                  id="year"
+                  label={content.forms.yearLabel}
+                  value={form.year}
+                  placeholder="e.g., 2022"
+                  required
+                  error={formErrors.year}
+                  type="number"
+                  onChange={(value) => setForm((prev) => ({ ...prev, year: value }))}
+                />
+                <LabeledInput
+                  id="fuelType"
+                  label={content.forms.fuelTypeLabel}
+                  value={form.fuelType}
+                  placeholder="e.g., Petrol"
+                  required
+                  error={formErrors.fuelType}
+                  onChange={(value) => setForm((prev) => ({ ...prev, fuelType: value }))}
+                />
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
-                <LabeledInput id="trim" label={content.forms.trimLabel} value={form.trim} onChange={(value) => setForm((prev) => ({ ...prev, trim: value }))} />
-                <LabeledInput id="mileage" label={content.forms.mileageLabel} value={form.mileage} type="number" onChange={(value) => setForm((prev) => ({ ...prev, mileage: value }))} />
-                <LabeledInput id="engineType" label={content.forms.engineTypeLabel} value={form.engineType} onChange={(value) => setForm((prev) => ({ ...prev, engineType: value }))} />
-                <LabeledInput id="vin" label={content.forms.vinLabel} value={form.vin} onChange={(value) => setForm((prev) => ({ ...prev, vin: value }))} />
-                <LabeledInput id="plateNumber" label={content.forms.plateLabel} value={form.plateNumber} onChange={(value) => setForm((prev) => ({ ...prev, plateNumber: value }))} />
+                <LabeledInput
+                  id="trim"
+                  label={content.forms.trimLabel}
+                  value={form.trim}
+                  placeholder="e.g., ZX"
+                  onChange={(value) => setForm((prev) => ({ ...prev, trim: value }))}
+                />
+                <LabeledInput
+                  id="mileage"
+                  label={content.forms.mileageLabel}
+                  value={form.mileage}
+                  type="number"
+                  placeholder="e.g., 12000"
+                  onChange={(value) => setForm((prev) => ({ ...prev, mileage: value }))}
+                />
+                <LabeledInput
+                  id="engineType"
+                  label={content.forms.engineTypeLabel}
+                  value={form.engineType}
+                  placeholder="e.g., 1.5L i-VTEC"
+                  onChange={(value) => setForm((prev) => ({ ...prev, engineType: value }))}
+                />
+                <LabeledInput
+                  id="vin"
+                  label={content.forms.vinLabel}
+                  value={form.vin}
+                  placeholder="17-character VIN"
+                  onChange={(value) => setForm((prev) => ({ ...prev, vin: value }))}
+                />
+                <LabeledInput
+                  id="plateNumber"
+                  label={content.forms.plateLabel}
+                  value={form.plateNumber}
+                  placeholder="e.g., KA01AB1234"
+                  onChange={(value) => setForm((prev) => ({ ...prev, plateNumber: value }))}
+                />
                 <LabeledInput id="warrantyDetails" label={content.forms.warrantyLabel} value={form.warrantyDetails} placeholder={content.forms.warrantyPlaceholder} onChange={(value) => setForm((prev) => ({ ...prev, warrantyDetails: value }))} />
               </div>
             </div>

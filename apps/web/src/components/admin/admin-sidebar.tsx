@@ -10,9 +10,7 @@ import {
   CreditCard,
   MessageSquare,
   Shield,
-  Store,
   Users,
-  User,
   Menu,
   X,
   AlertTriangle,
@@ -31,8 +29,7 @@ export type AdminSidebarItemKey =
   | 'bookings'
   | 'quotes'
   | 'payments'
-  | 'complaints'
-  | 'profile';
+  | 'complaints';
 
 const navItems: Array<{
   key: AdminSidebarItemKey;
@@ -46,7 +43,6 @@ const navItems: Array<{
   { key: 'quotes', label: 'Quotes', icon: MessageSquare },
   { key: 'payments', label: 'Payments', icon: CreditCard },
   { key: 'complaints', label: 'Complaints', icon: AlertTriangle },
-  { key: 'profile', label: 'Profile', icon: User },
 ];
 
 export function AdminSidebar({ activeItem }: AdminSidebarProps) {

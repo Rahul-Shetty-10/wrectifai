@@ -12,6 +12,7 @@ export function ProfileClient() {
   const [formData, setFormData] = useState<GarageProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     async function loadProfile() {
@@ -32,12 +33,16 @@ export function ProfileClient() {
     if (!formData) return;
 
     try {
+      setToast(null);
       setSaving(true);
       await updateGarageProfile(formData);
-      alert('Profile saved successfully!');
+      setToast({ type: 'success', message: 'Profile saved successfully.' });
     } catch (error) {
       console.error('Failed to save profile:', error);
-      alert('Failed to save profile. Please try again.');
+      setToast({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to save profile. Please try again.',
+      });
     } finally {
       setSaving(false);
     }
@@ -78,6 +83,28 @@ export function ProfileClient() {
 
   return (
     <div className="space-y-6">
+      {toast ? (
+        <Card
+          className={
+            toast.type === 'success'
+              ? 'rounded-2xl border-emerald-200 bg-emerald-50 shadow-none sm:rounded-3xl'
+              : 'rounded-2xl border-red-200 bg-red-50 shadow-none sm:rounded-3xl'
+          }
+        >
+          <CardContent className="p-4 sm:p-5">
+            <p
+              className={
+                toast.type === 'success'
+                  ? 'text-sm font-medium text-emerald-800'
+                  : 'text-sm font-medium text-red-800'
+              }
+            >
+              {toast.message}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {formData?.isApproved === false && (
         <Card className="rounded-2xl border-amber-200 bg-amber-50 shadow-none sm:rounded-3xl">
           <CardContent className="flex items-start gap-4 p-4 sm:p-6">
