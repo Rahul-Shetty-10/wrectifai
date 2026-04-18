@@ -1,27 +1,49 @@
 # Wrectifai
 
-## Vercel Deployment (Web + API)
+## Deployment Readiness (Local vs Production)
 
-Recommended setup:
+This repo now supports environment-driven switching. Use:
+
+- `apps/api/.env.example`
+- `apps/web/.env.example`
+
+Copy each to `.env`, then switch local/production by commenting one line and uncommenting the other.
+
+## Vercel Deployment (Web + API)
 
 - Create one Vercel project for `apps/web` (Root Directory = `apps/web`).
 - Create one Vercel project for `apps/api` (Root Directory = `apps/api`).
-- API project uses serverless catch-all handler at `apps/api/api/[...path].ts`.
+- API uses serverless handler at `apps/api/api/[...path].ts`.
 
-Set these environment variables in Vercel:
+Set these variables:
 
-- `DATABASE_URL`: Postgres connection string for the API.
-- `WEB_ORIGINS`: Comma-separated list of allowed web origins for CORS.
-  Example: `https://your-app.vercel.app,https://your-app-git-main-your-team.vercel.app`
-- `NEXT_PUBLIC_API_BASE_URL`: API base URL used by web app.
-  - If API is same-origin under `/api`, set to `https://your-app.vercel.app/api`.
-  - If API is on another domain, set that full `/api` URL.
-- `COOKIE_SAME_SITE`: `lax` for same-site deployments, `none` for cross-site web/api.
-- `COOKIE_DOMAIN` (optional): Shared cookie domain when needed (example: `.yourdomain.com`).
+- API project:
+  - `APP_ENV=production`
+  - `DATABASE_URL`
+  - `WEB_ORIGINS=https://<web-domain>,https://<preview-domain>`
+  - `COOKIE_SAME_SITE` (`lax` same-site, `none` cross-site)
+  - `COOKIE_SECURE=true`
+  - `AUTH_OTP_DEBUG_ECHO=false`
+  - Optional: `COOKIE_DOMAIN=.yourdomain.com`
+- Web project:
+  - `NEXT_PUBLIC_APP_ENV=production`
+  - `NEXT_PUBLIC_API_BASE_URL=https://<api-domain>/api` (or same-origin `/api` strategy)
+  - `NEXT_PUBLIC_TENANT_ID=default`
+
+## Render Deployment (API) + Web
+
+- API on Render:
+  - Root directory: `apps/api`
+  - Build command: `npm install && npx nx build api --configuration=production`
+  - Start command: `node dist/api/main.js`
+  - Env: same API vars as above (`APP_ENV=production`, `DATABASE_URL`, `WEB_ORIGINS`, etc.)
+- Web:
+  - Deploy separately (Vercel recommended for Next.js), or Render Web Service with standard Next.js build/start.
+  - Point `NEXT_PUBLIC_API_BASE_URL` to your Render API URL ending with `/api`.
 
 Notes:
-- `COOKIE_SAME_SITE=none` requires HTTPS and secure cookies.
-- CORS now supports an explicit allowlist via `WEB_ORIGINS`.
+- Keep `AUTH_OTP_FIXED_CODE` set only for local/dev.
+- `COOKIE_SAME_SITE=none` requires HTTPS and `COOKIE_SECURE=true`.
 
 ---
 

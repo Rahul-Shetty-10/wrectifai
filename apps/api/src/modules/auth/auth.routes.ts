@@ -38,12 +38,11 @@ function setSessionCookies(
     refreshExpiresAt: Date;
   }
 ) {
-  const { cookieSameSite, cookieDomain } = getEnv();
-  const secure = process.env.NODE_ENV === 'production' || cookieSameSite === 'none';
+  const { cookieSameSite, cookieDomain, cookieSecure } = getEnv();
   const base = {
     httpOnly: true,
     sameSite: cookieSameSite,
-    secure,
+    secure: cookieSecure,
     path: '/',
     domain: cookieDomain,
   } as const;
@@ -63,9 +62,8 @@ function setSessionCookies(
 }
 
 function clearSessionCookies(res: Response) {
-  const { cookieSameSite, cookieDomain } = getEnv();
-  const secure = process.env.NODE_ENV === 'production' || cookieSameSite === 'none';
-  const base = { path: '/', sameSite: cookieSameSite, secure, domain: cookieDomain };
+  const { cookieSameSite, cookieDomain, cookieSecure } = getEnv();
+  const base = { path: '/', sameSite: cookieSameSite, secure: cookieSecure, domain: cookieDomain };
   res.clearCookie('wrect_at', { ...base, httpOnly: true });
   res.clearCookie('wrect_rt', { ...base, httpOnly: true });
   res.clearCookie('wrect_role', { ...base, httpOnly: true });
@@ -88,10 +86,12 @@ authRouter.post('/register/send-otp', async (req, res, next) => {
       roleCode,
       fullName,
     });
+    const { otpDebugEcho } = getEnv();
     return res.json({
       message: 'OTP sent',
       otpLength: 6,
       expiresAt: otp.expiresAt.toISOString(),
+      ...(otpDebugEcho ? { debugOtp: otp.otpCode } : {}),
     });
   } catch (error) {
     return next(error);
@@ -136,10 +136,12 @@ authRouter.post('/login/send-otp', async (req, res, next) => {
     if (!phone) return res.status(400).json({ message: 'phone is required' });
 
     const otp = await createOtpChallenge({ phone, purpose: 'login' });
+    const { otpDebugEcho } = getEnv();
     return res.json({
       message: 'OTP sent',
       otpLength: 6,
       expiresAt: otp.expiresAt.toISOString(),
+      ...(otpDebugEcho ? { debugOtp: otp.otpCode } : {}),
     });
   } catch (error) {
     return next(error);

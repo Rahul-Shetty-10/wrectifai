@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { resolveApiBaseUrl } from './lib/runtime-env';
 
 const publicPaths = [
   '/auth/login',
@@ -11,12 +12,7 @@ const publicPaths = [
 const rolePrefixes = ['/user', '/garage', '/vendor', '/admin'] as const;
 
 function getApiBaseUrl(req: NextRequest) {
-  const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-  if (configured) return configured;
-  if (process.env.NODE_ENV === 'production') {
-    return `${req.nextUrl.origin}/api`;
-  }
-  return 'http://localhost:3000/api';
+  return resolveApiBaseUrl(req.nextUrl.origin);
 }
 
 function withNoStore(res: NextResponse) {

@@ -13,6 +13,10 @@ export function createApp() {
   if (vercelUrl) {
     originAllowlist.add(`https://${vercelUrl}`);
   }
+  const renderExternalUrl = process.env.RENDER_EXTERNAL_URL?.trim();
+  if (renderExternalUrl) {
+    originAllowlist.add(renderExternalUrl);
+  }
 
   const bootstrap = ensureDbBootstrap();
 

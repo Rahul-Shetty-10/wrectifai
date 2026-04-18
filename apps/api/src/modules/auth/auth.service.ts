@@ -1,10 +1,10 @@
 import crypto from 'node:crypto';
 import { query } from '../../db/postgres';
+import { getEnv } from '../../config/env';
 
 export type RoleCode = 'user' | 'garage' | 'vendor' | 'admin';
 export type SocialProvider = 'google' | 'apple';
 
-const OTP_CODE = '123456';
 const ACCESS_TTL_MS = 15 * 60 * 1000;
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -18,6 +18,12 @@ function hashToken(value: string) {
 
 function randomToken() {
   return crypto.randomBytes(32).toString('hex');
+}
+
+function generateOtpCode() {
+  const fixedCode = getEnv().otpFixedCode;
+  if (fixedCode) return fixedCode;
+  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 function isPhoneValid(phone: string) {
@@ -54,7 +60,9 @@ export async function createOtpChallenge(input: {
   }
 
   const challengeId = crypto.randomUUID();
-  const expiresAt = new Date(now().getTime() + 5 * 60 * 1000);
+  const { otpTtlSeconds } = getEnv();
+  const otpCode = generateOtpCode();
+  const expiresAt = new Date(now().getTime() + otpTtlSeconds * 1000);
 
   await query(
     `
@@ -67,7 +75,7 @@ export async function createOtpChallenge(input: {
       input.purpose,
       input.roleCode ?? null,
       input.fullName ?? null,
-      OTP_CODE,
+      otpCode,
       expiresAt,
     ]
   );
@@ -85,7 +93,7 @@ export async function createOtpChallenge(input: {
     ]
   );
 
-  return { expiresAt };
+  return { expiresAt, otpCode };
 }
 
 async function consumeChallenge(input: {
