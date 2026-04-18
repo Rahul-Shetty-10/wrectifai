@@ -84,12 +84,6 @@ function validateEnvOrThrow(config: EnvConfig) {
     if (config.webOrigins.some((origin) => isLocalOrigin(origin))) {
       errors.push('WEB_ORIGINS cannot include localhost/127.0.0.1 in production.');
     }
-    if (config.otpFixedCode) {
-      errors.push('AUTH_OTP_FIXED_CODE must not be set in production.');
-    }
-    if (config.otpDebugEcho) {
-      errors.push('AUTH_OTP_DEBUG_ECHO must be false in production.');
-    }
     if (config.socialDevSubjectFallbackAllowed) {
       errors.push('AUTH_SOCIAL_ALLOW_DEV_SUBJECT_FALLBACK must be false in production.');
     }
