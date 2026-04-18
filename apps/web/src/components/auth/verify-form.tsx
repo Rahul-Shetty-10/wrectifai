@@ -66,11 +66,18 @@ export function VerifyForm({
         credentials: 'include',
         body: JSON.stringify(payload),
       });
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') ?? '';
+      const isJson = contentType.includes('application/json');
+      const data = isJson
+        ? ((await response.json()) as { message?: string; redirectPath?: string })
+        : { message: await response.text() };
       if (!response.ok) {
         throw new Error(data.message ?? verifyFailedMessage);
       }
-      router.push(data.redirectPath ?? '/');
+      const target = data.redirectPath ?? '/';
+      // Use a full navigation so auth cookies set by the verify response
+      // are definitely applied before protected middleware checks run.
+      window.location.assign(target);
     } catch (err) {
       setError(err instanceof Error ? err.message : unexpectedErrorMessage);
     } finally {
