@@ -17,12 +17,16 @@ type Props = {
 
 export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
   const headerSidebar = { ...sidebar, logoUrl: appLogoUrl || sidebar.logoUrl };
-  const garageTitle = content.actions.garage.title.toLowerCase().includes('garage')
+  const garageRawTitle = content?.actions?.garage?.title ?? 'Direct Service Request';
+  const garageRawDescription =
+    content?.actions?.garage?.description ??
+    'Skip analysis and raise a direct service request when you already know the issue.';
+  const garageTitle = garageRawTitle.toLowerCase().includes('garage')
     ? 'Direct Service Request'
-    : content.actions.garage.title;
-  const garageDescription = content.actions.garage.title.toLowerCase().includes('garage')
+    : garageRawTitle;
+  const garageDescription = garageRawTitle.toLowerCase().includes('garage')
     ? 'Skip analysis and raise a direct service request when you already know the issue.'
-    : content.actions.garage.description;
+    : garageRawDescription;
 
   return (
     <div className="flex h-screen bg-background">

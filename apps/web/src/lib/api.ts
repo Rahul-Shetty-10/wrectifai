@@ -1589,13 +1589,94 @@ export async function getDashboardContent(options?: {
   locale?: string;
   tenantId?: string;
 }) {
-  return getUIContent<UserDashboardContent>({
+  const raw = await getUIContent<unknown>({
     module: 'user',
     page: 'dashboard',
     locale: options?.locale,
     tenantId: options?.tenantId,
     fallback: USER_DASHBOARD_DEFAULT,
   });
+
+  return normalizeUserDashboardContent(raw);
+}
+
+function normalizeUserDashboardContent(input: unknown): UserDashboardContent {
+  if (!input || typeof input !== 'object') return USER_DASHBOARD_DEFAULT;
+
+  const value = input as Record<string, unknown>;
+  const hero = value.hero as Record<string, unknown> | undefined;
+  const stats = value.stats as Record<string, unknown> | undefined;
+  const actions = value.actions as Record<string, unknown> | undefined;
+  const diagnosis = actions?.diagnosis as Record<string, unknown> | undefined;
+  const garage = actions?.garage as Record<string, unknown> | undefined;
+  const quotes = actions?.quotes as Record<string, unknown> | undefined;
+
+  return {
+    hero: {
+      welcomePrefix:
+        typeof hero?.welcomePrefix === 'string'
+          ? hero.welcomePrefix
+          : USER_DASHBOARD_DEFAULT.hero.welcomePrefix,
+      userNameDefault:
+        typeof hero?.userNameDefault === 'string'
+          ? hero.userNameDefault
+          : USER_DASHBOARD_DEFAULT.hero.userNameDefault,
+      description:
+        typeof hero?.description === 'string'
+          ? hero.description
+          : USER_DASHBOARD_DEFAULT.hero.description,
+    },
+    stats: {
+      activeVehicles:
+        typeof stats?.activeVehicles === 'string'
+          ? stats.activeVehicles
+          : USER_DASHBOARD_DEFAULT.stats.activeVehicles,
+      pendingQuotes:
+        typeof stats?.pendingQuotes === 'string'
+          ? stats.pendingQuotes
+          : USER_DASHBOARD_DEFAULT.stats.pendingQuotes,
+      upcomingBookings:
+        typeof stats?.upcomingBookings === 'string'
+          ? stats.upcomingBookings
+          : USER_DASHBOARD_DEFAULT.stats.upcomingBookings,
+    },
+    actions: {
+      title:
+        typeof actions?.title === 'string'
+          ? actions.title
+          : USER_DASHBOARD_DEFAULT.actions.title,
+      diagnosis: {
+        title:
+          typeof diagnosis?.title === 'string'
+            ? diagnosis.title
+            : USER_DASHBOARD_DEFAULT.actions.diagnosis.title,
+        description:
+          typeof diagnosis?.description === 'string'
+            ? diagnosis.description
+            : USER_DASHBOARD_DEFAULT.actions.diagnosis.description,
+      },
+      garage: {
+        title:
+          typeof garage?.title === 'string'
+            ? garage.title
+            : USER_DASHBOARD_DEFAULT.actions.garage.title,
+        description:
+          typeof garage?.description === 'string'
+            ? garage.description
+            : USER_DASHBOARD_DEFAULT.actions.garage.description,
+      },
+      quotes: {
+        title:
+          typeof quotes?.title === 'string'
+            ? quotes.title
+            : USER_DASHBOARD_DEFAULT.actions.quotes.title,
+        description:
+          typeof quotes?.description === 'string'
+            ? quotes.description
+            : USER_DASHBOARD_DEFAULT.actions.quotes.description,
+      },
+    },
+  };
 }
 
 export type DashboardStats = {
