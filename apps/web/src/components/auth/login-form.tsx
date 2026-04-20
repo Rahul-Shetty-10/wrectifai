@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { API_BASE_URL } from '@/lib/api';
+import { OTPInput } from './otp-input';
+import { ChevronLeft, Info } from 'lucide-react';
 
 type LoginFormProps = {
   title: string;
@@ -21,6 +23,7 @@ type LoginFormProps = {
   unexpectedErrorMessage: string;
 };
 
+type Step = 'phone' | 'otp';
 
 export function LoginForm({
   title,
@@ -37,53 +40,23 @@ export function LoginForm({
   unexpectedErrorMessage,
 }: LoginFormProps) {
   const router = useRouter();
+  const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ phone?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ phone?: string; otp?: string }>({});
 
-  async function onSocialLogin(provider: 'google' | 'apple') {
-    setError(null);
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/social/${provider}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({}),
-      });
-
-      let payload: { message?: string; redirectPath?: string } = {};
-      try {
-        payload = (await response.json()) as { message?: string; redirectPath?: string };
-      } catch {
-        payload = {};
-      }
-
-      if (!response.ok) {
-        throw new Error(payload.message ?? unexpectedErrorMessage);
-      }
-
-      router.push(payload.redirectPath ?? '/');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : unexpectedErrorMessage);
-    }
-  }
-
-  async function onSubmit(e: React.FormEvent) {
+  async function onSendOtp(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setFieldErrors({});
 
-    const errors: { phone?: string } = {};
-
     if (!/^\d{10}$/.test(phone)) {
-      errors.phone = invalidPhoneMessage;
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+      setFieldErrors({ phone: invalidPhoneMessage });
       return;
     }
+
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login/send-otp`, {
@@ -96,7 +69,38 @@ export function LoginForm({
       if (!response.ok) {
         throw new Error(data.message ?? sendOtpFailedMessage);
       }
-      router.push(`/auth/verify?mode=login&phone=${encodeURIComponent(phone)}`);
+      setStep('otp');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : unexpectedErrorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    
+    if (otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone, otp }),
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message ?? "Verification failed");
+      }
+      
+      window.location.assign(data.redirectPath ?? '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : unexpectedErrorMessage);
     } finally {
@@ -105,71 +109,107 @@ export function LoginForm({
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <h2 className="font-display text-4xl font-bold text-foreground">{title}</h2>
-      <p className="mt-2 text-muted-foreground">{subtitle}</p>
+    <div className="w-full">
+      {step === 'otp' && (
+        <button 
+          onClick={() => setStep('phone')}
+          className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Edit Phone Number
+        </button>
+      )}
 
-      <form className="mt-8 space-y-4" onSubmit={onSubmit}>
-        <div className="space-y-2">
-          <Label htmlFor="phone">{phoneLabel}</Label>
-          <Input
-            id="phone"
-            type="tel"
-            inputMode="numeric"
-            pattern="[0-9]{10}"
-            maxLength={10}
-            placeholder={phonePlaceholder}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-            className={fieldErrors.phone ? 'border-destructive' : ''}
-          />
-          {fieldErrors.phone && <p className="text-sm text-destructive">{fieldErrors.phone}</p>}
-        </div>
+      <form className="space-y-6" onSubmit={step === 'phone' ? onSendOtp : onVerifyOtp}>
+        {step === 'phone' ? (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm font-medium text-muted-foreground ml-1">
+                {phoneLabel}
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]{10}"
+                maxLength={10}
+                placeholder={phonePlaceholder}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                className={fieldErrors.phone ? 'border-destructive h-14 text-lg rounded-xl' : 'h-14 text-lg rounded-xl'}
+              />
+              {fieldErrors.phone && <p className="text-sm text-destructive ml-1">{fieldErrors.phone}</p>}
+            </div>
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <Button 
+              className="w-full h-14 text-lg font-semibold rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/20" 
+              type="submit" 
+              disabled={loading}
+            >
+              {loading ? sendingOtpLabel : sendOtpLabel}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="space-y-3">
+              <div className="flex justify-between items-end px-1">
+                <Label htmlFor="otp" className="text-sm font-medium text-muted-foreground">
+                  OTP (6 digits)
+                </Label>
+                <p className="text-xs text-green-600 font-medium animate-pulse">
+                  OTP sent successfully.
+                </p>
+              </div>
+              <OTPInput 
+                value={otp}
+                onChange={setOtp}
+                length={6}
+                disabled={loading}
+              />
+            </div>
 
-        <Button className="h-12 w-full text-base" type="submit" disabled={loading}>
-          {loading ? sendingOtpLabel : sendOtpLabel}
-        </Button>
+            {error ? <p className="text-sm text-destructive text-center">{error}</p> : null}
+
+            <Button 
+              className="w-full h-14 text-lg font-semibold rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/20" 
+              type="submit" 
+              disabled={loading || otp.length !== 6}
+            >
+              {loading ? "Verifying..." : "Login"}
+            </Button>
+          </div>
+        )}
       </form>
 
-      <div className="my-6 flex items-center gap-3">
+      {/* Quick Login Tips */}
+      <div className="mt-10 p-6 rounded-2xl bg-secondary/30 border border-secondary/50">
+        <div className="flex items-center gap-2 mb-3 text-primary font-bold">
+          <Info className="w-5 h-5" />
+          <span>Quick Login Tips</span>
+        </div>
+        <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+          <li>Use your registered mobile number</li>
+          <li>Ensure you have range to receive SMS OTP</li>
+          <li>Contact support if you face any issues</li>
+        </ul>
+      </div>
+
+      <div className="mt-8 flex items-center gap-3 opacity-50">
         <div className="h-px flex-1 bg-border" />
-        <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">
           {socialDividerLabel}
         </p>
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="group relative">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11 w-full"
-            disabled
-          >
-            <GoogleIcon />
-            {continueWithGoogleLabel}
-          </Button>
-          <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded border border-border bg-background px-2 py-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-            Feature coming soon
-          </span>
-        </div>
-        <div className="group relative">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11 w-full"
-            disabled
-          >
-            <AppleIcon />
-            {continueWithAppleLabel}
-          </Button>
-          <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded border border-border bg-background px-2 py-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-            Feature coming soon
-          </span>
-        </div>
+      <div className="mt-6 flex justify-center gap-4">
+        {/* Placeholder for social icons as per design need, keeping them simple buttons for now */}
+        <Button variant="outline" size="icon" className="w-12 h-12 rounded-xl" disabled>
+          <GoogleIcon />
+        </Button>
+        <Button variant="outline" size="icon" className="w-12 h-12 rounded-xl" disabled>
+          <AppleIcon />
+        </Button>
       </div>
     </div>
   );
@@ -177,7 +217,7 @@ export function LoginForm({
 
 function GoogleIcon() {
   return (
-    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-4 w-4">
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-5 w-5">
       <path
         fill="#FFC107"
         d="M43.611 20.083H42V20H24v8h11.303C33.655 32.657 29.24 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.95 3.05l5.657-5.657C34.056 6.053 29.278 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
@@ -200,7 +240,7 @@ function GoogleIcon() {
 
 function AppleIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
       <path d="M16.6 12.7c0-2 1.7-3 1.8-3.1-1-1.5-2.5-1.7-3-1.7-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.8-2.7-.8-1.4 0-2.7.8-3.4 2.1-1.5 2.6-.4 6.5 1.1 8.7.7 1.1 1.6 2.3 2.8 2.2 1.1 0 1.6-.7 2.9-.7 1.3 0 1.7.7 2.9.7 1.2 0 2-.9 2.7-2 .8-1.1 1.1-2.2 1.1-2.2 0 0-2.1-.8-2.1-3.9zM14.6 6.7c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.8-1.4z" />
     </svg>
   );

@@ -13,9 +13,10 @@ import {
 } from '@/components/ui/dialog';
 import { Search, MessageSquare, DollarSign, TrendingDown, TrendingUp, MoreVertical, ChevronLeft, ChevronRight, User, Car, MapPin, Calendar, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchAdminQuotes, type AdminQuote } from '@/lib/api';
+import { fetchAdminQuotes, type AdminQuote, type DynamicPageContent } from '@/lib/api';
 
-export function QuotesClient() {
+export function QuotesClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Accepted' | 'Pending' | 'Rejected'>('all');
@@ -65,8 +66,8 @@ export function QuotesClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Quotes</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage all service quotes</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Quotes')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage all service quotes')}</p>
       </div>
 
       {/* Search and Filter */}
@@ -76,7 +77,7 @@ export function QuotesClient() {
             <div className="relative flex-1 max-w-md">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input 
-                placeholder="Search quotes..." 
+                placeholder={t('searchPlaceholder', 'Search quotes...')}
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => {
@@ -94,7 +95,7 @@ export function QuotesClient() {
                   resetPage();
                 }}
               >
-                All
+                {t('filterAll', 'All')}
               </Button>
               <Button 
                 variant={statusFilter === 'Accepted' ? 'default' : 'outline'} 
@@ -104,7 +105,7 @@ export function QuotesClient() {
                   resetPage();
                 }}
               >
-                Accepted
+                {t('filterAccepted', 'Accepted')}
               </Button>
               <Button 
                 variant={statusFilter === 'Pending' ? 'default' : 'outline'} 
@@ -114,7 +115,7 @@ export function QuotesClient() {
                   resetPage();
                 }}
               >
-                Pending
+                {t('filterPending', 'Pending')}
               </Button>
               <Button 
                 variant={statusFilter === 'Rejected' ? 'default' : 'outline'} 
@@ -124,7 +125,7 @@ export function QuotesClient() {
                   resetPage();
                 }}
               >
-                Rejected
+                {t('filterRejected', 'Rejected')}
               </Button>
             </div>
           </div>
@@ -193,7 +194,7 @@ export function QuotesClient() {
                   className="h-8 gap-2 text-xs sm:h-9 sm:text-sm"
                   onClick={() => handleViewDetails(quote)}
                 >
-                  View Details
+                  {t('viewDetailsLabel', 'View Details')}
                 </Button>
                 <Button type="button" variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                   <MoreVertical className="h-4 w-4" />
@@ -240,7 +241,7 @@ export function QuotesClient() {
 
       {filteredQuotes.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-slate-500">No quotes found matching your search or filters.</p>
+          <p className="text-slate-500">{t('emptyState', 'No quotes found matching your search or filters.')}</p>
         </div>
       )}
 
@@ -248,8 +249,8 @@ export function QuotesClient() {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Quote Details</DialogTitle>
-            <DialogDescription>View complete quote information</DialogDescription>
+            <DialogTitle className="text-2xl">{t('detailsTitle', 'Quote Details')}</DialogTitle>
+            <DialogDescription>{t('detailsDescription', 'View complete quote information')}</DialogDescription>
           </DialogHeader>
           {selectedQuote && (
             <div className="space-y-6 mt-4">
@@ -375,7 +376,7 @@ export function QuotesClient() {
                   className="flex-1"
                   onClick={() => setIsDetailOpen(false)}
                 >
-                  Close
+                  {t('closeLabel', 'Close')}
                 </Button>
                 {selectedQuote.status === 'Pending' && (
                   <>
@@ -384,10 +385,10 @@ export function QuotesClient() {
                       variant="outline"
                       className="flex-1 text-destructive hover:bg-destructive/10"
                     >
-                      Reject Quote
+                      {t('rejectQuoteLabel', 'Reject Quote')}
                     </Button>
                     <Button type="button" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                      Accept Quote
+                      {t('acceptQuoteLabel', 'Accept Quote')}
                     </Button>
                   </>
                 )}

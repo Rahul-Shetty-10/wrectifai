@@ -212,6 +212,7 @@ router.get('/orders', requireAuth, requireRole('garage'), async (req, res, next)
         ir.id,
         ir.summary as issue,
         ir.issue_payload,
+        ir.issue_source,
         ir.status,
         ir.created_at as submitted,
         u.full_name as customer,
@@ -223,7 +224,8 @@ router.get('/orders', requireAuth, requireRole('garage'), async (req, res, next)
       FROM issue_requests ir
       JOIN users u ON ir.customer_user_id = u.id
       JOIN vehicles v ON ir.vehicle_id = v.id
-      WHERE ir.status IN ('open', 'quotes_pending')
+      WHERE ir.status = 'quotes_pending'
+         OR (ir.status = 'open' AND ir.issue_source = 'direct')
       ORDER BY ir.created_at DESC
     `);
 
@@ -264,6 +266,23 @@ router.post('/orders/:issueRequestId/quotes', requireAuth, requireRole('garage')
     const { issueRequestId } = req.params;
     const { parts_cost, labor_cost, eta_note, comparison_label, garage_id } = req.body;
     const userId = req.authUser!.userId;
+
+    const issueResult = await query<{ id: string }>(
+      `
+        SELECT id
+        FROM issue_requests
+        WHERE id = $1::uuid
+          AND (
+            status = 'quotes_pending'
+            OR (status = 'open' AND issue_source = 'direct')
+          )
+        LIMIT 1
+      `,
+      [issueRequestId]
+    );
+    if (issueResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Issue request is not available for garage quoting' });
+    }
 
     // Validate inputs
     if (!parts_cost || !labor_cost) {
@@ -339,6 +358,10 @@ router.get('/orders/:issueRequestId/issue-details', requireAuth, requireRole('ga
       JOIN users u ON ir.customer_user_id = u.id
       JOIN vehicles v ON ir.vehicle_id = v.id
       WHERE ir.id = $1::uuid
+        AND (
+          ir.status = 'quotes_pending'
+          OR (ir.status = 'open' AND ir.issue_source = 'direct')
+        )
     `, [issueRequestId]);
 
     if (issueResult.rows.length === 0) {

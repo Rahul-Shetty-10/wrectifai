@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Search, Plus, Wrench, DollarSign, Edit, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchGarageServices, createGarageService, updateGarageService, deleteGarageService, type GarageService } from '@/lib/api';
+import { fetchGarageServices, createGarageService, updateGarageService, deleteGarageService, type GarageService, type DynamicPageContent } from '@/lib/api';
 
-export function ServicesClient() {
+export function ServicesClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [services, setServices] = useState<GarageService[]>([]);
@@ -95,7 +96,7 @@ export function ServicesClient() {
       setSelectedService(null);
     } catch (error) {
       console.error('Failed to delete service:', error);
-      alert('Failed to delete service. Please try again.');
+      alert(t('deleteErrorLabel', 'Failed to delete service. Please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -103,7 +104,7 @@ export function ServicesClient() {
 
   const handleCreateService = async () => {
     if (!serviceName || !serviceCategory || !servicePrice) {
-      alert('Please fill in all required fields');
+      alert(t('requiredFieldsLabel', 'Please fill in all required fields'));
       return;
     }
 
@@ -115,7 +116,7 @@ export function ServicesClient() {
       setServices(data);
     } catch (error) {
       console.error('Failed to create service:', error);
-      alert('Failed to create service. Please try again.');
+      alert(t('createErrorLabel', 'Failed to create service. Please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -123,7 +124,7 @@ export function ServicesClient() {
 
   const handleUpdateService = async () => {
     if (!selectedService || !serviceName || !serviceCategory || !servicePrice) {
-      alert('Please fill in all required fields');
+      alert(t('requiredFieldsLabel', 'Please fill in all required fields'));
       return;
     }
 
@@ -135,7 +136,7 @@ export function ServicesClient() {
       setServices(data);
     } catch (error) {
       console.error('Failed to update service:', error);
-      alert('Failed to update service. Please try again.');
+      alert(t('updateErrorLabel', 'Failed to update service. Please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -146,12 +147,12 @@ export function ServicesClient() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Services</h1>
-            <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage services offered by your garage</p>
+            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Services')}</h1>
+            <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage services offered by your garage')}</p>
           </div>
           <Button className="gap-2 bg-[#2456f5] hover:bg-[#1a4bb8]" onClick={handleAddService}>
             <Plus className="h-4 w-4" />
-            Add Service
+            {t('addServiceLabel', 'Add Service')}
           </Button>
         </div>
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -178,12 +179,12 @@ export function ServicesClient() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Services</h1>
-          <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage services offered by your garage</p>
+          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Services')}</h1>
+          <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage services offered by your garage')}</p>
         </div>
         <Button className="gap-2 bg-[#2456f5] hover:bg-[#1a4bb8]" onClick={handleAddService}>
           <Plus className="h-4 w-4" />
-          Add Service
+          {t('addServiceLabel', 'Add Service')}
         </Button>
       </div>
 
@@ -193,7 +194,7 @@ export function ServicesClient() {
           <div className="relative max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
-              placeholder="Search services..."
+              placeholder={t('searchPlaceholder', 'Search services...')}
               className="pl-10"
               value={searchQuery}
               onChange={(e) => {
@@ -232,18 +233,18 @@ export function ServicesClient() {
               <div className="space-y-3 text-sm text-slate-500">
                 <p className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
-                  <span className="font-medium text-slate-900">Price:</span> ${service.price.toFixed(2)}
+                  <span className="font-medium text-slate-900">{t('priceLabel', 'Price:')}</span> ${service.price.toFixed(2)}
                 </p>
                 <p>{service.description}</p>
               </div>
               <div className="mt-4 flex gap-2">
                 <Button type="button" variant="outline" size="sm" className="flex-1 gap-2" onClick={() => handleEditService(service)}>
                   <Edit className="h-4 w-4" />
-                  Edit
+                  {t('editLabel', 'Edit')}
                 </Button>
                 <Button type="button" variant="outline" size="sm" className="flex-1 gap-2 text-destructive hover:bg-destructive/10" onClick={() => handleDeleteService(service)}>
                   <Trash2 className="h-4 w-4" />
-                  Delete
+                  {t('deleteLabel', 'Delete')}
                 </Button>
               </div>
             </CardContent>
@@ -287,7 +288,7 @@ export function ServicesClient() {
 
       {filteredServices.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-slate-500">No services found matching your search.</p>
+          <p className="text-slate-500">{t('emptyState', 'No services found matching your search.')}</p>
         </div>
       )}
 

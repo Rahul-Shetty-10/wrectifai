@@ -254,6 +254,134 @@ export type UserAiDiagnosisContent = {
   };
 };
 
+export type UserServiceIntakeContent = {
+  header: {
+    diagnosisTitle: string;
+    directTitle: string;
+    description: string;
+    badgeDefault: string;
+    badgeQuestionsSuffix: string;
+  };
+  sections: {
+    categoriesTitle: string;
+    categoriesSubtitle: string;
+    questionsTitle: string;
+    questionsSubtitle: string;
+    evidenceTitle: string;
+    evidenceSubtitle: string;
+    vehicleTitle: string;
+    vehicleSubtitle: string;
+    logisticsTitle: string;
+    logisticsSubtitle: string;
+    contactTitle: string;
+    contactSubtitle: string;
+    reportTitle: string;
+    reportSubtitle: string;
+  };
+  labels: {
+    loading: string;
+    continue: string;
+    loadingQuestions: string;
+    selectedCategories: string;
+    none: string;
+    smartQuestionsTitle: string;
+    smartQuestionsSubtitle: string;
+    useSaved: string;
+    manual: string;
+    selectVehicle: string;
+    car: string;
+    bike: string;
+    other: string;
+    useGps: string;
+    pickupRequired: string;
+    visitGarage: string;
+    needPickup: string;
+    schedule: string;
+    nowEmergency: string;
+    scheduleTime: string;
+    vehicleLabel: string;
+    serviceTypeLabel: string;
+    scheduleLabel: string;
+    questionsAnsweredLabel: string;
+    pickupRequiredValue: string;
+    visitGarageValue: string;
+    scheduledValue: string;
+    nowValue: string;
+    riskLevelLabel: string;
+    severityLabel: string;
+    summaryLabel: string;
+    recommendationLabel: string;
+    diyStepsTitle: string;
+    diyBlocked: string;
+    diagnosisHint: string;
+    directHint: string;
+    generateReport: string;
+    generating: string;
+    raiseIssue: string;
+    submitting: string;
+  };
+  placeholders: {
+    shortDescription: string;
+    brand: string;
+    model: string;
+    year: string;
+    fuelType: string;
+    variantOptional: string;
+    serviceAddress: string;
+    name: string;
+    phone: string;
+    alternatePhoneOptional: string;
+    answer: string;
+  };
+  errors: {
+    invalidDateTime: string;
+    pastTime: string;
+  };
+};
+
+export type UserSettingsContent = {
+  title: string;
+  loadingLabel: string;
+  bookingUpdatesLabel: string;
+  appointmentRemindersLabel: string;
+  offersLabel: string;
+  preferredCheckinModeLabel: string;
+  selfCheckinLabel: string;
+  homePickupLabel: string;
+  saveButtonLabel: string;
+  savingLabel: string;
+  savedMessage: string;
+  loadErrorLabel: string;
+  saveErrorLabel: string;
+};
+
+export type UserSupportContent = {
+  createTicketTitle: string;
+  subjectPlaceholder: string;
+  descriptionPlaceholder: string;
+  submitLabel: string;
+  submittingLabel: string;
+  myTicketsTitle: string;
+  loadingTicketsLabel: string;
+  noTicketsLabel: string;
+  loadTicketsErrorLabel: string;
+  createTicketErrorLabel: string;
+};
+
+export type UserSparePartsContent = {
+  catalogTitle: string;
+  loadingPartsLabel: string;
+  orderingLabel: string;
+  orderLabel: string;
+  outOfStockLabel: string;
+  myOrdersTitle: string;
+  noOrdersLabel: string;
+  loadErrorLabel: string;
+  orderErrorLabel: string;
+  qtyLabel: string;
+  totalLabel: string;
+};
+
 export type UserQuotesBookingsContent = {
   header: {
     title: string;
@@ -356,6 +484,197 @@ export type UserPage =
   | 'payments'
   | 'settings'
   | 'support';
+
+export type DynamicPageContent = Record<string, string>;
+
+type AdminPage = 'dashboard' | 'users' | 'bookings' | 'quotes' | 'payments' | 'approvals' | 'complaints';
+type GaragePage =
+  | 'dashboard'
+  | 'orders'
+  | 'bookings'
+  | 'services'
+  | 'profile'
+  | 'availability';
+
+const ADMIN_PAGE_DEFAULTS: Record<AdminPage, DynamicPageContent> = {
+  dashboard: {
+    title: 'Dashboard',
+    description: 'Platform analytics and metrics overview',
+    pendingApprovalsTitle: 'Pending Approvals',
+    pendingApprovalsDescription:
+      'You have pending registrations waiting for approval.',
+    reviewApprovalsLabel: 'Review Approvals',
+  },
+  users: {
+    title: 'Users',
+    description: 'Manage all platform users',
+    searchPlaceholder: 'Search users...',
+    filterAll: 'All',
+    filterCustomers: 'Customers',
+    filterGarages: 'Garages',
+    viewDetailsLabel: 'View Details',
+    suspendLabel: 'Suspend',
+    activateLabel: 'Activate',
+    emptyState: 'No users found matching your search or filters.',
+    userDetailsTitle: 'User Details',
+    userDetailsDescription: 'View complete user information',
+  },
+  bookings: {
+    title: 'Bookings',
+    description: 'Manage all platform bookings',
+    searchPlaceholder: 'Search bookings...',
+    filterAll: 'All',
+    filterConfirmed: 'Confirmed',
+    filterPending: 'Pending',
+    filterCompleted: 'Completed',
+    filterCancelled: 'Cancelled',
+    viewDetailsLabel: 'View Details',
+    emptyState: 'No bookings found matching your search or filters.',
+    detailsTitle: 'Booking Details',
+    detailsDescription: 'View complete booking information',
+  },
+  quotes: {
+    title: 'Quotes',
+    description: 'Manage all service quotes',
+    searchPlaceholder: 'Search quotes...',
+    filterAll: 'All',
+    filterAccepted: 'Accepted',
+    filterPending: 'Pending',
+    filterRejected: 'Rejected',
+    viewDetailsLabel: 'View Details',
+    emptyState: 'No quotes found matching your search or filters.',
+    detailsTitle: 'Quote Details',
+    detailsDescription: 'View complete quote information',
+  },
+  payments: {
+    title: 'Payments',
+    description: 'Manage all platform transactions',
+    searchPlaceholder: 'Search transactions...',
+    filterAll: 'All',
+    filterCompleted: 'Completed',
+    filterPending: 'Pending',
+    filterFailed: 'Failed',
+    viewReceiptLabel: 'View Receipt',
+    emptyState: 'No transactions found matching your search or filters.',
+    detailsTitle: 'Payment Details',
+    detailsDescription: 'View complete transaction information',
+  },
+  approvals: {
+    title: 'Approvals',
+    description: 'Review and approve garage registrations',
+    searchPlaceholder: 'Search garages...',
+    pendingLabel: 'Pending',
+    specializationsLabel: 'Specializations',
+    submittedDocumentsLabel: 'Submitted Documents',
+    viewDetailsLabel: 'View Details',
+    rejectLabel: 'Reject',
+    approveLabel: 'Approve',
+    emptyState: 'No garages found matching your search.',
+    detailsTitle: 'Garage Registration Details',
+    detailsDescription: 'Review complete garage information',
+  },
+  complaints: {
+    title: 'Complaints',
+    description: 'Manage user complaints and reports',
+    searchPlaceholder: 'Search complaints...',
+    filterAll: 'All',
+    filterResolved: 'Resolved',
+    filterInProgress: 'In Progress',
+    filterPending: 'Pending',
+    respondLabel: 'Respond',
+    emptyState: 'No complaints found matching your search or filters.',
+    detailsTitle: 'Complaint Details',
+    detailsDescription: 'View complete complaint information',
+  },
+};
+
+const GARAGE_PAGE_DEFAULTS: Record<GaragePage, DynamicPageContent> = {
+  dashboard: {
+    title: 'Dashboard',
+    description: 'Overview of your garage performance',
+    pendingApprovalTitle: 'Account Pending Approval',
+    pendingApprovalDescription:
+      'Your garage account is under review and some actions are restricted until approval.',
+    totalBookingsLabel: 'Total Bookings',
+    quotesSentLabel: 'Quotes Sent',
+    revenueLabel: 'Revenue',
+    ratingLabel: 'Rating',
+    reviewsSuffix: 'reviews',
+    quickActionsTitle: 'Quick Actions',
+    recentActivityTitle: 'Recent Activity',
+    viewOrdersLabel: 'View Orders',
+    manageBookingsLabel: 'Manage Bookings',
+    viewAnalyticsLabel: 'View Analytics',
+  },
+  orders: {
+    title: 'Orders',
+    description: 'Manage new issue requests from customers',
+    searchPlaceholder: 'Search orders...',
+    filterAll: 'All',
+    filterNew: 'New',
+    filterQuoted: 'Quoted',
+    filterAccepted: 'Accepted',
+    issueLabel: 'Issue:',
+    diagnosisLabel: 'Diagnosis:',
+    submittedPrefix: 'Submitted:',
+    viewDetailsLabel: 'View Details',
+    emptyState: 'No orders found matching your search or filters.',
+  },
+  bookings: {
+    title: 'Bookings',
+    description: 'Manage your appointments and bookings',
+    searchPlaceholder: 'Search bookings...',
+    filterAll: 'All',
+    filterPending: 'Pending',
+    filterConfirmed: 'Confirmed',
+    filterCompleted: 'Completed',
+    serviceLabel: 'Service:',
+    dateLabel: 'Date:',
+    modeLabel: 'Mode:',
+    acceptLabel: 'Accept',
+    rejectLabel: 'Reject',
+    markCompleteLabel: 'Mark Complete',
+    updatingLabel: 'Updating...',
+    emptyState: 'No bookings found matching your search or filters.',
+  },
+  services: {
+    title: 'Services',
+    description: 'Manage services offered by your garage',
+    addServiceLabel: 'Add Service',
+    searchPlaceholder: 'Search services...',
+    priceLabel: 'Price:',
+    editLabel: 'Edit',
+    deleteLabel: 'Delete',
+    emptyState: 'No services found matching your search.',
+  },
+  profile: {
+    title: 'Profile',
+    description: 'Manage your garage profile and information',
+    pendingApprovalTitle: 'Account Pending Approval',
+    pendingApprovalDescription:
+      'Your garage account is under review by the admin team. Full access is enabled after approval.',
+    garageLogoTitle: 'Garage Logo',
+    uploadLogoLabel: 'Upload Logo',
+    garageInfoTitle: 'Garage Information',
+    saveChangesLabel: 'Save Changes',
+    savingLabel: 'Saving...',
+    saveSuccess: 'Profile saved successfully.',
+  },
+  availability: {
+    title: 'Availability',
+    description: 'Manage your business hours and availability slots',
+    addSlotLabel: 'Add Slot',
+    businessHoursTitle: 'Current Business Hours',
+    blockedDatesTitle: 'Blocked Dates',
+    blockDateLabel: 'Block Date',
+    pickupDropoffTitle: 'Pickup & Drop-off Service',
+    homePickupLabel: 'Home Pickup',
+    dropoffLabel: 'Drop-off Service',
+    enabledLabel: 'Enabled',
+    activeLabel: 'Active',
+    closedLabel: 'Closed',
+  },
+};
 
 async function getUIContent<T>(params: {
   module: string;
@@ -702,6 +1021,134 @@ export const USER_AI_DIAGNOSIS_DEFAULT: UserAiDiagnosisContent = {
   }
 };
 
+export const USER_SERVICE_INTAKE_DEFAULT: UserServiceIntakeContent = {
+  header: {
+    diagnosisTitle: 'AI Guided Diagnosis Intake',
+    directTitle: 'Direct Service Intake',
+    description: 'Tell us the issue once, then answer all smart follow-up questions in one view.',
+    badgeDefault: 'Smart Intake',
+    badgeQuestionsSuffix: 'Smart Questions',
+  },
+  sections: {
+    categoriesTitle: '1. Select issue categories',
+    categoriesSubtitle: 'Choose one or more issue categories to continue.',
+    questionsTitle: '2. Smart follow-up questions',
+    questionsSubtitle: 'Answer all relevant questions below.',
+    evidenceTitle: '3. Evidence (optional)',
+    evidenceSubtitle: 'Upload image/video/audio files.',
+    vehicleTitle: '4. Vehicle',
+    vehicleSubtitle: 'Choose saved vehicle or enter manually.',
+    logisticsTitle: '5. Service logistics',
+    logisticsSubtitle: 'Location, pickup preference, and schedule.',
+    contactTitle: '6. Contact + review',
+    contactSubtitle: 'Confirm user details before sending.',
+    reportTitle: '7. Diagnosis Report',
+    reportSubtitle: 'AI assessment summary before any issue is raised.',
+  },
+  labels: {
+    loading: 'Loading...',
+    continue: 'Continue',
+    loadingQuestions: 'Loading Questions...',
+    selectedCategories: 'Selected categories',
+    none: 'NONE',
+    smartQuestionsTitle: 'Smart Intake Questions',
+    smartQuestionsSubtitle: 'Answer these generated questions and complete service details.',
+    useSaved: 'Use saved',
+    manual: 'Manual',
+    selectVehicle: 'Select vehicle',
+    car: 'Car',
+    bike: 'Bike',
+    other: 'Other',
+    useGps: 'Use GPS',
+    pickupRequired: 'Pickup required?',
+    visitGarage: 'Visit Garage',
+    needPickup: 'Need Pickup',
+    schedule: 'Schedule',
+    nowEmergency: 'Now (emergency)',
+    scheduleTime: 'Schedule time',
+    vehicleLabel: 'Vehicle:',
+    serviceTypeLabel: 'Service type:',
+    scheduleLabel: 'Schedule:',
+    questionsAnsweredLabel: 'Questions answered:',
+    pickupRequiredValue: 'Pickup required',
+    visitGarageValue: 'Visit garage',
+    scheduledValue: 'Scheduled',
+    nowValue: 'Now',
+    riskLevelLabel: 'Risk level:',
+    severityLabel: 'Severity:',
+    summaryLabel: 'Summary:',
+    recommendationLabel: 'Recommendation:',
+    diyStepsTitle: 'DIY Steps',
+    diyBlocked: 'DIY path is blocked for this risk level. Please raise issue to garage.',
+    diagnosisHint: 'Both actions create an issue. Raise Issue to Garage also pushes it to garages for quotes.',
+    directHint: 'Complete all required fields and submit once.',
+    generateReport: 'Generate Diagnosis Report',
+    generating: 'Generating...',
+    raiseIssue: 'Raise Issue to Garage',
+    submitting: 'Submitting...',
+  },
+  placeholders: {
+    shortDescription: 'Optional: add a short description (e.g., rear-left window glass cracked)',
+    brand: 'Brand',
+    model: 'Model',
+    year: 'Year',
+    fuelType: 'Fuel type',
+    variantOptional: 'Variant (optional)',
+    serviceAddress: 'Service address',
+    name: 'Name',
+    phone: 'Phone',
+    alternatePhoneOptional: 'Alternate phone (optional)',
+    answer: 'Type your answer',
+  },
+  errors: {
+    invalidDateTime: 'Please choose a valid date and time.',
+    pastTime: 'Past time is not allowed. Please choose a future time.',
+  },
+};
+
+export const USER_SETTINGS_DEFAULT: UserSettingsContent = {
+  title: 'Settings',
+  loadingLabel: 'Loading settings...',
+  bookingUpdatesLabel: 'Booking updates',
+  appointmentRemindersLabel: 'Appointment reminders',
+  offersLabel: 'Offers and campaigns',
+  preferredCheckinModeLabel: 'Preferred Check-in Mode',
+  selfCheckinLabel: 'Self Check-in',
+  homePickupLabel: 'Home Pickup',
+  saveButtonLabel: 'Save Settings',
+  savingLabel: 'Saving...',
+  savedMessage: 'Settings saved',
+  loadErrorLabel: 'Failed to load settings',
+  saveErrorLabel: 'Failed to save settings',
+};
+
+export const USER_SUPPORT_DEFAULT: UserSupportContent = {
+  createTicketTitle: 'Create Support Ticket',
+  subjectPlaceholder: 'Subject',
+  descriptionPlaceholder: 'Describe your issue',
+  submitLabel: 'Submit Ticket',
+  submittingLabel: 'Submitting...',
+  myTicketsTitle: 'My Tickets',
+  loadingTicketsLabel: 'Loading tickets...',
+  noTicketsLabel: 'No support tickets yet.',
+  loadTicketsErrorLabel: 'Failed to load tickets',
+  createTicketErrorLabel: 'Failed to create ticket',
+};
+
+export const USER_SPARE_PARTS_DEFAULT: UserSparePartsContent = {
+  catalogTitle: 'Spare Parts Catalog',
+  loadingPartsLabel: 'Loading parts...',
+  orderingLabel: 'Ordering...',
+  orderLabel: 'Order',
+  outOfStockLabel: 'Out of Stock',
+  myOrdersTitle: 'My Part Orders',
+  noOrdersLabel: 'No part orders yet.',
+  loadErrorLabel: 'Failed to load spare parts',
+  orderErrorLabel: 'Failed to place order',
+  qtyLabel: 'Qty',
+  totalLabel: 'Total',
+};
+
 export const USER_QUOTES_BOOKINGS_DEFAULT: UserQuotesBookingsContent = {
   header: {
     title: 'Marketplace',
@@ -824,6 +1271,32 @@ export async function getUserPageContent(
   });
 }
 
+export async function getAdminPageContent(
+  page: AdminPage,
+  options?: { locale?: string; tenantId?: string }
+) {
+  return getUIContent<DynamicPageContent>({
+    module: 'admin',
+    page,
+    locale: options?.locale,
+    tenantId: options?.tenantId,
+    fallback: ADMIN_PAGE_DEFAULTS[page],
+  });
+}
+
+export async function getGaragePageContent(
+  page: GaragePage,
+  options?: { locale?: string; tenantId?: string }
+) {
+  return getUIContent<DynamicPageContent>({
+    module: 'garage',
+    page,
+    locale: options?.locale,
+    tenantId: options?.tenantId,
+    fallback: GARAGE_PAGE_DEFAULTS[page],
+  });
+}
+
 export async function getUserMyGarageContent(options?: {
   locale?: string;
   tenantId?: string;
@@ -848,6 +1321,107 @@ export async function getAiDiagnosisContent(options?: {
     tenantId: options?.tenantId,
     fallback: USER_AI_DIAGNOSIS_DEFAULT,
   });
+}
+
+export async function getServiceIntakeContent(options?: {
+  locale?: string;
+  tenantId?: string;
+}) {
+  return getUIContent<UserServiceIntakeContent>({
+    module: 'user',
+    page: 'service-intake',
+    locale: options?.locale,
+    tenantId: options?.tenantId,
+    fallback: USER_SERVICE_INTAKE_DEFAULT,
+  });
+}
+
+function normalizeUserSettingsContent(input: unknown): UserSettingsContent {
+  if (!input || typeof input !== 'object') return USER_SETTINGS_DEFAULT;
+  const value = input as Record<string, unknown>;
+  return {
+    title: typeof value.title === 'string' ? value.title : USER_SETTINGS_DEFAULT.title,
+    loadingLabel: typeof value.loadingLabel === 'string' ? value.loadingLabel : USER_SETTINGS_DEFAULT.loadingLabel,
+    bookingUpdatesLabel: typeof value.bookingUpdatesLabel === 'string' ? value.bookingUpdatesLabel : USER_SETTINGS_DEFAULT.bookingUpdatesLabel,
+    appointmentRemindersLabel: typeof value.appointmentRemindersLabel === 'string' ? value.appointmentRemindersLabel : USER_SETTINGS_DEFAULT.appointmentRemindersLabel,
+    offersLabel: typeof value.offersLabel === 'string' ? value.offersLabel : USER_SETTINGS_DEFAULT.offersLabel,
+    preferredCheckinModeLabel: typeof value.preferredCheckinModeLabel === 'string' ? value.preferredCheckinModeLabel : USER_SETTINGS_DEFAULT.preferredCheckinModeLabel,
+    selfCheckinLabel: typeof value.selfCheckinLabel === 'string' ? value.selfCheckinLabel : USER_SETTINGS_DEFAULT.selfCheckinLabel,
+    homePickupLabel: typeof value.homePickupLabel === 'string' ? value.homePickupLabel : USER_SETTINGS_DEFAULT.homePickupLabel,
+    saveButtonLabel: typeof value.saveButtonLabel === 'string' ? value.saveButtonLabel : USER_SETTINGS_DEFAULT.saveButtonLabel,
+    savingLabel: typeof value.savingLabel === 'string' ? value.savingLabel : USER_SETTINGS_DEFAULT.savingLabel,
+    savedMessage: typeof value.savedMessage === 'string' ? value.savedMessage : USER_SETTINGS_DEFAULT.savedMessage,
+    loadErrorLabel: typeof value.loadErrorLabel === 'string' ? value.loadErrorLabel : USER_SETTINGS_DEFAULT.loadErrorLabel,
+    saveErrorLabel: typeof value.saveErrorLabel === 'string' ? value.saveErrorLabel : USER_SETTINGS_DEFAULT.saveErrorLabel,
+  };
+}
+
+function normalizeUserSupportContent(input: unknown): UserSupportContent {
+  if (!input || typeof input !== 'object') return USER_SUPPORT_DEFAULT;
+  const value = input as Record<string, unknown>;
+  return {
+    createTicketTitle: typeof value.createTicketTitle === 'string' ? value.createTicketTitle : USER_SUPPORT_DEFAULT.createTicketTitle,
+    subjectPlaceholder: typeof value.subjectPlaceholder === 'string' ? value.subjectPlaceholder : USER_SUPPORT_DEFAULT.subjectPlaceholder,
+    descriptionPlaceholder: typeof value.descriptionPlaceholder === 'string' ? value.descriptionPlaceholder : USER_SUPPORT_DEFAULT.descriptionPlaceholder,
+    submitLabel: typeof value.submitLabel === 'string' ? value.submitLabel : USER_SUPPORT_DEFAULT.submitLabel,
+    submittingLabel: typeof value.submittingLabel === 'string' ? value.submittingLabel : USER_SUPPORT_DEFAULT.submittingLabel,
+    myTicketsTitle: typeof value.myTicketsTitle === 'string' ? value.myTicketsTitle : USER_SUPPORT_DEFAULT.myTicketsTitle,
+    loadingTicketsLabel: typeof value.loadingTicketsLabel === 'string' ? value.loadingTicketsLabel : USER_SUPPORT_DEFAULT.loadingTicketsLabel,
+    noTicketsLabel: typeof value.noTicketsLabel === 'string' ? value.noTicketsLabel : USER_SUPPORT_DEFAULT.noTicketsLabel,
+    loadTicketsErrorLabel: typeof value.loadTicketsErrorLabel === 'string' ? value.loadTicketsErrorLabel : USER_SUPPORT_DEFAULT.loadTicketsErrorLabel,
+    createTicketErrorLabel: typeof value.createTicketErrorLabel === 'string' ? value.createTicketErrorLabel : USER_SUPPORT_DEFAULT.createTicketErrorLabel,
+  };
+}
+
+function normalizeUserSparePartsContent(input: unknown): UserSparePartsContent {
+  if (!input || typeof input !== 'object') return USER_SPARE_PARTS_DEFAULT;
+  const value = input as Record<string, unknown>;
+  return {
+    catalogTitle: typeof value.catalogTitle === 'string' ? value.catalogTitle : USER_SPARE_PARTS_DEFAULT.catalogTitle,
+    loadingPartsLabel: typeof value.loadingPartsLabel === 'string' ? value.loadingPartsLabel : USER_SPARE_PARTS_DEFAULT.loadingPartsLabel,
+    orderingLabel: typeof value.orderingLabel === 'string' ? value.orderingLabel : USER_SPARE_PARTS_DEFAULT.orderingLabel,
+    orderLabel: typeof value.orderLabel === 'string' ? value.orderLabel : USER_SPARE_PARTS_DEFAULT.orderLabel,
+    outOfStockLabel: typeof value.outOfStockLabel === 'string' ? value.outOfStockLabel : USER_SPARE_PARTS_DEFAULT.outOfStockLabel,
+    myOrdersTitle: typeof value.myOrdersTitle === 'string' ? value.myOrdersTitle : USER_SPARE_PARTS_DEFAULT.myOrdersTitle,
+    noOrdersLabel: typeof value.noOrdersLabel === 'string' ? value.noOrdersLabel : USER_SPARE_PARTS_DEFAULT.noOrdersLabel,
+    loadErrorLabel: typeof value.loadErrorLabel === 'string' ? value.loadErrorLabel : USER_SPARE_PARTS_DEFAULT.loadErrorLabel,
+    orderErrorLabel: typeof value.orderErrorLabel === 'string' ? value.orderErrorLabel : USER_SPARE_PARTS_DEFAULT.orderErrorLabel,
+    qtyLabel: typeof value.qtyLabel === 'string' ? value.qtyLabel : USER_SPARE_PARTS_DEFAULT.qtyLabel,
+    totalLabel: typeof value.totalLabel === 'string' ? value.totalLabel : USER_SPARE_PARTS_DEFAULT.totalLabel,
+  };
+}
+
+export async function getUserSettingsContent(options?: { locale?: string; tenantId?: string }) {
+  const raw = await getUIContent<unknown>({
+    module: 'user',
+    page: 'settings',
+    locale: options?.locale,
+    tenantId: options?.tenantId,
+    fallback: USER_SETTINGS_DEFAULT,
+  });
+  return normalizeUserSettingsContent(raw);
+}
+
+export async function getUserSupportContent(options?: { locale?: string; tenantId?: string }) {
+  const raw = await getUIContent<unknown>({
+    module: 'user',
+    page: 'support',
+    locale: options?.locale,
+    tenantId: options?.tenantId,
+    fallback: USER_SUPPORT_DEFAULT,
+  });
+  return normalizeUserSupportContent(raw);
+}
+
+export async function getUserSparePartsContent(options?: { locale?: string; tenantId?: string }) {
+  const raw = await getUIContent<unknown>({
+    module: 'user',
+    page: 'spare-parts',
+    locale: options?.locale,
+    tenantId: options?.tenantId,
+    fallback: USER_SPARE_PARTS_DEFAULT,
+  });
+  return normalizeUserSparePartsContent(raw);
 }
 
 export type UserVehicle = {

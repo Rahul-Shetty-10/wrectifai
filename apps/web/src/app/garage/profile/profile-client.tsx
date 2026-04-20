@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Building2, Phone, Mail, MapPin, Clock, Upload, Save, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchGarageProfile, updateGarageProfile, type GarageProfile } from '@/lib/api';
+import { fetchGarageProfile, updateGarageProfile, type GarageProfile, type DynamicPageContent } from '@/lib/api';
 
-export function ProfileClient() {
+export function ProfileClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const [formData, setFormData] = useState<GarageProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,12 +37,12 @@ export function ProfileClient() {
       setToast(null);
       setSaving(true);
       await updateGarageProfile(formData);
-      setToast({ type: 'success', message: 'Profile saved successfully.' });
+      setToast({ type: 'success', message: t('saveSuccess', 'Profile saved successfully.') });
     } catch (error) {
       console.error('Failed to save profile:', error);
       setToast({
         type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to save profile. Please try again.',
+        message: error instanceof Error ? error.message : t('saveErrorLabel', 'Failed to save profile. Please try again.'),
       });
     } finally {
       setSaving(false);
@@ -52,8 +53,8 @@ export function ProfileClient() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Profile</h1>
-          <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage your garage profile and information</p>
+          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Profile')}</h1>
+          <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your garage profile and information')}</p>
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
@@ -112,9 +113,9 @@ export function ProfileClient() {
               <AlertCircle className="h-6 w-6" />
             </div>
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-amber-900 sm:text-lg">Account Pending Approval</h3>
+              <h3 className="text-base font-semibold text-amber-900 sm:text-lg">{t('pendingApprovalTitle', 'Account Pending Approval')}</h3>
               <p className="mt-1 text-sm text-amber-800">
-                Your garage account is currently under review by our admin team. Once approved, you will have full access to all features including viewing orders, managing bookings, and submitting quotes. This typically takes 1-2 business days.
+                {t('pendingApprovalDescription', 'Your garage account is under review by the admin team. Full access is enabled after approval.')}
               </p>
             </div>
           </CardContent>
@@ -122,15 +123,15 @@ export function ProfileClient() {
       )}
 
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Profile</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage your garage profile and information</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Profile')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your garage profile and information')}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Profile Picture Section */}
         <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-slate-900">Garage Logo</CardTitle>
+            <CardTitle className="text-lg font-semibold text-slate-900">{t('garageLogoTitle', 'Garage Logo')}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col items-center gap-4">
@@ -139,7 +140,7 @@ export function ProfileClient() {
               </div>
               <Button type="button" variant="outline" className="gap-2">
                 <Upload className="h-4 w-4" />
-                Upload Logo
+                {t('uploadLogoLabel', 'Upload Logo')}
               </Button>
             </div>
           </CardContent>
@@ -148,7 +149,7 @@ export function ProfileClient() {
         {/* Profile Information */}
         <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-slate-900">Garage Information</CardTitle>
+            <CardTitle className="text-lg font-semibold text-slate-900">{t('garageInfoTitle', 'Garage Information')}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <div className="space-y-4">
@@ -213,7 +214,7 @@ export function ProfileClient() {
         <div className="lg:col-span-3">
           <Button type="button" className="gap-2 bg-[#2456f5] hover:bg-[#1a4bb8]" onClick={handleSave} disabled={saving}>
             <Save className="h-4 w-4" />
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? t('savingLabel', 'Saving...') : t('saveChangesLabel', 'Save Changes')}
           </Button>
         </div>
       </div>

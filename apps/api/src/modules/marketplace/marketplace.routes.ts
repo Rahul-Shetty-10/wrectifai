@@ -108,6 +108,7 @@ marketplaceRouter.post('/intake', async (req, res, next) => {
     const userName = cleanText(body.user?.name);
     const userPhone = cleanPhone(body.user?.phone);
     const source = body.source === 'diagnosis' ? 'diagnosis' : 'direct';
+    const initialStatus = source === 'diagnosis' ? 'diy' : 'open';
 
     if (!category || !severity) {
       return res.status(400).json({ message: 'Issue category and severity are required' });
@@ -134,9 +135,9 @@ marketplaceRouter.post('/intake', async (req, res, next) => {
         INSERT INTO issue_requests (
           id, customer_user_id, vehicle_id, diagnosis_session_id, summary, issue_source, issue_payload, status
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,'open')
+        VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8)
       `,
-      [issueId, userId, vehicleId, diagnosisSessionId, summary, source, JSON.stringify(body)]
+      [issueId, userId, vehicleId, diagnosisSessionId, summary, source, JSON.stringify(body), initialStatus]
     );
 
     return res.status(201).json({ issueId, message: 'Service intake submitted' });
@@ -181,14 +182,15 @@ marketplaceRouter.post('/issues', async (req, res, next) => {
     }
 
     const issueId = crypto.randomUUID();
+    const initialStatus = diagnosisSessionId ? 'diy' : 'open';
     await query(
       `
         INSERT INTO issue_requests (
           id, customer_user_id, vehicle_id, diagnosis_session_id, summary, status
         )
-        VALUES ($1,$2,$3,$4,$5,'open')
+        VALUES ($1,$2,$3,$4,$5,$6)
       `,
-      [issueId, userId, vehicleId, diagnosisSessionId, summary]
+      [issueId, userId, vehicleId, diagnosisSessionId, summary, initialStatus]
     );
 
     return res.status(201).json({ issueId, message: 'Issue request created' });

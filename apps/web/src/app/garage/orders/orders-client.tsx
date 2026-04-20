@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Search, AlertTriangle, Car, Clock, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchGarageOrders, type GarageOrder } from '@/lib/api';
+import { fetchGarageOrders, type GarageOrder, type DynamicPageContent } from '@/lib/api';
 
-export function OrdersClient() {
+export function OrdersClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,8 +58,8 @@ export function OrdersClient() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Orders</h1>
-          <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage new issue requests from customers</p>
+          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Orders')}</h1>
+          <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage new issue requests from customers')}</p>
         </div>
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -83,8 +84,8 @@ export function OrdersClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Orders</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage new issue requests from customers</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Orders')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage new issue requests from customers')}</p>
       </div>
 
       {/* Search and Filter */}
@@ -94,7 +95,7 @@ export function OrdersClient() {
             <div className="relative flex-1 max-w-md">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
-                placeholder="Search orders..."
+                placeholder={t('searchPlaceholder', 'Search orders...')}
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => {
@@ -112,7 +113,7 @@ export function OrdersClient() {
                   resetPage();
                 }}
               >
-                All
+                {t('filterAll', 'All')}
               </Button>
               <Button
                 variant={statusFilter === 'New' ? 'default' : 'outline'}
@@ -122,7 +123,7 @@ export function OrdersClient() {
                   resetPage();
                 }}
               >
-                New
+                {t('filterNew', 'New')}
               </Button>
               <Button
                 variant={statusFilter === 'Quoted' ? 'default' : 'outline'}
@@ -132,7 +133,7 @@ export function OrdersClient() {
                   resetPage();
                 }}
               >
-                Quoted
+                {t('filterQuoted', 'Quoted')}
               </Button>
               <Button
                 variant={statusFilter === 'Accepted' ? 'default' : 'outline'}
@@ -142,7 +143,7 @@ export function OrdersClient() {
                   resetPage();
                 }}
               >
-                Accepted
+                {t('filterAccepted', 'Accepted')}
               </Button>
             </div>
           </div>
@@ -184,16 +185,16 @@ export function OrdersClient() {
               <div className="space-y-3 text-sm text-slate-500">
                 <p className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
-                  <span className="font-medium text-slate-900">Issue:</span> {order.issue}
+                  <span className="font-medium text-slate-900">{t('issueLabel', 'Issue:')}</span> {order.issue}
                 </p>
                 <p className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
-                  <span className="font-medium text-slate-900">Diagnosis:</span> {order.diagnosis}
+                  <span className="font-medium text-slate-900">{t('diagnosisLabel', 'Diagnosis:')}</span> {order.diagnosis}
                 </p>
                 <div className="flex items-center justify-between">
                   <p className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
-                    Submitted: {order.submitted}
+                    {t('submittedPrefix', 'Submitted:')} {order.submitted}
                   </p>
                   <Badge
                     variant="outline"
@@ -217,7 +218,7 @@ export function OrdersClient() {
                   className="w-full gap-2 border-[#d9e2ef] text-[#2456f5] hover:bg-[#f3f8ff]"
                   onClick={() => handleViewQuoteDetails(order)}
                 >
-                  View Details
+                  {t('viewDetailsLabel', 'View Details')}
                 </Button>
               </div>
             </CardContent>
@@ -261,7 +262,7 @@ export function OrdersClient() {
 
       {filteredOrders.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-slate-500">No orders found matching your search or filters.</p>
+          <p className="text-slate-500">{t('emptyState', 'No orders found matching your search or filters.')}</p>
         </div>
       )}
 

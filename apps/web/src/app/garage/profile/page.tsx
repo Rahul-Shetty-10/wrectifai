@@ -1,12 +1,14 @@
 import { GarageDashboardShell } from '@/components/garage/garage-dashboard-shell';
 import { ProfileClient } from './profile-client';
+import { getGaragePageContent } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-export default function GarageProfilePage() {
+export default async function GarageProfilePage() {
+  const content = await getGaragePageContent('profile');
   return (
     <GarageDashboardShell activeItem="profile">
-      <ProfileClient />
+      <ProfileClient content={content} />
     </GarageDashboardShell>
   );
 }

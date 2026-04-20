@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Calendar, ClipboardList, DollarSign, Star, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchGarageDashboard, type GarageDashboardData } from '@/lib/api';
+import { fetchGarageDashboard, type GarageDashboardData, type DynamicPageContent } from '@/lib/api';
 
-export function DashboardClient() {
+export function DashboardClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const router = useRouter();
   const [dashboardData, setDashboardData] = useState<GarageDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,8 +33,8 @@ export function DashboardClient() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Dashboard</h1>
-          <p className="mt-2 text-sm text-slate-500 sm:text-base">Overview of your garage performance</p>
+          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Dashboard')}</h1>
+          <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Overview of your garage performance')}</p>
         </div>
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -60,9 +61,9 @@ export function DashboardClient() {
               <Clock className="h-6 w-6" />
             </div>
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-amber-900 sm:text-lg">Account Pending Approval</h3>
+              <h3 className="text-base font-semibold text-amber-900 sm:text-lg">{t('pendingApprovalTitle', 'Account Pending Approval')}</h3>
               <p className="mt-1 text-sm text-amber-800">
-                Your garage account is currently under review by our admin team. You can view your dashboard but access to other features is limited until approval is granted. This typically takes 1-2 business days.
+                {t('pendingApprovalDescription', 'Your garage account is under review and some actions are restricted until approval.')}
               </p>
             </div>
           </CardContent>
@@ -70,8 +71,8 @@ export function DashboardClient() {
       )}
 
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Dashboard</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Overview of your garage performance</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Dashboard')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Overview of your garage performance')}</p>
       </div>
 
       {/* Stats Cards */}
@@ -84,7 +85,7 @@ export function DashboardClient() {
         >
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-500">Total Bookings</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">{t('totalBookingsLabel', 'Total Bookings')}</CardTitle>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f3f8ff] text-[#2456f5]">
                 <Calendar className="h-5 w-5" />
               </div>
@@ -109,7 +110,7 @@ export function DashboardClient() {
         >
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-500">Quotes Sent</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">{t('quotesSentLabel', 'Quotes Sent')}</CardTitle>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f3f8ff] text-[#2456f5]">
                 <ClipboardList className="h-5 w-5" />
               </div>
@@ -129,7 +130,7 @@ export function DashboardClient() {
         <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-500">Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">{t('revenueLabel', 'Revenue')}</CardTitle>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f3f8ff] text-[#2456f5]">
                 <DollarSign className="h-5 w-5" />
               </div>
@@ -149,7 +150,7 @@ export function DashboardClient() {
         <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-500">Rating</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">{t('ratingLabel', 'Rating')}</CardTitle>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f3f8ff] text-[#2456f5]">
                 <Star className="h-5 w-5" />
               </div>
@@ -158,7 +159,7 @@ export function DashboardClient() {
           <CardContent className="p-4">
             <div className="space-y-1">
               <p className="text-3xl font-bold text-slate-900">{dashboardData?.rating || 0}</p>
-              <p className="text-sm text-slate-500">Based on {dashboardData?.reviewCount || 0} reviews</p>
+              <p className="text-sm text-slate-500">Based on {dashboardData?.reviewCount || 0} {t('reviewsSuffix', 'reviews')}</p>
             </div>
           </CardContent>
         </Card>
@@ -167,7 +168,7 @@ export function DashboardClient() {
       {/* Quick Actions */}
       <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">Quick Actions</CardTitle>
+          <CardTitle className="text-lg font-semibold text-slate-900">{t('quickActionsTitle', 'Quick Actions')}</CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           <div className="grid gap-4 sm:grid-cols-3">
@@ -182,7 +183,7 @@ export function DashboardClient() {
                 <ClipboardList className="h-6 w-6" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900">View Orders</p>
+                <p className="font-semibold text-slate-900">{t('viewOrdersLabel', 'View Orders')}</p>
                 <p className="text-xs text-slate-500">3 new requests</p>
               </div>
             </button>
@@ -197,7 +198,7 @@ export function DashboardClient() {
                 <Calendar className="h-6 w-6" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900">Manage Bookings</p>
+                <p className="font-semibold text-slate-900">{t('manageBookingsLabel', 'Manage Bookings')}</p>
                 <p className="text-xs text-slate-500">5 pending</p>
               </div>
             </button>
@@ -209,7 +210,7 @@ export function DashboardClient() {
                 <BarChart3 className="h-6 w-6" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900">View Analytics</p>
+                <p className="font-semibold text-slate-900">{t('viewAnalyticsLabel', 'View Analytics')}</p>
                 <p className="text-xs text-slate-500">View performance</p>
               </div>
             </button>
@@ -220,7 +221,7 @@ export function DashboardClient() {
       {/* Recent Activity */}
       <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">Recent Activity</CardTitle>
+          <CardTitle className="text-lg font-semibold text-slate-900">{t('recentActivityTitle', 'Recent Activity')}</CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           <div className="space-y-4">

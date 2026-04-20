@@ -6,11 +6,17 @@ import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-side
 import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { fetchUserSettings, saveUserSettings, type UserSettings, type UserSidebarContent } from '@/lib/api';
+import {
+  fetchUserSettings,
+  saveUserSettings,
+  type UserSettings,
+  type UserSettingsContent,
+  type UserSidebarContent,
+} from '@/lib/api';
 
-type Props = { sidebar: UserSidebarContent };
+type Props = { sidebar: UserSidebarContent; content: UserSettingsContent };
 
-export function SettingsClient({ sidebar }: Props) {
+export function SettingsClient({ sidebar, content }: Props) {
   const [settings, setSettings] = useState<UserSettings>({
     bookings: true,
     reminders: true,
@@ -28,7 +34,7 @@ export function SettingsClient({ sidebar }: Props) {
         const data = await fetchUserSettings();
         setSettings(data);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load settings');
+        setError(e instanceof Error ? e.message : content.loadErrorLabel);
       } finally {
         setLoading(false);
       }
@@ -42,9 +48,9 @@ export function SettingsClient({ sidebar }: Props) {
       setMessage(null);
       setError(null);
       await saveUserSettings(settings);
-      setMessage('Settings saved');
+      setMessage(content.savedMessage);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save settings');
+      setError(e instanceof Error ? e.message : content.saveErrorLabel);
     } finally {
       setSaving(false);
     }
@@ -62,10 +68,10 @@ export function SettingsClient({ sidebar }: Props) {
           <UserTopLogoHeader sidebar={sidebar} />
           <Card>
             <CardHeader>
-              <CardTitle>Settings</CardTitle>
+              <CardTitle>{content.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {loading ? <p className="text-sm text-muted-foreground">Loading settings...</p> : null}
+              {loading ? <p className="text-sm text-muted-foreground">{content.loadingLabel}</p> : null}
               <div className="space-y-3">
                 <label className="flex items-center gap-2 text-sm">
                   <input
@@ -73,7 +79,7 @@ export function SettingsClient({ sidebar }: Props) {
                     checked={settings.bookings}
                     onChange={(e) => setSettings((prev) => ({ ...prev, bookings: e.target.checked }))}
                   />
-                  Booking updates
+                  {content.bookingUpdatesLabel}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input
@@ -81,7 +87,7 @@ export function SettingsClient({ sidebar }: Props) {
                     checked={settings.reminders}
                     onChange={(e) => setSettings((prev) => ({ ...prev, reminders: e.target.checked }))}
                   />
-                  Appointment reminders
+                  {content.appointmentRemindersLabel}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input
@@ -89,11 +95,11 @@ export function SettingsClient({ sidebar }: Props) {
                     checked={settings.offers}
                     onChange={(e) => setSettings((prev) => ({ ...prev, offers: e.target.checked }))}
                   />
-                  Offers and campaigns
+                  {content.offersLabel}
                 </label>
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium">Preferred Check-in Mode</p>
+                <p className="text-sm font-medium">{content.preferredCheckinModeLabel}</p>
                 <select
                   value={settings.preferredCheckinMode}
                   onChange={(e) =>
@@ -104,14 +110,14 @@ export function SettingsClient({ sidebar }: Props) {
                   }
                   className="h-10 rounded-md border border-border bg-background px-3 text-sm"
                 >
-                  <option value="self_checkin">Self Check-in</option>
-                  <option value="home_pickup">Home Pickup</option>
+                  <option value="self_checkin">{content.selfCheckinLabel}</option>
+                  <option value="home_pickup">{content.homePickupLabel}</option>
                 </select>
               </div>
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
               {message ? <p className="text-sm text-primary">{message}</p> : null}
               <Button onClick={onSave} disabled={saving || loading}>
-                {saving ? 'Saving...' : 'Save Settings'}
+                {saving ? content.savingLabel : content.saveButtonLabel}
               </Button>
             </CardContent>
           </Card>

@@ -10,21 +10,10 @@ export default async function RegisterPage() {
 
   return (
     <AuthShell
-      hideHeroOnMobile
-      hideHero
+      layout="centered"
       appName={ui.appName}
-      authModeLabel=""
-      heroKicker={ui.hero.kicker}
-      heroTitle={ui.hero.title}
-      heroBody={ui.hero.body}
+      motto={ui.hero.body}
       rightPane={
-        <div>
-          <p className="mb-6 text-right text-sm text-muted-foreground">
-            {ui.links.haveAccountPrefix}{' '}
-            <Link href="/auth/login" className="text-primary hover:underline">
-              {ui.links.haveAccountCta}
-            </Link>
-          </p>
           <RegisterForm
             initialRoleCode="user"
             title={ui.form.title}
@@ -45,7 +34,6 @@ export default async function RegisterPage() {
             sendOtpFailedMessage={ui.errors.sendOtpFailed}
             unexpectedErrorMessage={ui.errors.unexpected}
           />
-        </div>
       }
     />
   );

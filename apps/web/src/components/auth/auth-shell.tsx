@@ -1,26 +1,61 @@
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 
 type AuthShellProps = {
+  layout?: 'split' | 'centered';
+  appName?: string;
+  logoUrl?: string;
+  motto?: string;
+  rightPane: ReactNode;
+  // Legacy props for split layout
   hideHeroOnMobile?: boolean;
   hideHero?: boolean;
-  appName: string;
-  authModeLabel: string;
-  heroKicker: string;
-  heroTitle: string;
-  heroBody: string;
-  rightPane: ReactNode;
+  authModeLabel?: string;
+  heroKicker?: string;
+  heroTitle?: string;
+  heroBody?: string;
 };
 
 export function AuthShell({
+  layout = 'centered',
+  logoUrl = '/wrectifai_logo_cropped.png',
+  rightPane,
   hideHeroOnMobile = false,
   hideHero = false,
-  appName,
-  authModeLabel,
-  heroKicker,
-  heroTitle,
-  heroBody,
-  rightPane,
+  authModeLabel = '',
+  heroKicker = '',
+  heroTitle = '',
+  heroBody = '',
 }: AuthShellProps) {
+  if (layout === 'centered') {
+    return (
+      <main className="min-h-screen bg-background flex flex-col items-center justify-center p-6 sm:p-12">
+        <div className="w-full max-w-[480px] flex flex-col items-center">
+          {/* Top Branding Section */}
+          <div className="flex flex-col items-center mb-4 transition-all duration-500">
+            <div className="relative w-72 h-44">
+              <Image 
+                src={logoUrl} 
+                alt="Logo" 
+                fill 
+                className="object-contain scale-110"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Main Card */}
+          <section className="w-full bg-card rounded-[2rem] shadow-ambient overflow-hidden">
+            <div className="p-8 sm:p-10">
+              {rightPane}
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  // Legacy Split Layout
   const asideClassName = hideHero
     ? 'hidden'
     : hideHeroOnMobile

@@ -13,9 +13,10 @@ import {
 } from '@/components/ui/dialog';
 import { Search, Calendar, Car, MapPin, Clock, MoreVertical, ChevronLeft, ChevronRight, X, Phone, Mail, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchAdminBookings, type AdminBooking } from '@/lib/api';
+import { fetchAdminBookings, type AdminBooking, type DynamicPageContent } from '@/lib/api';
 
-export function BookingsClient() {
+export function BookingsClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Confirmed' | 'Pending' | 'Completed' | 'Cancelled'>('all');
@@ -66,8 +67,8 @@ export function BookingsClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Bookings</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage all platform bookings</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Bookings')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage all platform bookings')}</p>
       </div>
 
       {/* Search and Filter */}
@@ -77,7 +78,7 @@ export function BookingsClient() {
             <div className="relative flex-1 max-w-md">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input 
-                placeholder="Search bookings..." 
+                placeholder={t('searchPlaceholder', 'Search bookings...')}
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => {
@@ -95,7 +96,7 @@ export function BookingsClient() {
                   resetPage();
                 }}
               >
-                All
+                {t('filterAll', 'All')}
               </Button>
               <Button 
                 variant={statusFilter === 'Confirmed' ? 'default' : 'outline'} 
@@ -105,7 +106,7 @@ export function BookingsClient() {
                   resetPage();
                 }}
               >
-                Confirmed
+                {t('filterConfirmed', 'Confirmed')}
               </Button>
               <Button 
                 variant={statusFilter === 'Pending' ? 'default' : 'outline'} 
@@ -115,7 +116,7 @@ export function BookingsClient() {
                   resetPage();
                 }}
               >
-                Pending
+                {t('filterPending', 'Pending')}
               </Button>
               <Button 
                 variant={statusFilter === 'Completed' ? 'default' : 'outline'} 
@@ -125,7 +126,7 @@ export function BookingsClient() {
                   resetPage();
                 }}
               >
-                Completed
+                {t('filterCompleted', 'Completed')}
               </Button>
               <Button 
                 variant={statusFilter === 'Cancelled' ? 'default' : 'outline'} 
@@ -135,7 +136,7 @@ export function BookingsClient() {
                   resetPage();
                 }}
               >
-                Cancelled
+                {t('filterCancelled', 'Cancelled')}
               </Button>
             </div>
           </div>
@@ -194,7 +195,7 @@ export function BookingsClient() {
                   className="h-8 gap-2 text-xs sm:h-9 sm:text-sm"
                   onClick={() => handleViewDetails(booking)}
                 >
-                  View Details
+                  {t('viewDetailsLabel', 'View Details')}
                 </Button>
                 <Button type="button" variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                   <MoreVertical className="h-4 w-4" />
@@ -241,7 +242,7 @@ export function BookingsClient() {
 
       {filteredBookings.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-slate-500">No bookings found matching your search or filters.</p>
+          <p className="text-slate-500">{t('emptyState', 'No bookings found matching your search or filters.')}</p>
         </div>
       )}
 
@@ -249,8 +250,8 @@ export function BookingsClient() {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Booking Details</DialogTitle>
-            <DialogDescription>View complete booking information</DialogDescription>
+            <DialogTitle className="text-2xl">{t('detailsTitle', 'Booking Details')}</DialogTitle>
+            <DialogDescription>{t('detailsDescription', 'View complete booking information')}</DialogDescription>
           </DialogHeader>
           {selectedBooking && (
             <div className="space-y-6 mt-4">
@@ -365,7 +366,7 @@ export function BookingsClient() {
                   className="flex-1"
                   onClick={() => setIsDetailOpen(false)}
                 >
-                  Close
+                  {t('closeLabel', 'Close')}
                 </Button>
                 {selectedBooking.status === 'Pending' && (
                   <>
@@ -374,10 +375,10 @@ export function BookingsClient() {
                       variant="outline"
                       className="flex-1 text-destructive hover:bg-destructive/10"
                     >
-                      Cancel Booking
+                      {t('cancelBookingLabel', 'Cancel Booking')}
                     </Button>
                     <Button type="button" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                      Confirm Booking
+                      {t('confirmBookingLabel', 'Confirm Booking')}
                     </Button>
                   </>
                 )}

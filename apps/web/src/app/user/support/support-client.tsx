@@ -11,12 +11,13 @@ import {
   createSupportTicket,
   fetchSupportTickets,
   type SupportTicket,
+  type UserSupportContent,
   type UserSidebarContent,
 } from '@/lib/api';
 
-type Props = { sidebar: UserSidebarContent };
+type Props = { sidebar: UserSidebarContent; content: UserSupportContent };
 
-export function SupportClient({ sidebar }: Props) {
+export function SupportClient({ sidebar, content }: Props) {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
@@ -29,7 +30,7 @@ export function SupportClient({ sidebar }: Props) {
       const data = await fetchSupportTickets();
       setTickets(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load tickets');
+      setError(e instanceof Error ? e.message : content.loadTicketsErrorLabel);
     } finally {
       setLoading(false);
     }
@@ -49,7 +50,7 @@ export function SupportClient({ sidebar }: Props) {
       setDescription('');
       await loadTickets();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create ticket');
+      setError(e instanceof Error ? e.message : content.createTicketErrorLabel);
     } finally {
       setSaving(false);
     }
@@ -67,30 +68,30 @@ export function SupportClient({ sidebar }: Props) {
           <UserTopLogoHeader sidebar={sidebar} />
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Create Support Ticket</CardTitle>
+              <CardTitle>{content.createTicketTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" />
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder={content.subjectPlaceholder} />
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your issue"
+                placeholder={content.descriptionPlaceholder}
               />
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
               <Button onClick={onCreate} disabled={saving || !subject.trim() || !description.trim()}>
-                {saving ? 'Submitting...' : 'Submit Ticket'}
+                {saving ? content.submittingLabel : content.submitLabel}
               </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>My Tickets</CardTitle>
+              <CardTitle>{content.myTicketsTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {loading ? <p className="text-sm text-muted-foreground">Loading tickets...</p> : null}
+              {loading ? <p className="text-sm text-muted-foreground">{content.loadingTicketsLabel}</p> : null}
               {!loading && tickets.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No support tickets yet.</p>
+                <p className="text-sm text-muted-foreground">{content.noTicketsLabel}</p>
               ) : null}
               {tickets.map((ticket) => (
                 <div key={ticket.id} className="rounded-lg border border-border p-3">

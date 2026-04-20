@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import { LogOut } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ type LogoutButtonProps = {
   variant?: ComponentProps<typeof Button>['variant'];
   withIcon?: boolean;
   label?: string;
+  hideLabel?: boolean;
 };
 
 export function LogoutButton({
@@ -19,26 +20,53 @@ export function LogoutButton({
   variant = 'secondary',
   withIcon = false,
   label = 'Logout',
+  hideLabel = false,
 }: LogoutButtonProps) {
-  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const logoutEndpoints = useMemo(() => {
+    const endpoints = ['/api/auth/logout'];
+    const apiLogout = `${API_BASE_URL.replace(/\/+$/, '')}/auth/logout`;
+    if (!endpoints.includes(apiLogout)) {
+      endpoints.push(apiLogout);
+    }
+    return endpoints;
+  }, []);
 
   async function logout() {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+
+    let requestSucceeded = false;
     try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store',
-      });
+      for (const endpoint of logoutEndpoints) {
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            credentials: 'include',
+            cache: 'no-store',
+          });
+          if (response.ok) {
+            requestSucceeded = true;
+            break;
+          }
+        } catch {
+          // Try the next endpoint when network/proxy differs between environments.
+        }
+      }
     } finally {
-      router.replace('/auth/login');
-      router.refresh();
+      if (requestSucceeded) {
+        window.location.href = '/auth/login';
+        return;
+      }
+      setIsLoggingOut(false);
     }
   }
 
   return (
-    <Button variant={variant} onClick={logout} className={cn(className)}>
-      {withIcon ? <LogOut className="h-4 w-4 shrink-0" /> : null}
-      {label}
+    <Button variant={variant} onClick={logout} disabled={isLoggingOut} className={cn(className)}>
+      {withIcon ? <LogOut className={cn("h-4 w-4 shrink-0", !hideLabel && "mr-0")} /> : null}
+      {!hideLabel && (isLoggingOut ? 'Logging out...' : label)}
     </Button>
   );
 }

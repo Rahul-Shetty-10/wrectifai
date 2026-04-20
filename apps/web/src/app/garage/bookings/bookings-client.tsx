@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, Calendar, Clock, Car, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchGarageBookings, updateGarageBookingStatus, type GarageBooking } from '@/lib/api';
+import { fetchGarageBookings, updateGarageBookingStatus, type GarageBooking, type DynamicPageContent } from '@/lib/api';
 
-export function BookingsClient() {
+export function BookingsClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled'>('all');
@@ -70,8 +71,8 @@ export function BookingsClient() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Bookings</h1>
-          <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage your appointments and bookings</p>
+          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Bookings')}</h1>
+          <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your appointments and bookings')}</p>
         </div>
         <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -96,8 +97,8 @@ export function BookingsClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Bookings</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage your appointments and bookings</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Bookings')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your appointments and bookings')}</p>
       </div>
 
       {/* Search and Filter */}
@@ -107,7 +108,7 @@ export function BookingsClient() {
             <div className="relative flex-1 max-w-md">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
-                placeholder="Search bookings..."
+                placeholder={t('searchPlaceholder', 'Search bookings...')}
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => {
@@ -125,7 +126,7 @@ export function BookingsClient() {
                   resetPage();
                 }}
               >
-                All
+                {t('filterAll', 'All')}
               </Button>
               <Button
                 variant={statusFilter === 'Pending' ? 'default' : 'outline'}
@@ -135,7 +136,7 @@ export function BookingsClient() {
                   resetPage();
                 }}
               >
-                Pending
+                {t('filterPending', 'Pending')}
               </Button>
               <Button
                 variant={statusFilter === 'Confirmed' ? 'default' : 'outline'}
@@ -145,7 +146,7 @@ export function BookingsClient() {
                   resetPage();
                 }}
               >
-                Confirmed
+                {t('filterConfirmed', 'Confirmed')}
               </Button>
               <Button
                 variant={statusFilter === 'Completed' ? 'default' : 'outline'}
@@ -155,7 +156,7 @@ export function BookingsClient() {
                   resetPage();
                 }}
               >
-                Completed
+                {t('filterCompleted', 'Completed')}
               </Button>
             </div>
           </div>
@@ -197,15 +198,15 @@ export function BookingsClient() {
               <div className="space-y-2 text-sm text-slate-500">
                 <p className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span className="font-medium text-slate-900">Service:</span> {booking.service}
+                  <span className="font-medium text-slate-900">{t('serviceLabel', 'Service:')}</span> {booking.service}
                 </p>
                 <p className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  <span className="font-medium text-slate-900">Date:</span> {booking.date} at {booking.time}
+                  <span className="font-medium text-slate-900">{t('dateLabel', 'Date:')}</span> {booking.date} at {booking.time}
                 </p>
                 <p className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span className="font-medium text-slate-900">Mode:</span> {booking.mode}
+                  <span className="font-medium text-slate-900">{t('modeLabel', 'Mode:')}</span> {booking.mode}
                 </p>
               </div>
               <div className="mt-4 flex gap-2">
@@ -217,7 +218,7 @@ export function BookingsClient() {
                       className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700"
                     >
                       <CheckCircle className="h-4 w-4" />
-                      Accept
+                      {t('acceptLabel', 'Accept')}
                     </Button>
                     <Button
                       type="button"
@@ -226,7 +227,7 @@ export function BookingsClient() {
                       className="flex-1 gap-2 text-destructive hover:bg-destructive/10"
                     >
                       <XCircle className="h-4 w-4" />
-                      Reject
+                      {t('rejectLabel', 'Reject')}
                     </Button>
                   </>
                 )}
@@ -239,7 +240,7 @@ export function BookingsClient() {
                     disabled={updatingBookingId === booking.id}
                   >
                     <CheckCircle className="h-4 w-4" />
-                    {updatingBookingId === booking.id ? 'Updating...' : 'Mark Complete'}
+                    {updatingBookingId === booking.id ? t('updatingLabel', 'Updating...') : t('markCompleteLabel', 'Mark Complete')}
                   </Button>
                 )}
               </div>
@@ -284,7 +285,7 @@ export function BookingsClient() {
 
       {filteredBookings.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-slate-500">No bookings found matching your search or filters.</p>
+          <p className="text-slate-500">{t('emptyState', 'No bookings found matching your search or filters.')}</p>
         </div>
       )}
 

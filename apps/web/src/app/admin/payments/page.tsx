@@ -1,12 +1,14 @@
 import { AdminDashboardShell } from '@/components/admin/admin-dashboard-shell';
 import { PaymentsClient } from './payments-client';
+import { getAdminPageContent } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminPaymentsPage() {
+export default async function AdminPaymentsPage() {
+  const content = await getAdminPageContent('payments');
   return (
     <AdminDashboardShell activeItem="payments">
-      <PaymentsClient />
+      <PaymentsClient content={content} />
     </AdminDashboardShell>
   );
 }

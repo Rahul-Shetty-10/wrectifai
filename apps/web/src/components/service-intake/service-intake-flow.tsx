@@ -18,6 +18,7 @@ import {
   raiseIssueToGarage as raiseIssueToGarageApi,
   submitServiceIntake,
   type ServiceIntakePayload,
+  type UserServiceIntakeContent,
   type UserSidebarContent,
   type UserVehicle,
 } from '@/lib/api';
@@ -214,10 +215,12 @@ function formatDateTimeLocal(date: Date) {
 export function ServiceIntakeFlow({
   mode,
   sidebar,
+  content,
   appLogoUrl,
 }: {
   mode: IntakeMode;
   sidebar: UserSidebarContent;
+  content: UserServiceIntakeContent;
   appLogoUrl?: string;
 }) {
   const router = useRouter();
@@ -276,10 +279,10 @@ export function ServiceIntakeFlow({
     if (scheduleMode !== 'scheduled') return null;
     if (!preferredAt) return null;
     const parsed = new Date(preferredAt);
-    if (Number.isNaN(parsed.getTime())) return 'Please choose a valid date and time.';
-    if (parsed.getTime() < Date.now()) return 'Past time is not allowed. Please choose a future time.';
+    if (Number.isNaN(parsed.getTime())) return content.errors.invalidDateTime;
+    if (parsed.getTime() < Date.now()) return content.errors.pastTime;
     return null;
-  }, [preferredAt, scheduleMode]);
+  }, [content.errors.invalidDateTime, content.errors.pastTime, preferredAt, scheduleMode]);
 
   useEffect(() => {
     let active = true;
@@ -545,24 +548,26 @@ export function ServiceIntakeFlow({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <CardTitle className="text-xl font-bold text-slate-900 sm:text-2xl md:text-3xl">
-                    {mode === 'diagnosis' ? 'AI Guided Diagnosis Intake' : 'Direct Service Intake'}
+                    {mode === 'diagnosis' ? content.header.diagnosisTitle : content.header.directTitle}
                   </CardTitle>
                   <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-                    Tell us the issue once, then answer all smart follow-up questions in one view.
+                    {content.header.description}
                   </p>
                 </div>
                 <Badge variant="outline" className="w-fit border-[#b5c7e5] bg-white text-[#1f3f70]">
                   <Sparkles className="mr-1 h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                  {dynamicQuestions.length > 0 ? `${dynamicQuestions.length} Smart Questions` : 'Smart Intake'}
+                  {dynamicQuestions.length > 0
+                    ? `${dynamicQuestions.length} ${content.header.badgeQuestionsSuffix}`
+                    : content.header.badgeDefault}
                 </Badge>
               </div>
             </CardHeader>
 
             <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
-              {loading ? <p className="text-sm text-slate-500">Loading...</p> : null}
+              {loading ? <p className="text-sm text-slate-500">{content.labels.loading}</p> : null}
 
               {!loading ? (
-                <SectionCard icon={Wrench} title="1. Select issue categories" subtitle="Choose one or more issue categories to continue.">
+                <SectionCard icon={Wrench} title={content.sections.categoriesTitle} subtitle={content.sections.categoriesSubtitle}>
                   <MultiOptionChips
                     values={categoryOptions}
                     valuesSelected={selectedCategories}
@@ -576,11 +581,14 @@ export function ServiceIntakeFlow({
                     value={problem}
                     onChange={(e) => setProblem(e.target.value)}
                     className="min-h-24 w-full rounded-xl border border-[#d6e1ee] p-3 text-sm sm:min-h-28"
-                    placeholder="Optional: add a short description (e.g., rear-left window glass cracked)"
+                    placeholder={content.placeholders.shortDescription}
                   />
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                     <Badge variant="outline" className="w-fit border-[#cddaf0] text-[#335889]">
-                      Selected categories: {selectedCategories.length > 0 ? selectedCategories.map((item) => item.toUpperCase()).join(', ') : 'NONE'}
+                      {content.labels.selectedCategories}:{' '}
+                      {selectedCategories.length > 0
+                        ? selectedCategories.map((item) => item.toUpperCase()).join(', ')
+                        : content.labels.none}
                     </Badge>
                     <Button
                       type="button"
@@ -588,7 +596,7 @@ export function ServiceIntakeFlow({
                       disabled={dynamicQuestionsLoading || selectedCategories.length === 0}
                       className="w-full sm:w-auto"
                     >
-                      {dynamicQuestionsLoading ? 'Loading Questions...' : 'Continue'}
+                      {dynamicQuestionsLoading ? content.labels.loadingQuestions : content.labels.continue}
                     </Button>
                   </div>
                 </SectionCard>
@@ -603,15 +611,15 @@ export function ServiceIntakeFlow({
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
                   <Sparkles className="h-4 w-4 text-[#2f6ac6] sm:h-5 sm:w-5" />
-                  Smart Intake Questions
+                  {content.labels.smartQuestionsTitle}
                 </DialogTitle>
                 <p className="text-xs text-slate-500 sm:text-sm">
-                  Answer these generated questions and complete service details.
+                  {content.labels.smartQuestionsSubtitle}
                 </p>
               </DialogHeader>
 
               {dynamicQuestions.length > 0 ? (
-                <SectionCard icon={ClipboardList} title="2. Smart follow-up questions" subtitle="Answer all relevant questions below.">
+                <SectionCard icon={ClipboardList} title={content.sections.questionsTitle} subtitle={content.sections.questionsSubtitle}>
                   <div className="grid gap-3 md:grid-cols-2">
                     {dynamicQuestions.map((question) => (
                       <div key={question.id} className="rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3">
@@ -628,6 +636,7 @@ export function ServiceIntakeFlow({
                             question={question}
                             value={questionAnswers[question.id] ?? ''}
                             onChange={(value) => answerQuestion(question.id, value)}
+                            textPlaceholder={content.placeholders.answer}
                           />
                         </div>
                       </div>
@@ -637,7 +646,7 @@ export function ServiceIntakeFlow({
               ) : null}
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <SectionCard icon={Upload} title="3. Evidence (optional)" subtitle="Upload image/video/audio files.">
+                <SectionCard icon={Upload} title={content.sections.evidenceTitle} subtitle={content.sections.evidenceSubtitle}>
                   <input type="file" multiple accept="image/*,video/*,audio/*" onChange={onMediaChange} />
                   {media.length > 0 ? (
                     <ul className="mt-2 list-inside list-disc text-xs text-slate-600">
@@ -648,13 +657,13 @@ export function ServiceIntakeFlow({
                   ) : null}
                 </SectionCard>
 
-                <SectionCard icon={Car} title="4. Vehicle" subtitle="Choose saved vehicle or enter manually.">
+                <SectionCard icon={Car} title={content.sections.vehicleTitle} subtitle={content.sections.vehicleSubtitle}>
                   <div className="flex gap-2">
                     <Button type="button" variant={!useManualVehicle ? 'default' : 'outline'} onClick={() => setUseManualVehicle(false)}>
-                      Use saved
+                      {content.labels.useSaved}
                     </Button>
                     <Button type="button" variant={useManualVehicle ? 'default' : 'outline'} onClick={() => setUseManualVehicle(true)}>
-                      Manual
+                      {content.labels.manual}
                     </Button>
                   </div>
 
@@ -664,7 +673,7 @@ export function ServiceIntakeFlow({
                       onChange={(e) => setSelectedVehicleId(e.target.value)}
                       className="mt-2 h-11 w-full rounded-xl border border-[#d6e1ee] px-3 text-sm"
                     >
-                      <option value="">Select vehicle</option>
+                      <option value="">{content.labels.selectVehicle}</option>
                       {vehicles.map((vehicle) => (
                         <option key={vehicle.id} value={vehicle.id}>
                           {vehicle.year} {vehicle.make} {vehicle.model}
@@ -683,46 +692,46 @@ export function ServiceIntakeFlow({
                         }
                         className="h-11 rounded-xl border border-[#d6e1ee] px-3 text-sm"
                       >
-                        <option value="car">Car</option>
-                        <option value="bike">Bike</option>
-                        <option value="other">Other</option>
+                        <option value="car">{content.labels.car}</option>
+                        <option value="bike">{content.labels.bike}</option>
+                        <option value="other">{content.labels.other}</option>
                       </select>
-                      <Input value={manualVehicle.brand} onChange={(e) => setManualVehicle((prev) => ({ ...prev, brand: e.target.value }))} placeholder="Brand" />
-                      <Input value={manualVehicle.model} onChange={(e) => setManualVehicle((prev) => ({ ...prev, model: e.target.value }))} placeholder="Model" />
-                      <Input value={manualVehicle.year} onChange={(e) => setManualVehicle((prev) => ({ ...prev, year: e.target.value }))} placeholder="Year" />
-                      <Input value={manualVehicle.fuel} onChange={(e) => setManualVehicle((prev) => ({ ...prev, fuel: e.target.value }))} placeholder="Fuel type" />
-                      <Input value={manualVehicle.variant} onChange={(e) => setManualVehicle((prev) => ({ ...prev, variant: e.target.value }))} placeholder="Variant (optional)" />
+                      <Input value={manualVehicle.brand} onChange={(e) => setManualVehicle((prev) => ({ ...prev, brand: e.target.value }))} placeholder={content.placeholders.brand} />
+                      <Input value={manualVehicle.model} onChange={(e) => setManualVehicle((prev) => ({ ...prev, model: e.target.value }))} placeholder={content.placeholders.model} />
+                      <Input value={manualVehicle.year} onChange={(e) => setManualVehicle((prev) => ({ ...prev, year: e.target.value }))} placeholder={content.placeholders.year} />
+                      <Input value={manualVehicle.fuel} onChange={(e) => setManualVehicle((prev) => ({ ...prev, fuel: e.target.value }))} placeholder={content.placeholders.fuelType} />
+                      <Input value={manualVehicle.variant} onChange={(e) => setManualVehicle((prev) => ({ ...prev, variant: e.target.value }))} placeholder={content.placeholders.variantOptional} />
                     </div>
                   )}
                 </SectionCard>
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <SectionCard icon={MapPin} title="5. Service logistics" subtitle="Location, pickup preference, and schedule.">
+                <SectionCard icon={MapPin} title={content.sections.logisticsTitle} subtitle={content.sections.logisticsSubtitle}>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" onClick={askGeo}>Use GPS</Button>
+                      <Button type="button" variant="outline" onClick={askGeo}>{content.labels.useGps}</Button>
                       {lat && lng ? <Badge variant="outline">{lat.toFixed(4)}, {lng.toFixed(4)}</Badge> : null}
                     </div>
-                    <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Service address" />
+                    <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={content.placeholders.serviceAddress} />
 
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Pickup required?</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{content.labels.pickupRequired}</p>
                     <OptionChips
                       values={[
-                        { value: 'no', label: 'Visit Garage' },
-                        { value: 'yes', label: 'Need Pickup' },
+                        { value: 'no', label: content.labels.visitGarage },
+                        { value: 'yes', label: content.labels.needPickup },
                       ]}
                       value={pickup ? 'yes' : 'no'}
                       onPick={(value) => setPickup(value === 'yes')}
                     />
 
                     <div className="rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3">
-                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Schedule</p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{content.labels.schedule}</p>
                       <div className="mt-2">
                         <OptionChips
                           values={[
-                            { value: 'now', label: 'Now (emergency)' },
-                            { value: 'scheduled', label: 'Schedule time' },
+                            { value: 'now', label: content.labels.nowEmergency },
+                            { value: 'scheduled', label: content.labels.scheduleTime },
                           ]}
                           value={scheduleMode}
                           onPick={(value) => setScheduleMode(value as 'now' | 'scheduled')}
@@ -746,27 +755,27 @@ export function ServiceIntakeFlow({
                   </div>
                 </SectionCard>
 
-                <SectionCard icon={Phone} title="6. Contact + review" subtitle="Confirm user details before sending.">
+                <SectionCard icon={Phone} title={content.sections.contactTitle} subtitle={content.sections.contactSubtitle}>
                   <div className="space-y-2">
-                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
-                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" />
-                    <Input value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value)} placeholder="Alternate phone (optional)" />
+                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={content.placeholders.name} />
+                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={content.placeholders.phone} />
+                    <Input value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value)} placeholder={content.placeholders.alternatePhoneOptional} />
                   </div>
 
                   <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3 text-sm">
-                    <p><span className="font-semibold text-slate-900">Vehicle:</span> {selectedVehicleLabel}</p>
-                    <p className="mt-1"><span className="font-semibold text-slate-900">Service type:</span> {pickup ? 'Pickup required' : 'Visit garage'}</p>
-                    <p className="mt-1"><span className="font-semibold text-slate-900">Schedule:</span> {scheduleMode === 'scheduled' ? preferredAt || 'Scheduled' : 'Now'}</p>
-                    <p className="mt-1"><span className="font-semibold text-slate-900">Questions answered:</span> {Object.keys(questionAnswers).length}</p>
+                    <p><span className="font-semibold text-slate-900">{content.labels.vehicleLabel}</span> {selectedVehicleLabel}</p>
+                    <p className="mt-1"><span className="font-semibold text-slate-900">{content.labels.serviceTypeLabel}</span> {pickup ? content.labels.pickupRequiredValue : content.labels.visitGarageValue}</p>
+                    <p className="mt-1"><span className="font-semibold text-slate-900">{content.labels.scheduleLabel}</span> {scheduleMode === 'scheduled' ? preferredAt || content.labels.scheduledValue : content.labels.nowValue}</p>
+                    <p className="mt-1"><span className="font-semibold text-slate-900">{content.labels.questionsAnsweredLabel}</span> {Object.keys(questionAnswers).length}</p>
                   </div>
                 </SectionCard>
               </div>
 
               {mode === 'diagnosis' && diagnosisReport ? (
-                <SectionCard icon={Sparkles} title="7. Diagnosis Report" subtitle="AI assessment summary before any issue is raised.">
+                <SectionCard icon={Sparkles} title={content.sections.reportTitle} subtitle={content.sections.reportSubtitle}>
                   <div className="rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3 text-sm">
                     <p>
-                      <span className="font-semibold text-slate-900">Risk level:</span>{' '}
+                      <span className="font-semibold text-slate-900">{content.labels.riskLevelLabel}</span>{' '}
                       <span className={
                         diagnosisReport.riskLevel === 'low'
                           ? 'text-emerald-700'
@@ -778,19 +787,19 @@ export function ServiceIntakeFlow({
                       </span>
                     </p>
                     <p className="mt-1">
-                      <span className="font-semibold text-slate-900">Severity:</span> {diagnosisReport.severity}
+                      <span className="font-semibold text-slate-900">{content.labels.severityLabel}</span> {diagnosisReport.severity}
                     </p>
                     <p className="mt-1">
-                      <span className="font-semibold text-slate-900">Summary:</span> {diagnosisReport.summary}
+                      <span className="font-semibold text-slate-900">{content.labels.summaryLabel}</span> {diagnosisReport.summary}
                     </p>
                     <p className="mt-1">
-                      <span className="font-semibold text-slate-900">Recommendation:</span> {diagnosisReport.recommendation}
+                      <span className="font-semibold text-slate-900">{content.labels.recommendationLabel}</span> {diagnosisReport.recommendation}
                     </p>
                   </div>
 
                   {diagnosisReport.diyEligible && diagnosisReport.diySteps.length > 0 ? (
                     <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                      <p className="text-sm font-semibold text-emerald-800">DIY Steps</p>
+                      <p className="text-sm font-semibold text-emerald-800">{content.labels.diyStepsTitle}</p>
                       <ul className="mt-2 list-inside list-disc text-sm text-emerald-900">
                         {diagnosisReport.diySteps.map((step, index) => (
                           <li key={`${step}-${index}`}>{step}</li>
@@ -799,7 +808,7 @@ export function ServiceIntakeFlow({
                     </div>
                   ) : (
                     <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                      DIY path is blocked for this risk level. Please raise issue to garage.
+                      {content.labels.diyBlocked}
                     </div>
                   )}
                 </SectionCard>
@@ -811,13 +820,13 @@ export function ServiceIntakeFlow({
                 <div className="inline-flex items-center gap-2 text-xs text-slate-500">
                   <CalendarClock className="h-4 w-4" />
                   {mode === 'diagnosis'
-                    ? 'Both actions create an issue. Raise Issue to Garage also pushes it to garages for quotes.'
-                    : 'Complete all required fields and submit once.'}
+                    ? content.labels.diagnosisHint
+                    : content.labels.directHint}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {mode === 'diagnosis' ? (
                     <Button type="button" variant="outline" onClick={generateDiagnosisReport} disabled={submitting || dynamicQuestionsLoading}>
-                      {submitting ? 'Generating...' : 'Generate Diagnosis Report'}
+                      {submitting ? content.labels.generating : content.labels.generateReport}
                     </Button>
                   ) : null}
                   <Button
@@ -825,7 +834,7 @@ export function ServiceIntakeFlow({
                     onClick={submitIssueToGarage}
                     disabled={submitting || dynamicQuestionsLoading}
                   >
-                    {submitting ? 'Submitting...' : 'Raise Issue to Garage'}
+                    {submitting ? content.labels.submitting : content.labels.raiseIssue}
                   </Button>
                 </div>
               </div>
@@ -923,10 +932,12 @@ function QuestionInput({
   question,
   value,
   onChange,
+  textPlaceholder,
 }: {
   question: DiagnosisQuestion;
   value: string;
   onChange: (value: string) => void;
+  textPlaceholder: string;
 }) {
   if (question.type === 'boolean') {
     return (
@@ -951,5 +962,5 @@ function QuestionInput({
     );
   }
 
-  return <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Type your answer" />;
+  return <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={textPlaceholder} />;
 }

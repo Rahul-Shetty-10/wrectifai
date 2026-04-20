@@ -12,12 +12,13 @@ import {
   placePartOrder,
   type PartOrder,
   type SparePartItem,
+  type UserSparePartsContent,
   type UserSidebarContent,
 } from '@/lib/api';
 
-type Props = { sidebar: UserSidebarContent };
+type Props = { sidebar: UserSidebarContent; content: UserSparePartsContent };
 
-export function SparePartsClient({ sidebar }: Props) {
+export function SparePartsClient({ sidebar, content }: Props) {
   const [parts, setParts] = useState<SparePartItem[]>([]);
   const [orders, setOrders] = useState<PartOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,7 @@ export function SparePartsClient({ sidebar }: Props) {
       setParts(partsData);
       setOrders(ordersData);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load spare parts');
+      setError(e instanceof Error ? e.message : content.loadErrorLabel);
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ export function SparePartsClient({ sidebar }: Props) {
       await placePartOrder(partId, 1);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to place order');
+      setError(e instanceof Error ? e.message : content.orderErrorLabel);
     } finally {
       setOrderingPartId(null);
     }
@@ -67,10 +68,10 @@ export function SparePartsClient({ sidebar }: Props) {
 
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Spare Parts Catalog</CardTitle>
+              <CardTitle>{content.catalogTitle}</CardTitle>
             </CardHeader>
             <CardContent>
-              {loading ? <p className="text-sm text-muted-foreground">Loading parts...</p> : null}
+              {loading ? <p className="text-sm text-muted-foreground">{content.loadingPartsLabel}</p> : null}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 {parts.map((part) => (
                   <div key={part.id} className="rounded-lg border border-border p-4">
@@ -83,7 +84,11 @@ export function SparePartsClient({ sidebar }: Props) {
                       disabled={!part.inStock || orderingPartId === part.id}
                       onClick={() => onOrder(part.id)}
                     >
-                      {orderingPartId === part.id ? 'Ordering...' : part.inStock ? 'Order' : 'Out of Stock'}
+                      {orderingPartId === part.id
+                        ? content.orderingLabel
+                        : part.inStock
+                          ? content.orderLabel
+                          : content.outOfStockLabel}
                     </Button>
                   </div>
                 ))}
@@ -93,10 +98,10 @@ export function SparePartsClient({ sidebar }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle>My Part Orders</CardTitle>
+              <CardTitle>{content.myOrdersTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {orders.length === 0 ? <p className="text-sm text-muted-foreground">No part orders yet.</p> : null}
+              {orders.length === 0 ? <p className="text-sm text-muted-foreground">{content.noOrdersLabel}</p> : null}
               {orders.map((order) => (
                 <div key={order.id} className="rounded-lg border border-border p-3">
                   <div className="flex items-center justify-between gap-3">
@@ -104,7 +109,7 @@ export function SparePartsClient({ sidebar }: Props) {
                     <p className="text-xs uppercase text-muted-foreground">{order.status}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Qty: {order.qty} | Total: ${order.totalAmount.toFixed(2)}
+                    {content.qtyLabel}: {order.qty} | {content.totalLabel}: ${order.totalAmount.toFixed(2)}
                   </p>
                 </div>
               ))}

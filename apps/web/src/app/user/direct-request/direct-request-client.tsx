@@ -1,13 +1,14 @@
 'use client';
 
 import { ServiceIntakeFlow } from '@/components/service-intake/service-intake-flow';
-import type { UserSidebarContent } from '@/lib/api';
+import type { UserServiceIntakeContent, UserSidebarContent } from '@/lib/api';
 
 type Props = {
   sidebar: UserSidebarContent;
+  content: UserServiceIntakeContent;
   appLogoUrl?: string;
 };
 
-export function DirectRequestClient({ sidebar, appLogoUrl }: Props) {
-  return <ServiceIntakeFlow mode="direct" sidebar={sidebar} appLogoUrl={appLogoUrl} />;
+export function DirectRequestClient({ sidebar, content, appLogoUrl }: Props) {
+  return <ServiceIntakeFlow mode="direct" sidebar={sidebar} content={content} appLogoUrl={appLogoUrl} />;
 }

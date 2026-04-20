@@ -13,9 +13,10 @@ import {
 } from '@/components/ui/dialog';
 import { Search, User, Building2, Package, Ban, CheckCircle, ChevronLeft, ChevronRight, Mail, Phone, MapPin, Calendar, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchAdminUsers, updateUserStatus, type AdminUser } from '@/lib/api';
+import { fetchAdminUsers, updateUserStatus, type AdminUser, type DynamicPageContent } from '@/lib/api';
 
-export function UsersClient() {
+export function UsersClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'Customer' | 'Garage' | 'Vendor'>('all');
@@ -85,8 +86,8 @@ export function UsersClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Users</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage all platform users</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Users')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage all platform users')}</p>
       </div>
 
       {/* Search and Filter */}
@@ -96,7 +97,7 @@ export function UsersClient() {
             <div className="relative flex-1 max-w-md">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input 
-                placeholder="Search users..." 
+                placeholder={t('searchPlaceholder', 'Search users...')}
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => {
@@ -115,7 +116,7 @@ export function UsersClient() {
                 }}
               >
                 <User className="h-4 w-4" />
-                All
+                {t('filterAll', 'All')}
               </Button>
               <Button 
                 variant={roleFilter === 'Customer' ? 'default' : 'outline'} 
@@ -126,7 +127,7 @@ export function UsersClient() {
                 }}
               >
                 <User className="h-4 w-4" />
-                Customers
+                {t('filterCustomers', 'Customers')}
               </Button>
               <Button 
                 variant={roleFilter === 'Garage' ? 'default' : 'outline'} 
@@ -137,7 +138,7 @@ export function UsersClient() {
                 }}
               >
                 <Building2 className="h-4 w-4" />
-                Garages
+                {t('filterGarages', 'Garages')}
               </Button>
               {/* <Button variant="outline" className="gap-2">
                 <Package className="h-4 w-4" />
@@ -184,7 +185,7 @@ export function UsersClient() {
                 <p>{user.email}</p>
                 <p>{user.phone}</p>
                 <p>{user.location}</p>
-                <p>Joined: {user.joined}</p>
+                <p>{t('joinedPrefix', 'Joined:')} {user.joined}</p>
               </div>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-between">
                 <Button
@@ -194,7 +195,7 @@ export function UsersClient() {
                   className="h-8 gap-2 text-xs sm:h-9 sm:text-sm"
                   onClick={() => handleViewDetails(user)}
                 >
-                  View Details
+                  {t('viewDetailsLabel', 'View Details')}
                 </Button>
                 {user.status === 'Active' ? (
                   <Button
@@ -205,7 +206,7 @@ export function UsersClient() {
                     onClick={() => handleToggleStatus(user)}
                   >
                     <Ban className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Suspend
+                    {t('suspendLabel', 'Suspend')}
                   </Button>
                 ) : (
                   <Button
@@ -216,7 +217,7 @@ export function UsersClient() {
                     onClick={() => handleToggleStatus(user)}
                   >
                     <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Activate
+                    {t('activateLabel', 'Activate')}
                   </Button>
                 )}
               </div>
@@ -261,7 +262,7 @@ export function UsersClient() {
 
       {filteredUsers.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-slate-500">No users found matching your search or filters.</p>
+          <p className="text-slate-500">{t('emptyState', 'No users found matching your search or filters.')}</p>
         </div>
       )}
 
@@ -269,8 +270,8 @@ export function UsersClient() {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">User Details</DialogTitle>
-            <DialogDescription>View complete user information</DialogDescription>
+            <DialogTitle className="text-2xl">{t('userDetailsTitle', 'User Details')}</DialogTitle>
+            <DialogDescription>{t('userDetailsDescription', 'View complete user information')}</DialogDescription>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-6 mt-4">
@@ -343,7 +344,7 @@ export function UsersClient() {
                   className="flex-1"
                   onClick={() => setIsDetailOpen(false)}
                 >
-                  Close
+                  {t('closeLabel', 'Close')}
                 </Button>
                 {selectedUser.status === 'Active' ? (
                   <Button
@@ -356,7 +357,7 @@ export function UsersClient() {
                     }}
                   >
                     <Ban className="mr-2 h-4 w-4" />
-                    Suspend User
+                    {t('suspendUserLabel', 'Suspend User')}
                   </Button>
                 ) : (
                   <Button
@@ -368,7 +369,7 @@ export function UsersClient() {
                     }}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    Activate User
+                    {t('activateUserLabel', 'Activate User')}
                   </Button>
                 )}
               </div>
@@ -382,7 +383,7 @@ export function UsersClient() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl">
-              {confirmAction?.action === 'suspend' ? 'Suspend User' : 'Activate User'}
+              {confirmAction?.action === 'suspend' ? t('suspendUserLabel', 'Suspend User') : t('activateUserLabel', 'Activate User')}
             </DialogTitle>
             {confirmAction && (
               <DialogDescription>
@@ -399,7 +400,7 @@ export function UsersClient() {
               className="flex-1"
               onClick={() => setConfirmAction(null)}
             >
-              Cancel
+              {t('cancelLabel', 'Cancel')}
             </Button>
             <Button
               type="button"
@@ -407,7 +408,7 @@ export function UsersClient() {
               className="flex-1"
               onClick={confirmToggleStatus}
             >
-              {confirmAction?.action === 'suspend' ? 'Suspend' : 'Activate'}
+              {confirmAction?.action === 'suspend' ? t('suspendLabel', 'Suspend') : t('activateLabel', 'Activate')}
             </Button>
           </div>
         </DialogContent>

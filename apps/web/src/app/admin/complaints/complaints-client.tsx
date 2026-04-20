@@ -13,9 +13,10 @@ import {
 } from '@/components/ui/dialog';
 import { Search, AlertTriangle, Calendar, Building2, CheckCircle, Clock, MoreVertical, MessageCircle, ChevronLeft, ChevronRight, User, FileText, Phone, Mail } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchAdminComplaints, type AdminComplaint } from '@/lib/api';
+import { fetchAdminComplaints, type AdminComplaint, type DynamicPageContent } from '@/lib/api';
 
-export function ComplaintsClient() {
+export function ComplaintsClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Resolved' | 'In Progress' | 'Pending'>('all');
@@ -66,8 +67,8 @@ export function ComplaintsClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Complaints</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage user complaints and reports</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Complaints')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage user complaints and reports')}</p>
       </div>
 
       {/* Search and Filter */}
@@ -77,7 +78,7 @@ export function ComplaintsClient() {
             <div className="relative flex-1 max-w-md">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input 
-                placeholder="Search complaints..." 
+                placeholder={t('searchPlaceholder', 'Search complaints...')}
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => {
@@ -95,7 +96,7 @@ export function ComplaintsClient() {
                   resetPage();
                 }}
               >
-                All
+                {t('filterAll', 'All')}
               </Button>
               <Button 
                 variant={statusFilter === 'Resolved' ? 'default' : 'outline'} 
@@ -105,7 +106,7 @@ export function ComplaintsClient() {
                   resetPage();
                 }}
               >
-                Resolved
+                {t('filterResolved', 'Resolved')}
               </Button>
               <Button 
                 variant={statusFilter === 'In Progress' ? 'default' : 'outline'} 
@@ -115,7 +116,7 @@ export function ComplaintsClient() {
                   resetPage();
                 }}
               >
-                In Progress
+                {t('filterInProgress', 'In Progress')}
               </Button>
               <Button 
                 variant={statusFilter === 'Pending' ? 'default' : 'outline'} 
@@ -125,7 +126,7 @@ export function ComplaintsClient() {
                   resetPage();
                 }}
               >
-                Pending
+                {t('filterPending', 'Pending')}
               </Button>
             </div>
           </div>
@@ -189,7 +190,7 @@ export function ComplaintsClient() {
                   onClick={() => handleViewDetails(complaint)}
                 >
                   <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Respond
+                  {t('respondLabel', 'Respond')}
                 </Button>
                 <Button type="button" variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                   <MoreVertical className="h-4 w-4" />
@@ -236,7 +237,7 @@ export function ComplaintsClient() {
 
       {filteredComplaints.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-slate-500">No complaints found matching your search or filters.</p>
+          <p className="text-slate-500">{t('emptyState', 'No complaints found matching your search or filters.')}</p>
         </div>
       )}
 
@@ -244,8 +245,8 @@ export function ComplaintsClient() {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Complaint Details</DialogTitle>
-            <DialogDescription>View complete complaint information</DialogDescription>
+            <DialogTitle className="text-2xl">{t('detailsTitle', 'Complaint Details')}</DialogTitle>
+            <DialogDescription>{t('detailsDescription', 'View complete complaint information')}</DialogDescription>
           </DialogHeader>
           {selectedComplaint && (
             <div className="space-y-6 mt-4">
@@ -340,16 +341,16 @@ export function ComplaintsClient() {
                   className="flex-1"
                   onClick={() => setIsDetailOpen(false)}
                 >
-                  Close
+                  {t('closeLabel', 'Close')}
                 </Button>
                 {selectedComplaint.status === 'Pending' && (
                   <Button type="button" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                    Mark as In Progress
+                    {t('markInProgressLabel', 'Mark as In Progress')}
                   </Button>
                 )}
                 {selectedComplaint.status === 'In Progress' && (
                   <Button type="button" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                    Mark as Resolved
+                    {t('markResolvedLabel', 'Mark as Resolved')}
                   </Button>
                 )}
               </div>

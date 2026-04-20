@@ -6,10 +6,13 @@ import type {
   UserAiDiagnosisContent,
   UserDashboardContent,
   UserMyGarageContent,
-  UserPage,
   UserPageContent,
   UserPaymentsContent,
   UserQuotesBookingsContent,
+  UserSettingsContent,
+  UserSparePartsContent,
+  UserSupportContent,
+  UserServiceIntakeContent,
   UserSidebarContent,
 } from './ui-content.types';
 
@@ -226,6 +229,45 @@ function isUserAiDiagnosisContent(value: unknown): value is UserAiDiagnosisConte
   );
 }
 
+function isUserServiceIntakeContent(value: unknown): value is UserServiceIntakeContent {
+  if (!isObject(value)) return false;
+  const header = value.header;
+  const sections = value.sections;
+  const labels = value.labels;
+  const placeholders = value.placeholders;
+  const errors = value.errors;
+
+  return (
+    isObject(header) &&
+    isString(header.diagnosisTitle) &&
+    isString(header.directTitle) &&
+    isString(header.description) &&
+    isString(header.badgeDefault) &&
+    isString(header.badgeQuestionsSuffix) &&
+    isObject(sections) &&
+    isString(sections.categoriesTitle) &&
+    isString(sections.questionsTitle) &&
+    isString(sections.evidenceTitle) &&
+    isString(sections.vehicleTitle) &&
+    isString(sections.logisticsTitle) &&
+    isString(sections.contactTitle) &&
+    isString(sections.reportTitle) &&
+    isObject(labels) &&
+    isString(labels.loading) &&
+    isString(labels.continue) &&
+    isString(labels.smartQuestionsTitle) &&
+    isString(labels.generateReport) &&
+    isString(labels.raiseIssue) &&
+    isObject(placeholders) &&
+    isString(placeholders.shortDescription) &&
+    isString(placeholders.serviceAddress) &&
+    isString(placeholders.answer) &&
+    isObject(errors) &&
+    isString(errors.invalidDateTime) &&
+    isString(errors.pastTime)
+  );
+}
+
 function isUserQuotesBookingsContent(value: unknown): value is UserQuotesBookingsContent {
   if (!isObject(value)) return false;
   const header = value.header;
@@ -295,6 +337,58 @@ function isUserPaymentsContent(value: unknown): value is UserPaymentsContent {
     isString(methods.title) &&
     isString(methods.addMethodLabel) &&
     isString(methods.expiryLabel)
+  );
+}
+
+function isUserSettingsContent(value: unknown): value is UserSettingsContent {
+  if (!isObject(value)) return false;
+  return (
+    isString(value.title) &&
+    isString(value.loadingLabel) &&
+    isString(value.bookingUpdatesLabel) &&
+    isString(value.appointmentRemindersLabel) &&
+    isString(value.offersLabel) &&
+    isString(value.preferredCheckinModeLabel) &&
+    isString(value.selfCheckinLabel) &&
+    isString(value.homePickupLabel) &&
+    isString(value.saveButtonLabel) &&
+    isString(value.savingLabel) &&
+    isString(value.savedMessage) &&
+    isString(value.loadErrorLabel) &&
+    isString(value.saveErrorLabel)
+  );
+}
+
+function isUserSupportContent(value: unknown): value is UserSupportContent {
+  if (!isObject(value)) return false;
+  return (
+    isString(value.createTicketTitle) &&
+    isString(value.subjectPlaceholder) &&
+    isString(value.descriptionPlaceholder) &&
+    isString(value.submitLabel) &&
+    isString(value.submittingLabel) &&
+    isString(value.myTicketsTitle) &&
+    isString(value.loadingTicketsLabel) &&
+    isString(value.noTicketsLabel) &&
+    isString(value.loadTicketsErrorLabel) &&
+    isString(value.createTicketErrorLabel)
+  );
+}
+
+function isUserSparePartsContent(value: unknown): value is UserSparePartsContent {
+  if (!isObject(value)) return false;
+  return (
+    isString(value.catalogTitle) &&
+    isString(value.loadingPartsLabel) &&
+    isString(value.orderingLabel) &&
+    isString(value.orderLabel) &&
+    isString(value.outOfStockLabel) &&
+    isString(value.myOrdersTitle) &&
+    isString(value.noOrdersLabel) &&
+    isString(value.loadErrorLabel) &&
+    isString(value.orderErrorLabel) &&
+    isString(value.qtyLabel) &&
+    isString(value.totalLabel)
   );
 }
 
@@ -388,7 +482,10 @@ export function validateUserContent(page: string, content: unknown) {
     return isUserPageContent(content) || isUserDashboardContent(content);
   }
   if (page === 'ai-diagnosis') {
-    return isUserPageContent(content) || isUserAiDiagnosisContent(content);
+    return isUserPageContent(content) || isUserAiDiagnosisContent(content) || isUserServiceIntakeContent(content);
+  }
+  if (page === 'service-intake') {
+    return isUserServiceIntakeContent(content);
   }
   if (page === 'quotes-bookings') {
     return isUserPageContent(content) || isUserQuotesBookingsContent(content);
@@ -396,11 +493,14 @@ export function validateUserContent(page: string, content: unknown) {
   if (page === 'payments') {
     return isUserPageContent(content) || isUserPaymentsContent(content);
   }
-  const allowedPages: UserPage[] = [
-    'spare-parts',
-    'settings',
-    'support',
-  ];
-  if (!allowedPages.includes(page as UserPage)) return false;
-  return isUserPageContent(content);
+  if (page === 'settings') {
+    return isUserPageContent(content) || isUserSettingsContent(content);
+  }
+  if (page === 'support') {
+    return isUserPageContent(content) || isUserSupportContent(content);
+  }
+  if (page === 'spare-parts') {
+    return isUserPageContent(content) || isUserSparePartsContent(content);
+  }
+  return false;
 }

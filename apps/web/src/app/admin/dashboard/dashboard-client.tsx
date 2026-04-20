@@ -2,13 +2,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Calendar, CreditCard, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react';
+import type { DynamicPageContent } from '@/lib/api';
 
-export function AdminAnalyticsDashboardClient() {
+export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Dashboard</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Platform analytics and metrics overview</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Dashboard')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Platform analytics and metrics overview')}</p>
       </div>
 
       {/* Key Metrics Cards */}
@@ -180,15 +183,15 @@ export function AdminAnalyticsDashboardClient() {
               <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div className="flex-1">
-              <p className="font-semibold text-slate-900 sm:text-lg">Pending Approvals</p>
+              <p className="font-semibold text-slate-900 sm:text-lg">{t('pendingApprovalsTitle', 'Pending Approvals')}</p>
               <p className="mt-1 text-sm text-slate-600 sm:text-base">
-                You have 12 pending garage registrations and 8 vendor registrations awaiting approval.
+                {t('pendingApprovalsDescription', 'You have pending registrations waiting for approval.')}
               </p>
               <button
                 type="button"
                 className="mt-3 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700 sm:px-6 sm:text-base"
               >
-                Review Approvals
+                {t('reviewApprovalsLabel', 'Review Approvals')}
               </button>
             </div>
           </div>

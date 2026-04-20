@@ -13,9 +13,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Building2, CheckCircle, XCircle, Clock, FileText, ChevronLeft, ChevronRight, Search, Phone, Mail, MapPin, Calendar, User } from 'lucide-react';
-import { fetchAdminApprovals, type AdminApproval, updateGarageApprovalStatus } from '@/lib/api';
+import { fetchAdminApprovals, type AdminApproval, updateGarageApprovalStatus, type DynamicPageContent } from '@/lib/api';
 
-export function ApprovalsClient() {
+export function ApprovalsClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [garages, setGarages] = useState<AdminApproval[]>([]);
@@ -79,8 +80,8 @@ export function ApprovalsClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Approvals</h1>
-        <p className="mt-2 text-sm text-slate-500 sm:text-base">Review and approve garage registrations</p>
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Approvals')}</h1>
+        <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Review and approve garage registrations')}</p>
       </div>
 
       {/* Search */}
@@ -89,7 +90,7 @@ export function ApprovalsClient() {
           <div className="relative max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input 
-              placeholder="Search garages..." 
+              placeholder={t('searchPlaceholder', 'Search garages...')}
               className="pl-10"
               value={searchQuery}
               onChange={(e) => {
@@ -118,7 +119,7 @@ export function ApprovalsClient() {
                   </div>
                   <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
                     <Clock className="mr-1 h-3 w-3" />
-                    Pending
+                    {t('pendingLabel', 'Pending')}
                   </Badge>
                 </div>
               </CardHeader>
@@ -126,7 +127,7 @@ export function ApprovalsClient() {
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#97a9c1] mb-2 sm:text-sm">
-                      Specializations
+                      {t('specializationsLabel', 'Specializations')}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {(garage.specializations || []).map((spec, index) => (
@@ -139,7 +140,7 @@ export function ApprovalsClient() {
 
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#97a9c1] mb-2 sm:text-sm">
-                      Submitted Documents
+                      {t('submittedDocumentsLabel', 'Submitted Documents')}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {garage.documents.map((doc, index) => (
@@ -165,7 +166,7 @@ export function ApprovalsClient() {
                       className="h-8 gap-2 text-xs sm:h-9 sm:text-sm"
                       onClick={() => handleViewDetails(garage)}
                     >
-                      View Details
+                      {t('viewDetailsLabel', 'View Details')}
                     </Button>
                     <div className="flex gap-2">
                       <Button
@@ -177,7 +178,7 @@ export function ApprovalsClient() {
                         disabled={updatingApprovalId === garage.id}
                       >
                         <XCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                        {updatingApprovalId === garage.id ? 'Updating...' : 'Reject'}
+                        {updatingApprovalId === garage.id ? t('updatingLabel', 'Updating...') : t('rejectLabel', 'Reject')}
                       </Button>
                       <Button
                         type="button"
@@ -187,7 +188,7 @@ export function ApprovalsClient() {
                         disabled={updatingApprovalId === garage.id}
                       >
                         <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                        {updatingApprovalId === garage.id ? 'Updating...' : 'Approve'}
+                        {updatingApprovalId === garage.id ? t('updatingLabel', 'Updating...') : t('approveLabel', 'Approve')}
                       </Button>
                     </div>
                   </div>
@@ -233,7 +234,7 @@ export function ApprovalsClient() {
 
       {filteredData.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-slate-500">No garages found matching your search.</p>
+          <p className="text-slate-500">{t('emptyState', 'No garages found matching your search.')}</p>
         </div>
       )}
 
@@ -241,8 +242,8 @@ export function ApprovalsClient() {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Garage Registration Details</DialogTitle>
-            <DialogDescription>Review complete garage information</DialogDescription>
+            <DialogTitle className="text-2xl">{t('detailsTitle', 'Garage Registration Details')}</DialogTitle>
+            <DialogDescription>{t('detailsDescription', 'Review complete garage information')}</DialogDescription>
           </DialogHeader>
           {selectedGarage && (
             <div className="space-y-6 mt-4">
@@ -317,7 +318,7 @@ export function ApprovalsClient() {
                   className="flex-1"
                   onClick={() => setIsDetailOpen(false)}
                 >
-                  Close
+                  {t('closeLabel', 'Close')}
                 </Button>
                 <Button
                   type="button"
@@ -327,7 +328,7 @@ export function ApprovalsClient() {
                   disabled={Boolean(selectedGarage && updatingApprovalId === selectedGarage.id)}
                 >
                   <XCircle className="mr-2 h-4 w-4" />
-                  Reject Registration
+                  {t('rejectRegistrationLabel', 'Reject Registration')}
                 </Button>
                 <Button
                   type="button"
@@ -336,7 +337,7 @@ export function ApprovalsClient() {
                   disabled={Boolean(selectedGarage && updatingApprovalId === selectedGarage.id)}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Approve Registration
+                  {t('approveRegistrationLabel', 'Approve Registration')}
                 </Button>
               </div>
             </div>

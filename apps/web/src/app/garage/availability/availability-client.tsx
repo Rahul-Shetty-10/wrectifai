@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Clock, Calendar, Plus, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchGarageAvailability, type GarageAvailability } from '@/lib/api';
+import { fetchGarageAvailability, type GarageAvailability, type DynamicPageContent } from '@/lib/api';
 
-export function AvailabilityClient() {
+export function AvailabilityClient({ content }: { content: DynamicPageContent }) {
+  const t = (key: string, fallback: string) => content[key] ?? fallback;
   const [currentPage, setCurrentPage] = useState(1);
   const [availability, setAvailability] = useState<GarageAvailability | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,12 +42,12 @@ export function AvailabilityClient() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Availability</h1>
-            <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage your business hours and availability slots</p>
+            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Availability')}</h1>
+            <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your business hours and availability slots')}</p>
           </div>
           <Button className="gap-2 bg-[#2456f5] hover:bg-[#1a4bb8]">
             <Plus className="h-4 w-4" />
-            Add Slot
+            {t('addSlotLabel', 'Add Slot')}
           </Button>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -69,19 +70,19 @@ export function AvailabilityClient() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Availability</h1>
-          <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage your business hours and availability slots</p>
+          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Availability')}</h1>
+          <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your business hours and availability slots')}</p>
         </div>
         <Button className="gap-2 bg-[#2456f5] hover:bg-[#1a4bb8]">
           <Plus className="h-4 w-4" />
-          Add Slot
+          {t('addSlotLabel', 'Add Slot')}
         </Button>
       </div>
 
       {/* Business Hours Summary */}
       <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">Current Business Hours</CardTitle>
+          <CardTitle className="text-lg font-semibold text-slate-900">{t('businessHoursTitle', 'Current Business Hours')}</CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -100,7 +101,7 @@ export function AvailabilityClient() {
                   variant="outline"
                   className={slot.active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}
                 >
-                  {slot.active ? 'Active' : 'Closed'}
+                  {slot.active ? t('activeLabel', 'Active') : t('closedLabel', 'Closed')}
                 </Badge>
               </div>
             ))}
@@ -111,7 +112,7 @@ export function AvailabilityClient() {
       {/* Blocked Dates */}
       <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">Blocked Dates</CardTitle>
+          <CardTitle className="text-lg font-semibold text-slate-900">{t('blockedDatesTitle', 'Blocked Dates')}</CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           <div className="space-y-3">
@@ -159,7 +160,7 @@ export function AvailabilityClient() {
             </div>
             <Button type="button" variant="outline" className="w-full gap-2">
               <Plus className="h-4 w-4" />
-              Block Date
+              {t('blockDateLabel', 'Block Date')}
             </Button>
           </div>
         </CardContent>
@@ -168,23 +169,23 @@ export function AvailabilityClient() {
       {/* Pickup/Drop-off Availability */}
       <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">Pickup & Drop-off Service</CardTitle>
+          <CardTitle className="text-lg font-semibold text-slate-900">{t('pickupDropoffTitle', 'Pickup & Drop-off Service')}</CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-slate-900">Home Pickup</p>
+                <p className="font-medium text-slate-900">{t('homePickupLabel', 'Home Pickup')}</p>
                 <p className="text-sm text-slate-500">Offer pickup service for customers</p>
               </div>
-              <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">Enabled</Badge>
+              <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">{t('enabledLabel', 'Enabled')}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-slate-900">Drop-off Service</p>
+                <p className="font-medium text-slate-900">{t('dropoffLabel', 'Drop-off Service')}</p>
                 <p className="text-sm text-slate-500">Offer drop-off service for customers</p>
               </div>
-              <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">Enabled</Badge>
+              <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">{t('enabledLabel', 'Enabled')}</Badge>
             </div>
           </div>
         </CardContent>

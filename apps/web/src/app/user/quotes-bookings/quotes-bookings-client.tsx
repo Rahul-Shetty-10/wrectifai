@@ -549,7 +549,7 @@ export function QuotesBookingsClient({ sidebar, content: _initialContent }: Prop
                           className="h-9 rounded-lg bg-[#2456f5] px-3 text-xs font-semibold text-white hover:bg-[#1e49d1]"
                           onClick={() => handleViewQuotes(issue)}
                         >
-                          View Quotes
+                          {isDiy ? 'View DIY Steps' : 'View Quotes'}
                         </Button>
                       </div>
                     </CardContent>

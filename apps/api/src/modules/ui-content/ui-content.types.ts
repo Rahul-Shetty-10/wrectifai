@@ -185,6 +185,91 @@ export type UserAiDiagnosisContent = {
   };
 };
 
+export type UserServiceIntakeContent = {
+  header: {
+    diagnosisTitle: string;
+    directTitle: string;
+    description: string;
+    badgeDefault: string;
+    badgeQuestionsSuffix: string;
+  };
+  sections: {
+    categoriesTitle: string;
+    categoriesSubtitle: string;
+    questionsTitle: string;
+    questionsSubtitle: string;
+    evidenceTitle: string;
+    evidenceSubtitle: string;
+    vehicleTitle: string;
+    vehicleSubtitle: string;
+    logisticsTitle: string;
+    logisticsSubtitle: string;
+    contactTitle: string;
+    contactSubtitle: string;
+    reportTitle: string;
+    reportSubtitle: string;
+  };
+  labels: {
+    loading: string;
+    continue: string;
+    loadingQuestions: string;
+    selectedCategories: string;
+    none: string;
+    smartQuestionsTitle: string;
+    smartQuestionsSubtitle: string;
+    useSaved: string;
+    manual: string;
+    selectVehicle: string;
+    car: string;
+    bike: string;
+    other: string;
+    useGps: string;
+    pickupRequired: string;
+    visitGarage: string;
+    needPickup: string;
+    schedule: string;
+    nowEmergency: string;
+    scheduleTime: string;
+    vehicleLabel: string;
+    serviceTypeLabel: string;
+    scheduleLabel: string;
+    questionsAnsweredLabel: string;
+    pickupRequiredValue: string;
+    visitGarageValue: string;
+    scheduledValue: string;
+    nowValue: string;
+    riskLevelLabel: string;
+    severityLabel: string;
+    summaryLabel: string;
+    recommendationLabel: string;
+    diyStepsTitle: string;
+    diyBlocked: string;
+    diagnosisHint: string;
+    directHint: string;
+    generateReport: string;
+    generating: string;
+    raiseIssue: string;
+    submitting: string;
+  };
+  placeholders: {
+    shortDescription: string;
+    brand: string;
+    model: string;
+    year: string;
+    fuelType: string;
+    variantOptional: string;
+    serviceAddress: string;
+    name: string;
+    phone: string;
+    alternatePhoneOptional: string;
+    answer: string;
+  };
+  errors: {
+    invalidDateTime: string;
+    pastTime: string;
+  };
+};
+
 export type UserQuotesBookingsContent = {
   header: {
     title: string;
@@ -247,6 +332,49 @@ export type UserPaymentsContent = {
     addMethodLabel: string;
     expiryLabel: string;
   };
+};
+
+export type UserSettingsContent = {
+  title: string;
+  loadingLabel: string;
+  bookingUpdatesLabel: string;
+  appointmentRemindersLabel: string;
+  offersLabel: string;
+  preferredCheckinModeLabel: string;
+  selfCheckinLabel: string;
+  homePickupLabel: string;
+  saveButtonLabel: string;
+  savingLabel: string;
+  savedMessage: string;
+  loadErrorLabel: string;
+  saveErrorLabel: string;
+};
+
+export type UserSupportContent = {
+  createTicketTitle: string;
+  subjectPlaceholder: string;
+  descriptionPlaceholder: string;
+  submitLabel: string;
+  submittingLabel: string;
+  myTicketsTitle: string;
+  loadingTicketsLabel: string;
+  noTicketsLabel: string;
+  loadTicketsErrorLabel: string;
+  createTicketErrorLabel: string;
+};
+
+export type UserSparePartsContent = {
+  catalogTitle: string;
+  loadingPartsLabel: string;
+  orderingLabel: string;
+  orderLabel: string;
+  outOfStockLabel: string;
+  myOrdersTitle: string;
+  noOrdersLabel: string;
+  loadErrorLabel: string;
+  orderErrorLabel: string;
+  qtyLabel: string;
+  totalLabel: string;
 };
 
 export type UserMyGarageContent = {
@@ -324,6 +452,7 @@ export type UserPage =
   | 'dashboard'
   | 'my-garage'
   | 'ai-diagnosis'
+  | 'service-intake'
   | 'quotes-bookings'
   | 'spare-parts'
   | 'payments'

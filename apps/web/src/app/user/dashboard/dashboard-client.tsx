@@ -18,14 +18,18 @@ type Props = {
 export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
   const headerSidebar = { ...sidebar, logoUrl: appLogoUrl || sidebar.logoUrl };
   const garageRawTitle = content?.actions?.garage?.title ?? 'Direct Service Request';
-  const garageRawDescription =
-    content?.actions?.garage?.description ??
-    'Skip analysis and raise a direct service request when you already know the issue.';
+  const garageRawDescription = content?.actions?.garage?.description ?? 'Skip analysis and raise a direct service request when you already know the issue.';
   const garageTitle = garageRawTitle.toLowerCase().includes('garage')
     ? 'Direct Service Request'
     : garageRawTitle;
-  const garageDescription = garageRawTitle.toLowerCase().includes('garage')
-    ? 'Skip analysis and raise a direct service request when you already know the issue.'
+
+  // Use uniform length descriptions for visual symmetry
+  const diagnosisDescription = (content.actions.diagnosis.description.length < 50)
+    ? 'Run a virtual checkup on your vehicle to identify issues quickly and accurately.'
+    : content.actions.diagnosis.description;
+
+  const garageDescription = (garageRawDescription.length < 50 || garageRawDescription.includes('when you already know'))
+    ? 'Skip the analysis and raise a service request directly if you already know the issue.'
     : garageRawDescription;
 
   return (
@@ -81,7 +85,7 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900 sm:text-xl">{content.actions.diagnosis.title}</h2>
-                  <p className="mt-1 text-xs text-slate-500 sm:text-sm">{content.actions.diagnosis.description}</p>
+                  <p className="mt-1 text-xs text-slate-500 sm:text-sm">{diagnosisDescription}</p>
                 </div>
                 <Button asChild className="h-10 w-full rounded-xl bg-[#0f93de] text-white text-sm hover:bg-[#0d82c4] sm:h-11 sm:text-base">
                   <Link href="/user/ai-diagnosis">Start Guided Assessment</Link>
