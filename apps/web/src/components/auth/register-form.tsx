@@ -165,7 +165,7 @@ export function RegisterForm({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder={fullNamePlaceholder}
-                className={fieldErrors.fullName ? 'border-destructive h-14 text-lg rounded-xl' : 'h-14 text-lg rounded-xl'}
+                className={fieldErrors.fullName ? 'border-destructive h-12 text-base rounded-xl' : 'h-12 text-base rounded-xl'}
               />
               {fieldErrors.fullName && <p className="text-sm text-destructive ml-1">{fieldErrors.fullName}</p>}
             </div>
@@ -183,7 +183,7 @@ export function RegisterForm({
                 placeholder={phonePlaceholder}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                className={fieldErrors.phone ? 'border-destructive h-14 text-lg rounded-xl' : 'h-14 text-lg rounded-xl'}
+                className={fieldErrors.phone ? 'border-destructive h-12 text-base rounded-xl' : 'h-12 text-base rounded-xl'}
               />
               {fieldErrors.phone && <p className="text-sm text-destructive ml-1">{fieldErrors.phone}</p>}
             </div>
@@ -204,7 +204,7 @@ export function RegisterForm({
             </div>
 
             <Button 
-              className="w-full h-14 text-lg font-semibold rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/20" 
+              className="w-full h-12 text-base font-semibold rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/20" 
               type="submit" 
               disabled={loading}
             >
@@ -233,7 +233,7 @@ export function RegisterForm({
             {error ? <p className="text-sm text-destructive text-center">{error}</p> : null}
 
             <Button 
-              className="w-full h-14 text-lg font-semibold rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/20" 
+              className="w-full h-12 text-base font-semibold rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/20" 
               type="submit" 
               disabled={loading || otp.length !== 6}
             >

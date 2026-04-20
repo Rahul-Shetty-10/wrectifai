@@ -18,6 +18,7 @@ type AuthShellProps = {
 
 export function AuthShell({
   layout = 'centered',
+  appName = 'WrectifAI',
   logoUrl = '/wrectifai_logo_cropped.png',
   rightPane,
   hideHeroOnMobile = false,
