@@ -42,7 +42,7 @@ export function AvailabilityClient({ content }: { content: DynamicPageContent })
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Availability')}</h1>
+            <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Availability')}</h1>
             <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your business hours and availability slots')}</p>
           </div>
           <Button className="gap-2 bg-[#2456f5] hover:bg-[#1a4bb8]">
@@ -52,7 +52,7 @@ export function AvailabilityClient({ content }: { content: DynamicPageContent })
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+            <Card key={i} className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
               <CardContent className="p-4">
                 <div className="space-y-2">
                   <div className="h-4 w-24 bg-slate-200 animate-pulse rounded" />
@@ -70,7 +70,7 @@ export function AvailabilityClient({ content }: { content: DynamicPageContent })
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Availability')}</h1>
+          <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Availability')}</h1>
           <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your business hours and availability slots')}</p>
         </div>
         <Button className="gap-2 bg-[#2456f5] hover:bg-[#1a4bb8]">
@@ -80,7 +80,7 @@ export function AvailabilityClient({ content }: { content: DynamicPageContent })
       </div>
 
       {/* Business Hours Summary */}
-      <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">{t('businessHoursTitle', 'Current Business Hours')}</CardTitle>
         </CardHeader>
@@ -110,7 +110,7 @@ export function AvailabilityClient({ content }: { content: DynamicPageContent })
       </Card>
 
       {/* Blocked Dates */}
-      <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">{t('blockedDatesTitle', 'Blocked Dates')}</CardTitle>
         </CardHeader>
@@ -167,7 +167,7 @@ export function AvailabilityClient({ content }: { content: DynamicPageContent })
       </Card>
 
       {/* Pickup/Drop-off Availability */}
-      <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">{t('pickupDropoffTitle', 'Pickup & Drop-off Service')}</CardTitle>
         </CardHeader>
@@ -193,3 +193,4 @@ export function AvailabilityClient({ content }: { content: DynamicPageContent })
     </div>
   );
 }
+

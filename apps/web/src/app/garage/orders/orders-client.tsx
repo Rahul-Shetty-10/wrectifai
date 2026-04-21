@@ -58,12 +58,12 @@ export function OrdersClient({ content }: { content: DynamicPageContent }) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Orders')}</h1>
+          <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Orders')}</h1>
           <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage new issue requests from customers')}</p>
         </div>
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+            <Card key={i} className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
               <CardHeader className="border-b border-[#e6ebf2] pb-4">
                 <div className="h-6 w-32 bg-slate-200 animate-pulse rounded" />
               </CardHeader>
@@ -84,12 +84,12 @@ export function OrdersClient({ content }: { content: DynamicPageContent }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Orders')}</h1>
+        <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Orders')}</h1>
         <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage new issue requests from customers')}</p>
       </div>
 
       {/* Search and Filter */}
-      <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
@@ -153,7 +153,7 @@ export function OrdersClient({ content }: { content: DynamicPageContent }) {
       {/* Orders Grid */}
       <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {currentOrders.map((order) => (
-          <Card key={order.id} className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+          <Card key={order.id} className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
             <CardHeader className="border-b border-[#e6ebf2] pb-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -269,3 +269,4 @@ export function OrdersClient({ content }: { content: DynamicPageContent }) {
     </div>
   );
 }
+

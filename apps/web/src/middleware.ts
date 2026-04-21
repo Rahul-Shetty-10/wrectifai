@@ -22,17 +22,22 @@ function withNoStore(res: NextResponse) {
   return res;
 }
 
+function clearAuthCookies(res: NextResponse) {
+  const cookieNames = ['wrect_at', 'wrect_rt', 'wrect_role'];
+  for (const cookieName of cookieNames) {
+    res.cookies.set(cookieName, '', {
+      path: '/',
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  }
+  return res;
+}
+
 async function getSessionRole(req: NextRequest) {
   const accessToken = req.cookies.get('wrect_at')?.value;
-  const refreshToken = req.cookies.get('wrect_rt')?.value;
-  const roleCookie = req.cookies.get('wrect_role')?.value?.replace(/^"|"$/g, '').toLowerCase();
-  const roleFromCookie =
-    roleCookie === 'user' || roleCookie === 'garage' || roleCookie === 'vendor' || roleCookie === 'admin'
-      ? roleCookie
-      : null;
 
   if (!accessToken) {
-    if (refreshToken && roleFromCookie) return { role: roleFromCookie, garageApproved: undefined as boolean | undefined };
     return null;
   }
 
@@ -46,7 +51,6 @@ async function getSessionRole(req: NextRequest) {
       cache: 'no-store',
     });
     if (!response.ok) {
-      if (refreshToken && roleFromCookie) return { role: roleFromCookie, garageApproved: undefined as boolean | undefined };
       return null;
     }
     const data = (await response.json()) as {
@@ -61,11 +65,6 @@ async function getSessionRole(req: NextRequest) {
       garageApproved: data.user.garageApproved,
     };
   } catch {
-    // Production fallback: if API reachability is transiently broken but
-    // session cookies exist, keep user signed in instead of forcing logout.
-    if (refreshToken && roleFromCookie) {
-      return { role: roleFromCookie, garageApproved: undefined as boolean | undefined };
-    }
     return null;
   }
 }
@@ -88,11 +87,11 @@ export async function middleware(req: NextRequest) {
   const rolePath = rolePrefixes.find((prefix) => pathname.startsWith(prefix));
 
   if (!isAuthed && rolePath) {
-    return withNoStore(NextResponse.redirect(new URL('/auth/login', req.url)));
+    return clearAuthCookies(withNoStore(NextResponse.redirect(new URL('/auth/login', req.url))));
   }
 
   if (!isAuthed && pathname === '/') {
-    return withNoStore(NextResponse.redirect(new URL('/auth/login', req.url)));
+    return clearAuthCookies(withNoStore(NextResponse.redirect(new URL('/auth/login', req.url))));
   }
 
   if (isAuthed && isPublic) {

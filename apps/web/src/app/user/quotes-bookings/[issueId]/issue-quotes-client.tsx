@@ -3,9 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftRight, CheckCircle2, ChevronLeft, Star, Trophy } from 'lucide-react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -226,17 +224,9 @@ export function IssueQuotesClient({ sidebar, content: _initialContent, issueId }
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="quotes-bookings" content={sidebar} />
-      <div className="hidden lg:block">
-        <UserSidebar activeItem="quotes-bookings" content={sidebar} />
-      </div>
-
-      <section className="flex-1 overflow-y-auto bg-[#f1f3f8]">
+    <UserThemeShell activeItem="quotes-bookings" sidebar={sidebar}>
+      <section className="overflow-y-auto bg-[#f1f3f8]">
         <div className="mx-auto max-w-5xl p-6 md:p-8">
-          <UserTopLogoHeader sidebar={sidebar} />
-
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <button
@@ -333,7 +323,7 @@ export function IssueQuotesClient({ sidebar, content: _initialContent, issueId }
               <div className="h-11 w-11 animate-spin rounded-full border-[3px] border-[#cfd8e8] border-t-[#2456f5]" />
             </div>
           ) : quotes.length === 0 ? (
-            <div className="mt-6 rounded-3xl border border-dashed border-[#d9e2ef] bg-white p-8 text-sm text-slate-500">
+            <div className="mt-6 rounded-xl border border-dashed border-[#d9e2ef] bg-white p-8 text-sm text-slate-500 shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
               No quotes available yet for this issue.
             </div>
           ) : (
@@ -347,7 +337,7 @@ export function IssueQuotesClient({ sidebar, content: _initialContent, issueId }
                   (isIssueQuoteAccepted && !isSelectedQuote);
 
                 return (
-                  <Card key={quote.id} className="rounded-3xl border-[#d9e2ef] bg-white shadow-none">
+                  <Card key={quote.id} className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
                     <CardContent className="p-5">
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
@@ -419,7 +409,7 @@ export function IssueQuotesClient({ sidebar, content: _initialContent, issueId }
       </section>
 
       <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
-        <DialogContent className="max-w-4xl border-[#d9e2ef] bg-[#f8fbff] sm:rounded-2xl">
+        <DialogContent className="max-w-4xl rounded-xl border-[#d9e2ef] bg-[#f8fbff] shadow-[0_16px_40px_rgba(33,61,105,0.18)]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900">Quote Comparison</DialogTitle>
             <DialogDescription className="text-sm text-slate-500">
@@ -503,7 +493,7 @@ export function IssueQuotesClient({ sidebar, content: _initialContent, issueId }
       </Dialog>
 
       <Dialog open={quoteAcceptedOpen} onOpenChange={setQuoteAcceptedOpen}>
-        <DialogContent className="max-w-md border-[#d9e2ef] bg-white sm:rounded-2xl">
+        <DialogContent className="max-w-md rounded-xl border-[#d9e2ef] bg-white shadow-[0_16px_40px_rgba(33,61,105,0.18)]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900">Quote Accepted</DialogTitle>
             <DialogDescription className="text-sm text-slate-600">
@@ -521,6 +511,6 @@ export function IssueQuotesClient({ sidebar, content: _initialContent, issueId }
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </UserThemeShell>
   );
 }

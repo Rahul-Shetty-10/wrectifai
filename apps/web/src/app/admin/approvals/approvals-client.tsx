@@ -80,12 +80,12 @@ export function ApprovalsClient({ content }: { content: DynamicPageContent }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Approvals')}</h1>
+        <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Approvals')}</h1>
         <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Review and approve garage registrations')}</p>
       </div>
 
       {/* Search */}
-      <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardContent className="p-4 sm:p-6">
           <div className="relative max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -105,7 +105,7 @@ export function ApprovalsClient({ content }: { content: DynamicPageContent }) {
       {/* Cards Grid */}
       <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {currentItems.map((garage) => (
-            <Card key={garage.id} className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+            <Card key={garage.id} className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
               <CardHeader className="border-b border-[#e6ebf2] pb-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ export function ApprovalsClient({ content }: { content: DynamicPageContent }) {
 
       {/* Garage Details Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto rounded-xl border-[#d9e2ef] bg-white shadow-[0_16px_40px_rgba(33,61,105,0.18)]">
           <DialogHeader>
             <DialogTitle className="text-2xl">{t('detailsTitle', 'Garage Registration Details')}</DialogTitle>
             <DialogDescription>{t('detailsDescription', 'Review complete garage information')}</DialogDescription>
@@ -347,3 +347,4 @@ export function ApprovalsClient({ content }: { content: DynamicPageContent }) {
     </div>
   );
 }
+

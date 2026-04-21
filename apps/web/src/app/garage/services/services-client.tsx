@@ -147,7 +147,7 @@ export function ServicesClient({ content }: { content: DynamicPageContent }) {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Services')}</h1>
+            <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Services')}</h1>
             <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage services offered by your garage')}</p>
           </div>
           <Button className="gap-2 bg-[#2456f5] hover:bg-[#1a4bb8]" onClick={handleAddService}>
@@ -157,7 +157,7 @@ export function ServicesClient({ content }: { content: DynamicPageContent }) {
         </div>
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+            <Card key={i} className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
               <CardHeader className="border-b border-[#e6ebf2] pb-4">
                 <div className="h-6 w-32 bg-slate-200 animate-pulse rounded" />
               </CardHeader>
@@ -179,7 +179,7 @@ export function ServicesClient({ content }: { content: DynamicPageContent }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Services')}</h1>
+          <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Services')}</h1>
           <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage services offered by your garage')}</p>
         </div>
         <Button className="gap-2 bg-[#2456f5] hover:bg-[#1a4bb8]" onClick={handleAddService}>
@@ -189,7 +189,7 @@ export function ServicesClient({ content }: { content: DynamicPageContent }) {
       </div>
 
       {/* Search */}
-      <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardContent className="p-4 sm:p-6">
           <div className="relative max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -209,7 +209,7 @@ export function ServicesClient({ content }: { content: DynamicPageContent }) {
       {/* Services Grid */}
       <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {currentServices.map((service) => (
-          <Card key={service.id} className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+          <Card key={service.id} className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
             <CardHeader className="border-b border-[#e6ebf2] pb-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -295,7 +295,7 @@ export function ServicesClient({ content }: { content: DynamicPageContent }) {
       {/* Add Service Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+          <Card className="w-full max-w-md rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
             <CardHeader className="border-b border-[#e6ebf2] pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold text-slate-900">Add New Service</CardTitle>
@@ -375,7 +375,7 @@ export function ServicesClient({ content }: { content: DynamicPageContent }) {
       {/* Edit Service Modal */}
       {showEditModal && selectedService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+          <Card className="w-full max-w-md rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
             <CardHeader className="border-b border-[#e6ebf2] pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold text-slate-900">Edit Service</CardTitle>
@@ -464,7 +464,7 @@ export function ServicesClient({ content }: { content: DynamicPageContent }) {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteModal} onOpenChange={(open) => !open && setShowDeleteModal(false)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-xl border-[#d9e2ef] bg-white shadow-[0_16px_40px_rgba(33,61,105,0.18)]">
           <DialogHeader>
             <DialogTitle>Delete Service</DialogTitle>
           </DialogHeader>
@@ -492,3 +492,4 @@ export function ServicesClient({ content }: { content: DynamicPageContent }) {
     </div>
   );
 }
+

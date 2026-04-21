@@ -1,5 +1,6 @@
 import './global.css';
 import { Inter, Manrope } from 'next/font/google';
+import { GlobalLoaderProvider } from '@/components/ui/global-loader-provider';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -32,7 +33,7 @@ export default function RootLayout({
       <body
         className={`${fontSans.variable} ${fontDisplay.variable} bg-background text-foreground antialiased`}
       >
-        {children}
+        <GlobalLoaderProvider>{children}</GlobalLoaderProvider>
       </body>
     </html>
   );

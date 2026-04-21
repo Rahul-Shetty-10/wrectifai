@@ -4,9 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, CreditCard, Loader2 } from 'lucide-react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -77,19 +75,17 @@ export function PaymentsCheckoutClient({ sidebar }: Props) {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="payments" content={sidebar} />
-      <div className="hidden lg:block">
-        <UserSidebar activeItem="payments" content={sidebar} />
-      </div>
+    <UserThemeShell activeItem="payments" sidebar={sidebar}>
+      <section className="overflow-y-auto">
+        <div className="mx-auto max-w-3xl p-4 sm:p-6 md:p-8">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="h-5 w-1 rounded-full bg-[#4ec2ed] sm:h-6" />
+            <h1 className="text-[23px] font-semibold tracking-tight text-[#0f2244]">Payment Checkout</h1>
+          </div>
 
-      <section className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl p-6 md:p-10">
-          <UserTopLogoHeader sidebar={sidebar} />
-          <Card className="mt-6">
+          <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold">Custom Payment Gateway</CardTitle>
+              <CardTitle className="text-[17px] font-medium text-slate-900">Custom Payment Gateway</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
               {loading ? (
@@ -116,7 +112,7 @@ export function PaymentsCheckoutClient({ sidebar }: Props) {
                     </div>
                   ) : null}
 
-                  <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                  <div className="space-y-2 rounded-xl border border-[#d9e2ef] bg-[#f9fbff] p-4">
                     <p className="text-sm text-muted-foreground">Payer</p>
                     <p className="font-semibold">{profile?.fullName || 'User'}</p>
                     <p className="text-sm text-muted-foreground">Service Provider</p>
@@ -126,7 +122,7 @@ export function PaymentsCheckoutClient({ sidebar }: Props) {
                     <p className="text-sm text-muted-foreground">Payment Method</p>
                     <p className="font-semibold uppercase">{intent.method.replace('_', ' ')}</p>
                     <p className="text-sm text-muted-foreground">Amount</p>
-                    <p className="text-2xl font-bold">
+                    <p className="text-[24px] font-semibold text-slate-900">
                       {intent.currency} {intent.amount.toFixed(2)}
                     </p>
                   </div>
@@ -152,6 +148,6 @@ export function PaymentsCheckoutClient({ sidebar }: Props) {
           </Card>
         </div>
       </section>
-    </div>
+    </UserThemeShell>
   );
 }

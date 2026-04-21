@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   CarFront,
+  ChevronLeft,
+  ChevronRight,
   CirclePlus,
   Star,
   Trash2,
@@ -10,9 +12,7 @@ import {
   Sparkles,
   Wrench,
 } from 'lucide-react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -86,6 +86,7 @@ export function MyGarageClient({ sidebar, content }: Props) {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [processingRc, setProcessingRc] = useState(false);
+  const [vehiclePage, setVehiclePage] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -214,17 +215,24 @@ export function MyGarageClient({ sidebar, content }: Props) {
   );
 
   const visibleVehicles = vehicles;
-  return (
-    <div className="flex h-screen bg-[#f2f5fa]">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="my-garage" content={sidebar} />
-      <div className="hidden lg:block">
-        <UserSidebar activeItem="my-garage" content={sidebar} />
-      </div>
+  const VEHICLES_PER_PAGE = 2;
+  const totalVehiclePages = Math.max(1, Math.ceil(visibleVehicles.length / VEHICLES_PER_PAGE));
+  const pagedVehicles = visibleVehicles.slice(
+    vehiclePage * VEHICLES_PER_PAGE,
+    vehiclePage * VEHICLES_PER_PAGE + VEHICLES_PER_PAGE
+  );
 
-      <section className="flex-1 overflow-y-auto bg-[#f8fafe]">
+  useEffect(() => {
+    if (vehiclePage > totalVehiclePages - 1) {
+      setVehiclePage(Math.max(0, totalVehiclePages - 1));
+    }
+  }, [totalVehiclePages, vehiclePage]);
+
+  return (
+    <>
+      <UserThemeShell activeItem="my-garage" sidebar={sidebar}>
+      <section className="overflow-y-auto bg-[#f8fafe]">
         <div className="mx-auto w-full max-w-[1280px] px-4 py-4 sm:px-6 sm:py-5">
-          <UserTopLogoHeader sidebar={sidebar} />
           <div className="mb-4 sm:mb-6 flex flex-col gap-4 border-b border-[#e6ebf2] pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold leading-none text-[#0f2244] md:text-3xl sm:text-4xl">MyGarage</h1>
@@ -253,85 +261,109 @@ export function MyGarageClient({ sidebar, content }: Props) {
 
           <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_360px]">
             <div>
-              <div className="mb-3 sm:mb-4 flex items-center gap-2">
-                <span className="h-5 w-1 rounded-full bg-[#4ec2ed] sm:h-6" />
-                <h2 className="text-xl font-semibold tracking-tight text-[#0f2244] sm:text-2xl">Active Inventory</h2>
+              <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-5 w-1 rounded-full bg-[#4ec2ed] sm:h-6" />
+                  <h2 className="text-xl font-semibold tracking-tight text-[#0f2244] sm:text-2xl">Active Inventory</h2>
+                </div>
+                {visibleVehicles.length > VEHICLES_PER_PAGE ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVehiclePage((prev) => Math.max(0, prev - 1))}
+                      disabled={vehiclePage === 0}
+                      className="grid h-8 w-8 place-items-center rounded-full border border-[#d5e2f3] bg-white text-slate-600 transition hover:bg-[#f4f8ff] disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label="Previous vehicles"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVehiclePage((prev) => Math.min(totalVehiclePages - 1, prev + 1))}
+                      disabled={vehiclePage >= totalVehiclePages - 1}
+                      className="grid h-8 w-8 place-items-center rounded-full border border-[#d5e2f3] bg-white text-slate-600 transition hover:bg-[#f4f8ff] disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label="Next vehicles"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : null}
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleVehicles.map((vehicle, index) => {
+                {pagedVehicles.map((vehicle, index) => {
                   const active = vehicle.id === selectedVehicle?.id;
                   return (
                     <button
                       key={vehicle.id}
                       onClick={() => setSelectedVehicleId(vehicle.id)}
-                      className={`overflow-hidden rounded-2xl border bg-white p-2.5 sm:p-3 text-left transition ${
-                        active ? 'border-[#8ed5ef] shadow-[0_6px_16px_rgba(73,144,196,0.18)]' : 'border-[#dde6f0]'
+                      className={`overflow-hidden rounded-xl border bg-white p-3 text-left transition ${
+                        active ? 'border-[#8ed5ef] shadow-[0_6px_16px_rgba(73,144,196,0.14)]' : 'border-[#dde6f0]'
                       }`}
                     >
-                      <div className="relative mb-2.5 sm:mb-3 h-40 sm:h-56 overflow-hidden rounded-xl">
-                        <img
-                          src={VEHICLE_IMAGES[index % VEHICLE_IMAGES.length]}
-                          alt={`${vehicle.make} ${vehicle.model}`}
-                          className="h-full w-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-                        {vehicle.isDefault ? (
-                          <span className="absolute right-2 top-2 rounded-full bg-[#dbfff0] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#00a56a] sm:px-2.5 sm:py-1 sm:text-[10px]">
-                            Default
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div className="space-y-2.5 text-[#203457] sm:space-y-3">
-                        <div>
-                          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#97a9c1] sm:text-[10px]">Vehicle</p>
-                          <p className="mt-1 text-sm font-semibold sm:text-base">{vehicle.make} {vehicle.model}</p>
+                        <div className="relative mb-2.5 sm:mb-3 h-40 sm:h-56 overflow-hidden rounded-xl">
+                          <img
+                            src={VEHICLE_IMAGES[index % VEHICLE_IMAGES.length]}
+                            alt={`${vehicle.make} ${vehicle.model}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                          {vehicle.isDefault ? (
+                            <span className="absolute right-2 top-2 rounded-full bg-[#dbfff0] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#00a56a] sm:px-2.5 sm:py-1 sm:text-[10px]">
+                              Default
+                            </span>
+                          ) : null}
                         </div>
-                        <div>
-                          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#97a9c1] sm:text-[10px]">Details</p>
-                          <div className="mt-1 space-y-0.5 text-xs font-semibold sm:space-y-1 sm:text-sm">
-                            <p>Model: {vehicle.model}</p>
-                            <p>Year: {vehicle.year}</p>
-                            <p>Fuel Type: {vehicle.fuelType}</p>
+
+                        <div className="space-y-2.5 text-[#203457] sm:space-y-3">
+                          <div>
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#97a9c1] sm:text-[10px]">Vehicle</p>
+                            <p className="mt-1 text-sm font-semibold sm:text-base">{vehicle.make} {vehicle.model}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#97a9c1] sm:text-[10px]">Details</p>
+                            <div className="mt-1 space-y-0.5 text-xs font-semibold sm:space-y-1 sm:text-sm">
+                              <p>Model: {vehicle.model}</p>
+                              <p>Year: {vehicle.year}</p>
+                              <p>Fuel Type: {vehicle.fuelType}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 pt-1">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setVehicleToSetDefault(vehicle);
+                              }}
+                              className="h-7 px-2 text-[10px] sm:h-8 sm:px-3 sm:text-xs"
+                            >
+                              <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                              <span className="hidden sm:inline ml-1">Default</span>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setVehicleToDelete(vehicle);
+                              }}
+                              className="h-7 px-2 text-[10px] text-destructive hover:text-destructive sm:h-8 sm:px-3 sm:text-xs"
+                            >
+                              <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                              <span className="hidden sm:inline ml-1">Delete</span>
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 pt-1">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setVehicleToSetDefault(vehicle);
-                            }}
-                            className="h-7 px-2 text-[10px] sm:h-8 sm:px-3 sm:text-xs"
-                          >
-                            <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                            <span className="hidden sm:inline ml-1">Default</span>
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setVehicleToDelete(vehicle);
-                            }}
-                            className="h-7 px-2 text-[10px] text-destructive hover:text-destructive sm:h-8 sm:px-3 sm:text-xs"
-                          >
-                            <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                            <span className="hidden sm:inline ml-1">Delete</span>
-                          </Button>
-                        </div>
-                      </div>
                     </button>
                   );
                 })}
 
                 <button
                   onClick={() => setShowAddForm(true)}
-                  className="grid min-h-[280px] sm:min-h-[370px] place-items-center rounded-2xl border border-dashed border-[#cfdced] bg-[#f5f8fd] text-center text-[#90a4c2] transition hover:border-[#7abfe6] hover:text-[#4db5df]"
+                  className="grid min-h-[280px] sm:min-h-[370px] place-items-center rounded-xl border border-dashed border-[#cfdced] bg-[#f5f8fd] text-center text-[#90a4c2] transition hover:border-[#7abfe6] hover:text-[#4db5df]"
                 >
                   <div className="space-y-2">
                     <CirclePlus className="mx-auto h-6 w-6 sm:h-8 sm:w-8" />
@@ -341,7 +373,7 @@ export function MyGarageClient({ sidebar, content }: Props) {
               </div>
             </div>
 
-            <Card className="rounded-2xl border-[#dfe7f1] bg-white shadow-none">
+            <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
               <CardContent className="p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <span className="h-6 w-1 rounded-full bg-[#0f2244]" />
@@ -383,32 +415,40 @@ export function MyGarageClient({ sidebar, content }: Props) {
           ) : null}
         </div>
       </section>
+      </UserThemeShell>
 
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-3xl">
-          <DialogHeader className="border-b border-border/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-5">
-            <DialogTitle className="flex items-center gap-2 text-2xl font-display font-bold">
-              <CarFront className="h-5 w-5 text-primary" />
+        <DialogContent className="max-h-[92vh] overflow-y-auto rounded-2xl border border-[#d5e2f4] bg-[#f7fbff] p-0 shadow-[0_24px_56px_rgba(26,54,101,0.24)] sm:max-w-4xl [&>button]:right-5 [&>button]:top-5 [&>button]:rounded-full [&>button]:border [&>button]:border-[#d3dfef] [&>button]:bg-white [&>button]:p-1 [&>button]:text-[#60738f] [&>button]:opacity-100">
+          <DialogHeader className="border-b border-[#dce7f6] bg-[linear-gradient(180deg,#f9fcff_0%,#eef5ff_100%)] px-6 py-5 sm:px-7">
+            <DialogTitle className="flex items-center gap-3 text-[32px] font-semibold tracking-tight text-[#0f2244]">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#e6f0ff] text-[#2a7cea]">
+                <CarFront className="h-5 w-5" />
+              </span>
               {content.forms.addVehicleTitle}
             </DialogTitle>
+            <p className="pt-1 text-[13px] font-medium text-[#70839f]">
+              Enter vehicle details manually or paste RC text for quick auto-fill.
+            </p>
           </DialogHeader>
 
-          <div className="space-y-5 p-6">
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <div className="space-y-4 p-6 sm:p-7">
+            <div className="rounded-2xl border border-[#cfe1fb] bg-[linear-gradient(180deg,#f2f8ff_0%,#ecf4ff_100%)] p-4 sm:p-5">
               <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-foreground">{content.forms.rcInputLabel}</p>
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#4d6fa6]">
+                    {content.forms.rcInputLabel}
+                  </p>
                   <Input
                     value={rcText}
                     onChange={(e) => setRcText(e.target.value)}
                     placeholder={content.forms.rcInputPlaceholder}
-                    className="bg-background/90"
+                    className="h-11 rounded-xl border-[#bdd3f6] bg-white text-[14px] text-[#233c60] placeholder:text-[#9aa9bf] focus-visible:ring-2 focus-visible:ring-[#78adff]"
                   />
                 </div>
                 <div className="flex items-end">
                   <Button
                     variant="secondary"
-                    className="h-11 w-full md:w-auto"
+                    className="h-11 w-full rounded-xl border border-[#bcd3f7] bg-white px-5 text-[13px] font-semibold text-[#1f6fdf] hover:bg-[#edf4ff] md:w-auto"
                     onClick={handleApplyRcSuggestion}
                     disabled={processingRc || !rcText.trim()}
                   >
@@ -418,7 +458,12 @@ export function MyGarageClient({ sidebar, content }: Props) {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card p-4">
+            <div className="rounded-2xl border border-[#d5e2f4] bg-white p-4 sm:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3 border-b border-[#e8f0fb] pb-3">
+                <p className="text-[15px] font-semibold text-[#163153]">Vehicle Details</p>
+                <p className="text-[12px] font-medium text-[#7d8fa9]">Fields marked * are required</p>
+              </div>
+
               <div className="mb-3 grid gap-3 md:grid-cols-2">
                 <LabeledInput
                   id="make"
@@ -500,11 +545,19 @@ export function MyGarageClient({ sidebar, content }: Props) {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3 border-t border-border/40 pt-4">
-              <Button onClick={handleAddVehicle} disabled={submitting} className="h-11 min-w-36">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 flex flex-wrap gap-3 border-t border-[#dce8f8] bg-[#f7fbff] px-6 py-4 sm:-mx-7 sm:-mb-7 sm:px-7">
+              <Button
+                onClick={handleAddVehicle}
+                disabled={submitting}
+                className="h-11 min-w-36 rounded-xl bg-[#1677f2] px-5 text-[13px] font-semibold text-white hover:bg-[#0f66d7]"
+              >
                 {submitting ? `${content.forms.saveVehicleLabel}...` : content.forms.saveVehicleLabel}
               </Button>
-              <Button variant="secondary" onClick={() => setShowAddForm(false)} className="h-11 min-w-28">
+              <Button
+                variant="secondary"
+                onClick={() => setShowAddForm(false)}
+                className="h-11 min-w-28 rounded-xl border border-[#d3dfef] bg-white px-5 text-[13px] font-semibold text-[#365179] hover:bg-[#edf3fb]"
+              >
                 {content.forms.cancelLabel}
               </Button>
             </div>
@@ -513,7 +566,7 @@ export function MyGarageClient({ sidebar, content }: Props) {
       </Dialog>
 
       <Dialog open={Boolean(vehicleToDelete)} onOpenChange={(open) => !open && setVehicleToDelete(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_16px_40px_rgba(33,61,105,0.18)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Vehicle</DialogTitle>
           </DialogHeader>
@@ -554,7 +607,7 @@ export function MyGarageClient({ sidebar, content }: Props) {
       </Dialog>
 
       <Dialog open={Boolean(vehicleToSetDefault)} onOpenChange={(open) => !open && setVehicleToSetDefault(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_16px_40px_rgba(33,61,105,0.18)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Set Default Vehicle</DialogTitle>
           </DialogHeader>
@@ -594,7 +647,7 @@ export function MyGarageClient({ sidebar, content }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
 
@@ -621,7 +674,12 @@ function LabeledInput({
   const displayLabel = safeLabel.replace(/\s*\*\s*$/, '');
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className={error ? 'text-destructive' : ''}>
+      <Label
+        htmlFor={id}
+        className={`text-[12px] font-semibold uppercase tracking-[0.1em] ${
+          error ? 'text-destructive' : 'text-[#5d708f]'
+        }`}
+      >
         {displayLabel} {required ? <span className="text-destructive">*</span> : null}
       </Label>
       <Input
@@ -630,7 +688,11 @@ function LabeledInput({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className={error ? 'border-destructive focus-visible:ring-destructive' : ''}
+        className={`h-11 rounded-xl border bg-[#fbfdff] text-[14px] text-[#263f61] placeholder:text-[#9baabc] focus-visible:ring-2 ${
+          error
+            ? 'border-destructive focus-visible:ring-destructive'
+            : 'border-[#d5e1f0] focus-visible:ring-[#78adff]'
+        }`}
       />
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

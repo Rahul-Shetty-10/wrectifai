@@ -38,29 +38,28 @@ export function LogoutButton({
     setIsLoggingOut(true);
 
     let requestSucceeded = false;
-    try {
-      for (const endpoint of logoutEndpoints) {
-        try {
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            credentials: 'include',
-            cache: 'no-store',
-          });
-          if (response.ok) {
-            requestSucceeded = true;
-            break;
-          }
-        } catch {
-          // Try the next endpoint when network/proxy differs between environments.
+    for (const endpoint of logoutEndpoints) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        if (response.ok) {
+          requestSucceeded = true;
+          break;
         }
+      } catch {
+        // Try the next endpoint when network/proxy differs between environments.
       }
-    } finally {
-      if (requestSucceeded) {
-        window.location.href = '/auth/login';
-        return;
-      }
-      setIsLoggingOut(false);
     }
+
+    if (requestSucceeded) {
+      window.location.href = '/auth/login';
+      return;
+    }
+
+    setIsLoggingOut(false);
   }
 
   return (

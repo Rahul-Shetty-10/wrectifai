@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -55,32 +53,30 @@ export function SparePartsClient({ sidebar, content }: Props) {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="spare-parts" content={sidebar} />
-      <div className="hidden lg:block">
-        <UserSidebar activeItem="spare-parts" content={sidebar} />
-      </div>
-      <section className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-7xl p-6">
-          <UserTopLogoHeader sidebar={sidebar} />
+    <UserThemeShell activeItem="spare-parts" sidebar={sidebar}>
+      <section className="overflow-y-auto">
+        <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="h-5 w-1 rounded-full bg-[#4ec2ed] sm:h-6" />
+            <h1 className="text-[23px] font-semibold tracking-tight text-[#0f2244]">{content.catalogTitle}</h1>
+          </div>
           {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
-          <Card className="mb-6">
+          <Card className="mb-6 rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
             <CardHeader>
-              <CardTitle>{content.catalogTitle}</CardTitle>
+              <CardTitle className="text-[17px] font-medium text-slate-900">{content.catalogTitle}</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? <p className="text-sm text-muted-foreground">{content.loadingPartsLabel}</p> : null}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 {parts.map((part) => (
-                  <div key={part.id} className="rounded-lg border border-border p-4">
-                    <p className="font-medium">{part.name}</p>
-                    <p className="text-xs text-muted-foreground">{part.category}</p>
-                    <p className="mt-2 text-lg font-semibold">${part.price.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">{part.supplier}</p>
+                  <div key={part.id} className="rounded-xl border border-[#d9e2ef] bg-[#f9fbff] p-4">
+                    <p className="text-[16px] font-medium text-slate-900">{part.name}</p>
+                    <p className="text-xs text-slate-500">{part.category}</p>
+                    <p className="mt-2 text-xl font-semibold text-slate-900">${part.price.toFixed(2)}</p>
+                    <p className="text-xs text-slate-500">{part.supplier}</p>
                     <Button
-                      className="mt-3 w-full"
+                      className="mt-3 h-9 w-full rounded-xl bg-[#1976f2] text-[13px] font-medium text-white hover:bg-[#0d62d4]"
                       disabled={!part.inStock || orderingPartId === part.id}
                       onClick={() => onOrder(part.id)}
                     >
@@ -96,16 +92,16 @@ export function SparePartsClient({ sidebar, content }: Props) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
             <CardHeader>
-              <CardTitle>{content.myOrdersTitle}</CardTitle>
+              <CardTitle className="text-[17px] font-medium text-slate-900">{content.myOrdersTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {orders.length === 0 ? <p className="text-sm text-muted-foreground">{content.noOrdersLabel}</p> : null}
               {orders.map((order) => (
-                <div key={order.id} className="rounded-lg border border-border p-3">
+                <div key={order.id} className="rounded-xl border border-[#d9e2ef] bg-[#f9fbff] p-3">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium">{order.partName}</p>
+                    <p className="text-[14px] font-medium text-slate-900">{order.partName}</p>
                     <p className="text-xs uppercase text-muted-foreground">{order.status}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -117,6 +113,6 @@ export function SparePartsClient({ sidebar, content }: Props) {
           </Card>
         </div>
       </section>
-    </div>
+    </UserThemeShell>
   );
 }

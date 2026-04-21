@@ -33,12 +33,12 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Dashboard')}</h1>
+          <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Dashboard')}</h1>
           <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Overview of your garage performance')}</p>
         </div>
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+            <Card key={i} className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
               <CardHeader className="border-b border-[#e6ebf2] pb-4">
                 <div className="h-6 w-32 bg-slate-200 animate-pulse rounded" />
               </CardHeader>
@@ -55,7 +55,7 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
   return (
     <div className="space-y-6">
       {isApproved === false && (
-        <Card className="rounded-2xl border-amber-200 bg-amber-50 shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-amber-200 bg-amber-50 shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardContent className="flex items-start gap-4 p-4 sm:p-6">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
               <Clock className="h-6 w-6" />
@@ -71,7 +71,7 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
       )}
 
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Dashboard')}</h1>
+        <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Dashboard')}</h1>
         <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Overview of your garage performance')}</p>
       </div>
 
@@ -79,7 +79,7 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
       <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Card
           onClick={() => isApproved && router.push('/garage/bookings')}
-          className={`rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl transition-colors ${
+          className={`rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]  transition-colors ${
             isApproved ? 'cursor-pointer hover:border-[#2456f5]' : 'cursor-not-allowed opacity-60'
           }`}
         >
@@ -104,7 +104,7 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
 
         <Card
           onClick={() => isApproved && router.push('/garage/orders')}
-          className={`rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl transition-colors ${
+          className={`rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]  transition-colors ${
             isApproved ? 'cursor-pointer hover:border-[#2456f5]' : 'cursor-not-allowed opacity-60'
           }`}
         >
@@ -127,7 +127,7 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-slate-500">{t('revenueLabel', 'Revenue')}</CardTitle>
@@ -147,7 +147,7 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-slate-500">{t('ratingLabel', 'Rating')}</CardTitle>
@@ -166,7 +166,7 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
       </div>
 
       {/* Quick Actions */}
-      <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">{t('quickActionsTitle', 'Quick Actions')}</CardTitle>
         </CardHeader>
@@ -219,7 +219,7 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
       </Card>
 
       {/* Recent Activity */}
-      <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">{t('recentActivityTitle', 'Recent Activity')}</CardTitle>
         </CardHeader>
@@ -249,3 +249,4 @@ export function DashboardClient({ content }: { content: DynamicPageContent }) {
     </div>
   );
 }
+

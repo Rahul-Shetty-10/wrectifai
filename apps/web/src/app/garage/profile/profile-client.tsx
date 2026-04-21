@@ -53,11 +53,11 @@ export function ProfileClient({ content }: { content: DynamicPageContent }) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Profile')}</h1>
+          <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Profile')}</h1>
           <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your garage profile and information')}</p>
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+          <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
             <CardHeader>
               <div className="h-6 w-32 bg-slate-200 animate-pulse rounded" />
             </CardHeader>
@@ -65,7 +65,7 @@ export function ProfileClient({ content }: { content: DynamicPageContent }) {
               <div className="h-32 w-32 bg-slate-200 animate-pulse rounded-full" />
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl lg:col-span-2">
+          <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)]  lg:col-span-2">
             <CardHeader>
               <div className="h-6 w-32 bg-slate-200 animate-pulse rounded" />
             </CardHeader>
@@ -88,8 +88,8 @@ export function ProfileClient({ content }: { content: DynamicPageContent }) {
         <Card
           className={
             toast.type === 'success'
-              ? 'rounded-2xl border-emerald-200 bg-emerald-50 shadow-none sm:rounded-3xl'
-              : 'rounded-2xl border-red-200 bg-red-50 shadow-none sm:rounded-3xl'
+              ? 'rounded-xl border-emerald-200 bg-emerald-50 shadow-[0_6px_16px_rgba(94,126,179,0.10)] '
+              : 'rounded-xl border-red-200 bg-red-50 shadow-[0_6px_16px_rgba(94,126,179,0.10)] '
           }
         >
           <CardContent className="p-4 sm:p-5">
@@ -107,7 +107,7 @@ export function ProfileClient({ content }: { content: DynamicPageContent }) {
       ) : null}
 
       {formData?.isApproved === false && (
-        <Card className="rounded-2xl border-amber-200 bg-amber-50 shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-amber-200 bg-amber-50 shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardContent className="flex items-start gap-4 p-4 sm:p-6">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
               <AlertCircle className="h-6 w-6" />
@@ -123,13 +123,13 @@ export function ProfileClient({ content }: { content: DynamicPageContent }) {
       )}
 
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Profile')}</h1>
+        <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Profile')}</h1>
         <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage your garage profile and information')}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Profile Picture Section */}
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl lg:col-span-1">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)]  lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-slate-900">{t('garageLogoTitle', 'Garage Logo')}</CardTitle>
           </CardHeader>
@@ -147,7 +147,7 @@ export function ProfileClient({ content }: { content: DynamicPageContent }) {
         </Card>
 
         {/* Profile Information */}
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl lg:col-span-2">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)]  lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-slate-900">{t('garageInfoTitle', 'Garage Information')}</CardTitle>
           </CardHeader>
@@ -221,3 +221,4 @@ export function ProfileClient({ content }: { content: DynamicPageContent }) {
     </div>
   );
 }
+

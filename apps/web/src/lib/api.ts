@@ -1805,10 +1805,12 @@ export type IssueDetail = {
 };
 
 export async function fetchIssueDetail(issueId: string): Promise<IssueDetail> {
-  const response = await fetch(`${API_BASE_URL}/marketplace/issues/${encodeURIComponent(issueId)}`, {
-    credentials: 'include',
-    cache: 'no-store',
-  });
+  const response = await withSessionRefreshRetry(() =>
+    fetch(`${API_BASE_URL}/marketplace/issues/${encodeURIComponent(issueId)}`, {
+      credentials: 'include',
+      cache: 'no-store',
+    })
+  );
   const data = (await response.json()) as { message?: string; issue?: IssueDetail };
   if (!response.ok) throw new Error(data.message ?? 'Failed to load issue details');
   if (!data.issue) throw new Error('Issue details were not returned');
@@ -1829,16 +1831,34 @@ export async function raiseIssueToGarage(issueId: string): Promise<{ message?: s
 }
 
 export async function fetchIssueQuotes(issueId: string): Promise<MockQuote[]> {
-  const response = await fetch(`${API_BASE_URL}/marketplace/issues/${encodeURIComponent(issueId)}/quotes`, {
-    credentials: 'include',
-    cache: 'no-store',
-  });
+  const response = await withSessionRefreshRetry(() =>
+    fetch(`${API_BASE_URL}/marketplace/issues/${encodeURIComponent(issueId)}/quotes`, {
+      credentials: 'include',
+      cache: 'no-store',
+    })
+  );
   const data = (await response.json()) as {
     message?: string;
     quotes?: MockQuote[];
   };
   if (!response.ok) throw new Error(data.message ?? 'Failed to load quotes');
   return data.quotes ?? [];
+}
+
+async function forceClientLogoutOnAuthExpiry() {
+  if (typeof window === 'undefined') return;
+
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+    });
+  } catch {
+    // Ignore and proceed with hard redirect to clear client state.
+  }
+
+  window.location.replace('/auth/login');
 }
 
 async function withSessionRefreshRetry(
@@ -1852,9 +1872,15 @@ async function withSessionRefreshRetry(
     credentials: 'include',
     cache: 'no-store',
   });
-  if (!refreshResponse.ok) return response;
+  if (!refreshResponse.ok) {
+    await forceClientLogoutOnAuthExpiry();
+    return response;
+  }
 
   response = await request();
+  if (response.status === 401) {
+    await forceClientLogoutOnAuthExpiry();
+  }
   return response;
 }
 
@@ -2982,10 +3008,12 @@ export type IssueRequestWithQuotes = {
 };
 
 export async function fetchIssueRequestsWithQuotes(): Promise<IssueRequestWithQuotes[]> {
-  const response = await fetch(`${API_BASE_URL}/users/issue-requests-with-quotes`, {
-    credentials: 'include',
-    cache: 'no-store',
-  });
+  const response = await withSessionRefreshRetry(() =>
+    fetch(`${API_BASE_URL}/users/issue-requests-with-quotes`, {
+      credentials: 'include',
+      cache: 'no-store',
+    })
+  );
   const data = (await response.json()) as { message?: string; issue_requests?: IssueRequestWithQuotes[] };
   if (!response.ok) throw new Error(data.message ?? 'Failed to load issue requests with quotes');
   const issueRequests = data.issue_requests ?? [];

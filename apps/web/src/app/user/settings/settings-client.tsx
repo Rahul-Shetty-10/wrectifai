@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -57,18 +55,17 @@ export function SettingsClient({ sidebar, content }: Props) {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="settings" content={sidebar} />
-      <div className="hidden lg:block">
-        <UserSidebar activeItem="settings" content={sidebar} />
-      </div>
-      <section className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-7xl p-6">
-          <UserTopLogoHeader sidebar={sidebar} />
-          <Card>
+    <UserThemeShell activeItem="settings" sidebar={sidebar}>
+      <section className="overflow-y-auto">
+        <div className="mx-auto w-full max-w-4xl p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="h-5 w-1 rounded-full bg-[#4ec2ed] sm:h-6" />
+            <h1 className="text-[23px] font-semibold tracking-tight text-[#0f2244]">{content.title}</h1>
+          </div>
+
+          <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
             <CardHeader>
-              <CardTitle>{content.title}</CardTitle>
+              <CardTitle className="text-[17px] font-medium text-slate-900">{content.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {loading ? <p className="text-sm text-muted-foreground">{content.loadingLabel}</p> : null}
@@ -108,7 +105,7 @@ export function SettingsClient({ sidebar, content }: Props) {
                       preferredCheckinMode: e.target.value as 'self_checkin' | 'home_pickup',
                     }))
                   }
-                  className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+                  className="h-10 rounded-xl border border-[#d9e2ef] bg-white px-3 text-sm text-slate-700"
                 >
                   <option value="self_checkin">{content.selfCheckinLabel}</option>
                   <option value="home_pickup">{content.homePickupLabel}</option>
@@ -116,13 +113,13 @@ export function SettingsClient({ sidebar, content }: Props) {
               </div>
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
               {message ? <p className="text-sm text-primary">{message}</p> : null}
-              <Button onClick={onSave} disabled={saving || loading}>
+              <Button className="h-9 rounded-xl bg-[#1976f2] px-4 text-[13px] font-medium text-white hover:bg-[#0d62d4]" onClick={onSave} disabled={saving || loading}>
                 {saving ? content.savingLabel : content.saveButtonLabel}
               </Button>
             </CardContent>
           </Card>
         </div>
       </section>
-    </div>
+    </UserThemeShell>
   );
 }

@@ -144,7 +144,7 @@ export function IssueDetailsClient({ issueId }: Props) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-none">
+        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
           <CardContent className="p-5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7f95b4]">Customer</p>
             <div className="mt-3 space-y-2">
@@ -161,7 +161,7 @@ export function IssueDetailsClient({ issueId }: Props) {
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-none">
+        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
           <CardContent className="p-5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7f95b4]">Vehicle</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -186,7 +186,7 @@ export function IssueDetailsClient({ issueId }: Props) {
         </Card>
       </div>
 
-      <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-none">
+      <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
         <CardContent className="p-5 sm:p-6">
           <h3 className="text-xl font-bold text-slate-900">Issue Breakdown</h3>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -211,7 +211,7 @@ export function IssueDetailsClient({ issueId }: Props) {
       </Card>
 
       {parsedSymptoms.length > 0 ? (
-        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-none">
+        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
           <CardContent className="p-5 sm:p-6">
             <h3 className="text-lg font-semibold text-slate-900">Symptoms</h3>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -232,7 +232,7 @@ export function IssueDetailsClient({ issueId }: Props) {
       ) : null}
 
       {answerEntries.length > 0 ? (
-        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-none">
+        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
           <CardContent className="p-5 sm:p-6">
             <h3 className="text-lg font-semibold text-slate-900">Answers Provided</h3>
             <div className="mt-2 overflow-hidden rounded-xl border border-[#e2e8f3]">
@@ -252,7 +252,7 @@ export function IssueDetailsClient({ issueId }: Props) {
         </Card>
       ) : null}
 
-      <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-none">
+      <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
         <CardContent className="p-5 sm:p-6">
           <h3 className="text-lg font-semibold text-slate-900">Submit Quote</h3>
           <p className="mt-1 text-sm text-slate-500">Send your estimate for this issue request.</p>
@@ -305,7 +305,7 @@ export function IssueDetailsClient({ issueId }: Props) {
       </Card>
 
       {details.quotes.length > 0 ? (
-        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-none">
+        <Card className="rounded-3xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
           <CardContent className="p-5 sm:p-6">
             <h3 className="text-lg font-semibold text-slate-900">Quote History</h3>
             <div className="mt-3 space-y-2">

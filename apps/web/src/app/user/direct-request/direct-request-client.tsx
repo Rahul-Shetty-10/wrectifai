@@ -6,9 +6,8 @@ import type { UserServiceIntakeContent, UserSidebarContent } from '@/lib/api';
 type Props = {
   sidebar: UserSidebarContent;
   content: UserServiceIntakeContent;
-  appLogoUrl?: string;
 };
 
-export function DirectRequestClient({ sidebar, content, appLogoUrl }: Props) {
-  return <ServiceIntakeFlow mode="direct" sidebar={sidebar} content={content} appLogoUrl={appLogoUrl} />;
+export function DirectRequestClient({ sidebar, content }: Props) {
+  return <ServiceIntakeFlow mode="direct" sidebar={sidebar} content={content} />;
 }

@@ -2,16 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type React from 'react';
-import { useRouter } from 'next/navigation';
-import { CalendarClock, Car, ClipboardList, MapPin, Phone, Sparkles, Upload, Wrench } from 'lucide-react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { CalendarClock, Car, ClipboardList, MapPin, Phone, Sparkles, Upload, Wrench, X } from 'lucide-react';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import {
   fetchUserProfile,
   fetchUserVehicles,
@@ -216,15 +215,13 @@ export function ServiceIntakeFlow({
   mode,
   sidebar,
   content,
-  appLogoUrl,
 }: {
   mode: IntakeMode;
   sidebar: UserSidebarContent;
   content: UserServiceIntakeContent;
-  appLogoUrl?: string;
 }) {
   const router = useRouter();
-  const headerSidebar = { ...sidebar, logoUrl: appLogoUrl || sidebar.logoUrl };
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -283,6 +280,13 @@ export function ServiceIntakeFlow({
     if (parsed.getTime() < Date.now()) return content.errors.pastTime;
     return null;
   }, [content.errors.invalidDateTime, content.errors.pastTime, preferredAt, scheduleMode]);
+
+  useEffect(() => {
+    const issueFromQuery = searchParams.get('issue');
+    if (issueFromQuery && issueFromQuery.trim()) {
+      setProblem(issueFromQuery.trim());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let active = true;
@@ -530,20 +534,24 @@ export function ServiceIntakeFlow({
     if (!selected) return 'Not selected';
     return `${selected.year} ${selected.make} ${selected.model}`;
   }, [manualVehicle, selectedVehicleId, useManualVehicle, vehicles]);
+  const requiredQuestions = useMemo(
+    () => dynamicQuestions.filter((question) => question.required),
+    [dynamicQuestions]
+  );
+  const answeredRequiredQuestions = useMemo(
+    () =>
+      requiredQuestions.filter((question) => {
+        const value = questionAnswers[question.id];
+        return typeof value === 'string' && value.trim().length > 0;
+      }).length,
+    [questionAnswers, requiredQuestions]
+  );
 
   return (
-    <div className="flex h-screen bg-[#eef2f7]">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="ai-diagnosis" content={sidebar} />
-      <div className="hidden lg:block">
-        <UserSidebar activeItem="ai-diagnosis" content={sidebar} />
-      </div>
-
-      <section className="flex-1 overflow-y-auto">
+    <UserThemeShell activeItem="ai-diagnosis" sidebar={sidebar}>
+      <section className="overflow-y-auto">
         <div className="mx-auto max-w-7xl p-4 sm:p-6 md:p-8">
-          <UserTopLogoHeader sidebar={headerSidebar} />
-
-          <Card className="mt-3 sm:mt-4 overflow-hidden rounded-2xl border-[#dbe4f1] bg-white shadow-none sm:rounded-3xl">
+          <Card className="mt-3 overflow-hidden rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
             <CardHeader className="border-b border-[#e7edf5] bg-[linear-gradient(135deg,#f8fbff_0%,#f3f8ff_100%)] p-4 sm:p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -607,27 +615,63 @@ export function ServiceIntakeFlow({
           </Card>
 
           <Dialog open={questionPopupOpen} onOpenChange={setQuestionPopupOpen}>
-            <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto rounded-2xl border-[#dbe4f1] p-4 sm:p-6">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
-                  <Sparkles className="h-4 w-4 text-[#2f6ac6] sm:h-5 sm:w-5" />
-                  {content.labels.smartQuestionsTitle}
-                </DialogTitle>
-                <p className="text-xs text-slate-500 sm:text-sm">
-                  {content.labels.smartQuestionsSubtitle}
-                </p>
+            <DialogContent className="max-h-[92vh] max-w-[1100px] overflow-y-auto rounded-xl border-[#d9e2ef] bg-white p-0 shadow-[0_20px_52px_rgba(33,61,105,0.24)]">
+              <DialogHeader className="sticky top-0 z-20 border-b border-[#e5edf8] bg-white/95 px-4 py-4 backdrop-blur-sm sm:px-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <DialogTitle className="flex items-center gap-2 text-[23px] font-semibold text-slate-900">
+                      <Sparkles className="h-4 w-4 text-[#2f6ac6] sm:h-5 sm:w-5" />
+                      {content.labels.smartQuestionsTitle}
+                    </DialogTitle>
+                    <p className="text-[13px] text-slate-500">
+                      {content.labels.smartQuestionsSubtitle}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                    onClick={() => setQuestionPopupOpen(false)}
+                    aria-label="Close smart intake questions popup"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </DialogHeader>
+              <div className="space-y-6 px-4 py-4 sm:px-6 sm:py-5">
+                {requiredQuestions.length > 0 ? (
+                  <div className="rounded-xl border border-[#dce7f6] bg-[#f7fbff] p-3">
+                    <div className="mb-2 flex items-center justify-between text-[13px]">
+                      <p className="font-medium text-slate-700">Required Questions Progress</p>
+                      <p className="font-semibold text-[#2456f5]">
+                        {answeredRequiredQuestions}/{requiredQuestions.length}
+                      </p>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-[#e8effa]">
+                      <div
+                        className="h-full rounded-full bg-[linear-gradient(90deg,#2a82f6_0%,#57a5ff_100%)] transition-all duration-300"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.round((answeredRequiredQuestions / requiredQuestions.length) * 100)
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
 
               {dynamicQuestions.length > 0 ? (
                 <SectionCard icon={ClipboardList} title={content.sections.questionsTitle} subtitle={content.sections.questionsSubtitle}>
                   <div className="grid gap-3 md:grid-cols-2">
                     {dynamicQuestions.map((question) => (
-                      <div key={question.id} className="rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3">
+                      <div key={question.id} className="rounded-xl border border-[#dbe5f3] bg-white p-3 shadow-[0_4px_12px_rgba(94,126,179,0.08)]">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold text-slate-900">
+                          <p className="text-[16px] font-medium text-slate-900">
                             {question.label} {question.required ? <span className="text-red-500">*</span> : null}
                           </p>
-                          <Badge variant="outline" className="border-[#d3deef] bg-white text-[10px] uppercase text-[#45628b]">
+                          <Badge variant="outline" className="border-[#d3deef] bg-[#f7fbff] text-[10px] font-medium uppercase text-[#45628b]">
                             {question.category}
                           </Badge>
                         </div>
@@ -838,11 +882,12 @@ export function ServiceIntakeFlow({
                   </Button>
                 </div>
               </div>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
       </section>
-    </div>
+    </UserThemeShell>
   );
 }
 
@@ -858,13 +903,13 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-[#dbe5f3] bg-[linear-gradient(180deg,#fcfdff_0%,#f9fbff_100%)] p-4">
+    <div className="rounded-xl border border-[#dbe5f3] bg-[linear-gradient(180deg,#fcfdff_0%,#f7fbff_100%)] p-4 shadow-[0_4px_12px_rgba(94,126,179,0.08)]">
       <div className="mb-3 flex items-start gap-3">
         <div className="rounded-xl bg-[#e9f2ff] p-2 text-[#2f6ac6]">
           <Icon className="h-4 w-4" />
         </div>
         <div>
-          <p className="text-base font-semibold text-slate-900">{title}</p>
+          <p className="text-[18px] font-medium text-slate-900">{title}</p>
           {subtitle ? <p className="text-xs text-slate-500">{subtitle}</p> : null}
         </div>
       </div>
@@ -888,8 +933,13 @@ function OptionChips({
         <Button
           key={item.value}
           type="button"
-          variant={value === item.value ? 'default' : 'outline'}
-          className="h-9 rounded-lg"
+          variant="outline"
+          className={cn(
+            'h-9 rounded-xl border px-3 text-[13px] font-medium transition-all',
+            value === item.value
+              ? 'border-[#7bb4ff] bg-[#1d7ff2] text-white hover:bg-[#146ad4] hover:text-white'
+              : 'border-[#d6e1f1] bg-[#f7faff] text-slate-700 hover:bg-white'
+          )}
           onClick={() => onPick(item.value)}
         >
           {item.label}
@@ -916,8 +966,13 @@ function MultiOptionChips({
           <Button
             key={item.value}
             type="button"
-            variant={selected ? 'default' : 'outline'}
-            className="h-9 rounded-lg"
+            variant="outline"
+            className={cn(
+              'h-9 rounded-xl border px-3 text-[13px] font-medium transition-all',
+              selected
+                ? 'border-[#7bb4ff] bg-[#1d7ff2] text-white hover:bg-[#146ad4] hover:text-white'
+                : 'border-[#d6e1f1] bg-[#f7faff] text-slate-700 hover:bg-white'
+            )}
             onClick={() => onToggle(item.value)}
           >
             {item.label}

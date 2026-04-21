@@ -42,12 +42,26 @@ export function UsersClient({ content }: { content: DynamicPageContent }) {
     loadUsers();
   }, []);
 
+  function normalizeRole(role: string) {
+    const value = role.trim().toLowerCase();
+    if (value === 'customer' || value === 'user') return 'customer';
+    if (value === 'garage') return 'garage';
+    if (value === 'vendor') return 'vendor';
+    if (value === 'admin') return 'admin';
+    return value;
+  }
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch = searchQuery === '' || 
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role.toLowerCase() === roleFilter.toLowerCase();
+    const normalizedRole = normalizeRole(user.role);
+    const matchesRole =
+      roleFilter === 'all' ||
+      (roleFilter === 'Customer' && normalizedRole === 'customer') ||
+      (roleFilter === 'Garage' && normalizedRole === 'garage') ||
+      (roleFilter === 'Vendor' && normalizedRole === 'vendor');
     return matchesSearch && matchesRole;
   });
 
@@ -86,12 +100,12 @@ export function UsersClient({ content }: { content: DynamicPageContent }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Users')}</h1>
+        <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Users')}</h1>
         <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Manage all platform users')}</p>
       </div>
 
       {/* Search and Filter */}
-      <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
@@ -152,14 +166,14 @@ export function UsersClient({ content }: { content: DynamicPageContent }) {
       {/* User Cards Grid */}
       <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {currentUsers.map((user) => (
-          <Card key={user.id} className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+          <Card key={user.id} className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
             <CardHeader className="border-b border-[#e6ebf2] pb-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f3f8ff] text-[#2456f5] sm:h-14 sm:w-14">
-                    {user.role === 'Customer' && <User className="h-6 w-6 sm:h-7 sm:w-7" />}
-                    {user.role === 'Garage' && <Building2 className="h-6 w-6 sm:h-7 sm:w-7" />}
-                    {user.role === 'Vendor' && <Package className="h-6 w-6 sm:h-7 sm:w-7" />}
+                    {normalizeRole(user.role) === 'customer' && <User className="h-6 w-6 sm:h-7 sm:w-7" />}
+                    {normalizeRole(user.role) === 'garage' && <Building2 className="h-6 w-6 sm:h-7 sm:w-7" />}
+                    {normalizeRole(user.role) === 'vendor' && <Package className="h-6 w-6 sm:h-7 sm:w-7" />}
                   </div>
                   <div>
                     <CardTitle className="text-base font-semibold text-slate-900 sm:text-lg">{user.name}</CardTitle>
@@ -268,7 +282,7 @@ export function UsersClient({ content }: { content: DynamicPageContent }) {
 
       {/* User Details Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto rounded-xl border-[#d9e2ef] bg-white shadow-[0_16px_40px_rgba(33,61,105,0.18)]">
           <DialogHeader>
             <DialogTitle className="text-2xl">{t('userDetailsTitle', 'User Details')}</DialogTitle>
             <DialogDescription>{t('userDetailsDescription', 'View complete user information')}</DialogDescription>
@@ -416,3 +430,4 @@ export function UsersClient({ content }: { content: DynamicPageContent }) {
     </div>
   );
 }
+

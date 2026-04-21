@@ -15,9 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -284,17 +282,9 @@ export function QuotesBookingsClient({ sidebar, content: _initialContent }: Prop
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="quotes-bookings" content={sidebar} />
-      <div className="hidden lg:block">
-        <UserSidebar activeItem="quotes-bookings" content={sidebar} />
-      </div>
-
-      <section className="flex-1 overflow-y-auto bg-[#f1f3f8] text-sm">
+    <UserThemeShell activeItem="quotes-bookings" sidebar={sidebar}>
+      <section className="overflow-y-auto bg-[#f1f3f8] text-sm">
         <div className="mx-auto max-w-7xl p-6 md:p-8">
-          <UserTopLogoHeader sidebar={sidebar} />
-
           <div className="mt-6">
             <h1 className="text-xl font-bold text-slate-900">Service Quotes</h1>
             <p className="mt-1 text-xs text-slate-500">
@@ -480,7 +470,7 @@ export function QuotesBookingsClient({ sidebar, content: _initialContent }: Prop
               <div className="h-11 w-11 animate-spin rounded-full border-[3px] border-[#cfd8e8] border-t-[#2456f5]" />
             </div>
           ) : filteredRequests.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-[#d9e2ef] bg-white p-6 sm:p-8 text-center text-[#6c809e]">
+            <div className="mt-6 rounded-xl border border-[#d9e2ef] bg-white p-6 sm:p-8 text-center text-[#6c809e] shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
               No quote requests found.
             </div>
           ) : (
@@ -501,7 +491,7 @@ export function QuotesBookingsClient({ sidebar, content: _initialContent }: Prop
                 return (
                   <Card
                     key={issue.id}
-                    className="relative rounded-2xl border-[#d9e2ef] bg-white shadow-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(33,61,105,0.1)]"
+                    className="relative rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(33,61,105,0.1)]"
                   >
                     {pendingQuotesCount > 0 && (
                       <Badge className="absolute right-4 top-4 z-10 h-6 min-w-6 rounded-full bg-[#2456f5] px-2 text-xs font-bold text-white sm:right-5 sm:top-5">
@@ -598,7 +588,7 @@ export function QuotesBookingsClient({ sidebar, content: _initialContent }: Prop
       {/* Quotes Modal */}
       {showDetailsModal && detailsIssue && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+          <Card className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border-[#d9e2ef] bg-white shadow-[0_16px_40px_rgba(33,61,105,0.18)]">
             <CardHeader className="border-b border-[#e6ebf2] pb-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -691,6 +681,6 @@ export function QuotesBookingsClient({ sidebar, content: _initialContent }: Prop
           </Card>
         </div>
       )}
-    </div>
+    </UserThemeShell>
   );
 }

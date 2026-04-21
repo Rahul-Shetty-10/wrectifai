@@ -9,9 +9,7 @@ import {
   Search,
   Loader2,
 } from 'lucide-react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import type { UserSidebarContent, UserPaymentsContent, PaymentTransaction } from '@/lib/api';
 import { fetchPaymentSummary, fetchPaymentTransactions } from '@/lib/api';
 import { Input } from '@/components/ui/input';
@@ -65,29 +63,21 @@ export function PaymentsClient({
   );
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="payments" content={sidebar} />
-      <div className="hidden lg:block border-r border-slate-100 h-full">
-        <UserSidebar activeItem="payments" content={sidebar} />
-      </div>
-
-      <section className="flex-1 overflow-y-auto w-full relative bg-slate-50/50 h-full">
+    <UserThemeShell activeItem="payments" sidebar={sidebar}>
+      <section className="relative w-full overflow-y-auto bg-slate-50/50">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent -z-10 pointer-events-none" />
 
-        <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-10 min-h-full flex flex-col">
-          <UserTopLogoHeader sidebar={sidebar} />
-
+        <div className="mx-auto flex min-h-full max-w-7xl flex-col space-y-8 p-4 md:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
                 <WalletCards className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-2xl font-display font-black text-slate-900 tracking-tight leading-none md:text-3xl">
+                <h1 className="text-[23px] font-semibold text-slate-900 tracking-tight leading-none md:text-[24px]">
                   {content.header.title}
                 </h1>
-                <p className="text-sm font-medium text-slate-500 mt-2">{content.header.description}</p>
+                <p className="mt-2 text-[13px] font-medium text-slate-500">{content.header.description}</p>
               </div>
             </div>
           </div>
@@ -118,7 +108,7 @@ export function PaymentsClient({
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200/60 rounded-[1.5rem] overflow-hidden shadow-lg shadow-slate-200/50">
+              <div className="overflow-hidden rounded-xl border border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
@@ -177,7 +167,7 @@ export function PaymentsClient({
             </div>
 
             <div className="space-y-6 sm:space-y-8">
-              <Card className="rounded-[1.5rem] border border-slate-200/60 bg-gradient-to-br from-slate-900 to-slate-800 p-6 sm:p-8 shadow-xl shadow-slate-900/20 relative overflow-hidden">
+              <Card className="relative overflow-hidden rounded-xl border border-[#d9e2ef] bg-gradient-to-br from-slate-900 to-slate-800 p-6 shadow-[0_8px_20px_rgba(15,23,42,0.18)]">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full translate-x-12 -translate-y-12 blur-2xl" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-full -translate-x-8 translate-y-8 blur-2xl" />
                 <h3 className="text-xs font-bold uppercase text-white/40 tracking-[0.15em] mb-6 relative z-10">{content.methods.title}</h3>
@@ -191,7 +181,7 @@ export function PaymentsClient({
                     methodUsage.map(([method, count], idx) => (
                       <div
                         key={method}
-                        className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:scale-[1.02] ${
+                        className={`rounded-xl border p-4 transition-all duration-200 ${
                           idx === 0 
                             ? 'bg-white/10 border-white/20 backdrop-blur-sm' 
                             : 'bg-white/5 border-white/10 backdrop-blur-sm'
@@ -213,21 +203,21 @@ export function PaymentsClient({
           </div>
         </div>
       </section>
-    </div>
+    </UserThemeShell>
   );
 }
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
   return (
-    <Card className="rounded-[2rem] border border-slate-100 shadow-lg shadow-slate-200/60 p-6 sm:p-8 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] cursor-default bg-white relative overflow-hidden group">
+    <Card className="group relative cursor-default overflow-hidden rounded-xl border border-[#d9e2ef] bg-white p-5 shadow-[0_6px_16px_rgba(94,126,179,0.10)] transition-all duration-300 hover:shadow-[0_10px_24px_rgba(94,126,179,0.14)]">
       <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-slate-50 to-transparent rounded-full translate-x-8 -translate-y-8 opacity-50" />
-      <div className="flex items-center gap-4 mb-4 relative z-10">
-        <div className={`h-12 w-12 rounded-2xl ${color} text-white flex items-center justify-center shadow-lg shadow-black/10`}>
+      <div className="relative z-10 mb-4 flex items-center gap-4">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${color} text-white shadow-lg shadow-black/10`}>
           <Icon className="h-6 w-6" />
         </div>
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{label}</p>
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">{label}</p>
       </div>
-      <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight relative z-10">{value}</p>
+      <p className="relative z-10 text-[24px] font-semibold tracking-tight text-slate-900">{value}</p>
     </Card>
   );
 }

@@ -72,7 +72,11 @@
 
 body {
   @apply bg-background font-sans text-foreground;
-  background-image: radial-gradient(circle at top left, hsl(218 100% 99%) 0%, hsl(var(--background)) 52%);
+  background-image:
+    radial-gradient(circle at 8% -20%, hsl(210 100% 98%) 0%, transparent 52%),
+    radial-gradient(circle at 92% -10%, hsl(214 100% 97%) 0%, transparent 46%),
+    radial-gradient(circle at 50% 130%, hsl(219 100% 96%) 0%, transparent 52%);
+  background-attachment: fixed;
 }
 
 h1,
@@ -105,4 +109,29 @@ h6 {
 
 .ghost-border {
   border: 1px solid rgb(56 72 90 / 15%);
+}
+
+/* App-wide modern UI polish used by user/admin/garage surfaces */
+::selection {
+  background: rgb(51 125 235 / 24%);
+  color: hsl(var(--foreground));
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgb(236 243 253 / 90%);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid rgb(236 243 253 / 90%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgb(124 173 240), rgb(72 130 213));
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgb(104 161 238), rgb(58 118 202));
 }

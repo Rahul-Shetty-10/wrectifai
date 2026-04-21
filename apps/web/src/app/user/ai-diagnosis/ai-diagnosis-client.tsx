@@ -6,9 +6,8 @@ import type { UserServiceIntakeContent, UserSidebarContent } from '@/lib/api';
 type Props = {
   sidebar: UserSidebarContent;
   content: UserServiceIntakeContent;
-  appLogoUrl?: string;
 };
 
-export function AiDiagnosisClient({ sidebar, content, appLogoUrl }: Props) {
-  return <ServiceIntakeFlow mode="diagnosis" sidebar={sidebar} content={content} appLogoUrl={appLogoUrl} />;
+export function AiDiagnosisClient({ sidebar, content }: Props) {
+  return <ServiceIntakeFlow mode="diagnosis" sidebar={sidebar} content={content} />;
 }

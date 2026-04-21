@@ -15,6 +15,20 @@ export function SessionGuard({ requiredRole }: SessionGuardProps) {
   useEffect(() => {
     let active = true;
 
+    async function redirectToLoginAfterLogout() {
+      try {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          credentials: 'include',
+          cache: 'no-store',
+        });
+      } catch {
+        // Ignore logout API failures and force local redirect.
+      } finally {
+        router.replace('/auth/login');
+      }
+    }
+
     async function verifySession() {
       try {
         const me = async () =>
@@ -33,14 +47,14 @@ export function SessionGuard({ requiredRole }: SessionGuardProps) {
             cache: 'no-store',
           });
           if (!refreshResponse.ok) {
-            router.replace('/auth/login');
+            await redirectToLoginAfterLogout();
             return;
           }
           response = await me();
         }
 
         if (!response.ok) {
-          router.replace('/auth/login');
+          await redirectToLoginAfterLogout();
           return;
         }
 
@@ -54,7 +68,7 @@ export function SessionGuard({ requiredRole }: SessionGuardProps) {
         const garageApproved = data.user?.garageApproved;
 
         if (!role) {
-          router.replace('/auth/login');
+          await redirectToLoginAfterLogout();
           return;
         }
 
@@ -75,7 +89,7 @@ export function SessionGuard({ requiredRole }: SessionGuardProps) {
           router.refresh();
         }
       } catch {
-        router.replace('/auth/login');
+        await redirectToLoginAfterLogout();
       }
     }
 

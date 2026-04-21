@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -114,16 +112,9 @@ export function ProfileClient({ sidebar }: Props) {
   }
 
   return (
-    <div className="flex h-screen bg-[#f2f5fa]">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="profile" content={sidebar} />
-      <div className="hidden lg:block">
-        <UserSidebar activeItem="profile" content={sidebar} />
-      </div>
-      <section className="flex-1 overflow-y-auto bg-[#f8fafe]">
+    <UserThemeShell activeItem="profile" sidebar={sidebar}>
+      <section className="w-full overflow-y-auto bg-[#f8fafe]">
         <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-          <UserTopLogoHeader sidebar={sidebar} />
-
           <div className="mb-3 sm:mb-4 flex items-center gap-2">
             <span className="h-5 w-1 rounded-full bg-[#4ec2ed] sm:h-6" />
             <h1 className="text-2xl font-semibold tracking-tight text-[#0f2244] sm:text-3xl">My Profile</h1>
@@ -134,7 +125,7 @@ export function ProfileClient({ sidebar }: Props) {
           ) : (
             <form className="space-y-3 sm:space-y-4" onSubmit={onSubmit}>
               {/* Profile Header Card */}
-              <Card className="rounded-2xl border-[#dfe7f1] bg-white shadow-none sm:rounded-3xl">
+              <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
                 <CardContent className="p-4 sm:p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
                     <div className="relative group">
@@ -177,7 +168,7 @@ export function ProfileClient({ sidebar }: Props) {
 
               <div className="space-y-3 sm:space-y-4">
                 {/* Personal Information */}
-                <Card className="rounded-2xl border-[#dfe7f1] bg-white shadow-none sm:rounded-3xl">
+                <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
                   <CardHeader className="border-b border-[#e6ebf2] pb-2 sm:pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[#0f2244] sm:text-xl">
                       <User className="h-4 w-4 text-[#0989d8] sm:h-5 sm:w-5" />
@@ -255,7 +246,7 @@ export function ProfileClient({ sidebar }: Props) {
                 </Card>
 
                 {/* Address Information */}
-                <Card className="rounded-2xl border-[#dfe7f1] bg-white shadow-none sm:rounded-3xl">
+                <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
                   <CardHeader className="border-b border-[#e6ebf2] pb-2 sm:pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[#0f2244] sm:text-xl">
                       <MapPin className="h-4 w-4 text-[#0989d8] sm:h-5 sm:w-5" />
@@ -321,6 +312,6 @@ export function ProfileClient({ sidebar }: Props) {
           )}
         </div>
       </section>
-    </div>
+    </UserThemeShell>
   );
 }

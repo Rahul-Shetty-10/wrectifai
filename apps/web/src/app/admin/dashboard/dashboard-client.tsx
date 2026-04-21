@@ -10,13 +10,13 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('title', 'Dashboard')}</h1>
+        <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">{t('title', 'Dashboard')}</h1>
         <p className="mt-2 text-sm text-slate-500 sm:text-base">{t('description', 'Platform analytics and metrics overview')}</p>
       </div>
 
       {/* Key Metrics Cards */}
       <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -31,7 +31,7 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -46,7 +46,7 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -61,7 +61,7 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -79,7 +79,7 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
 
       {/* Charts Section */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <CardTitle className="text-lg font-semibold text-slate-900 sm:text-xl">User Growth</CardTitle>
           </CardHeader>
@@ -90,7 +90,7 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <CardTitle className="text-lg font-semibold text-slate-900 sm:text-xl">Popular Repairs</CardTitle>
           </CardHeader>
@@ -122,7 +122,7 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
 
       {/* Shop Performance & Active Customers */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <CardTitle className="text-lg font-semibold text-slate-900 sm:text-xl">Shop Performance</CardTitle>
           </CardHeader>
@@ -148,7 +148,7 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+        <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
           <CardHeader className="border-b border-[#e6ebf2] pb-4">
             <CardTitle className="text-lg font-semibold text-slate-900 sm:text-xl">Active Customers</CardTitle>
           </CardHeader>
@@ -176,7 +176,7 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
       </div>
 
       {/* Pending Approvals Alert */}
-      <Card className="rounded-2xl border-amber-200 bg-amber-50 shadow-none sm:rounded-3xl">
+      <Card className="rounded-xl border-amber-200 bg-amber-50 shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-start gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 sm:h-12 sm:w-12">
@@ -200,3 +200,4 @@ export function AdminAnalyticsDashboardClient({ content }: { content: DynamicPag
     </div>
   );
 }
+

@@ -108,7 +108,7 @@ export function ProfileClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">My Profile</h1>
+        <h1 className="text-[23px] font-semibold text-slate-900 sm:text-[24px]">My Profile</h1>
         <p className="mt-2 text-sm text-slate-500 sm:text-base">Manage your admin profile and account settings</p>
       </div>
 
@@ -117,7 +117,7 @@ export function ProfileClient() {
       ) : (
         <form className="space-y-4 sm:space-y-6" onSubmit={onSubmit}>
           {/* Profile Header Card */}
-          <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+          <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
                 <div className="relative group">
@@ -148,7 +148,7 @@ export function ProfileClient() {
           <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
             {/* Personal Information */}
             <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-              <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+              <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
                 <CardHeader className="border-b border-[#e6ebf2] pb-3 sm:pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900 sm:text-xl">
                     <User className="h-4 w-4 text-[#0989d8] sm:h-5 sm:w-5" />
@@ -227,7 +227,7 @@ export function ProfileClient() {
               </Card>
 
               {/* Address Information */}
-              <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+              <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
                 <CardHeader className="border-b border-[#e6ebf2] pb-3 sm:pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900 sm:text-xl">
                     <MapPin className="h-4 w-4 text-[#0989d8] sm:h-5 sm:w-5" />
@@ -281,7 +281,7 @@ export function ProfileClient() {
             {/* Sidebar */}
             <div className="space-y-4 sm:space-y-6">
               {/* Quick Stats */}
-              <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+              <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
                 <CardContent className="p-4 sm:p-6">
                   <h3 className="mb-3 text-base font-semibold text-slate-900 sm:mb-4 sm:text-lg">Quick Stats</h3>
                   <div className="space-y-3 sm:space-y-4">
@@ -304,7 +304,7 @@ export function ProfileClient() {
               </Card>
 
               {/* Account Settings */}
-              <Card className="rounded-2xl border-[#d9e2ef] bg-white shadow-none sm:rounded-3xl">
+              <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba\(94,126,179,0.10\)] ">
                 <CardContent className="p-4 sm:p-6">
                   <h3 className="mb-3 text-base font-semibold text-slate-900 sm:mb-4 sm:text-lg">Quick Actions</h3>
                   <div className="space-y-2">
@@ -342,3 +342,4 @@ export function ProfileClient() {
     </div>
   );
 }
+

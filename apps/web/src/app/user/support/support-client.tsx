@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SessionGuard } from '@/components/auth/session-guard';
-import { UserSidebar, UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
+import { UserThemeShell } from '@/components/dashboard/user-theme-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -57,18 +55,17 @@ export function SupportClient({ sidebar, content }: Props) {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <SessionGuard requiredRole="user" />
-      <UserSidebarMobile activeItem="support" content={sidebar} />
-      <div className="hidden lg:block">
-        <UserSidebar activeItem="support" content={sidebar} />
-      </div>
-      <section className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-7xl p-6">
-          <UserTopLogoHeader sidebar={sidebar} />
-          <Card className="mb-6">
+    <UserThemeShell activeItem="support" sidebar={sidebar}>
+      <section className="overflow-y-auto">
+        <div className="mx-auto w-full max-w-5xl p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="h-5 w-1 rounded-full bg-[#4ec2ed] sm:h-6" />
+            <h1 className="text-[23px] font-semibold tracking-tight text-[#0f2244]">{content.myTicketsTitle}</h1>
+          </div>
+
+          <Card className="mb-6 rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
             <CardHeader>
-              <CardTitle>{content.createTicketTitle}</CardTitle>
+              <CardTitle className="text-[17px] font-medium text-slate-900">{content.createTicketTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder={content.subjectPlaceholder} />
@@ -78,15 +75,15 @@ export function SupportClient({ sidebar, content }: Props) {
                 placeholder={content.descriptionPlaceholder}
               />
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <Button onClick={onCreate} disabled={saving || !subject.trim() || !description.trim()}>
+              <Button className="h-9 rounded-xl bg-[#1976f2] px-4 text-[13px] font-medium text-white hover:bg-[#0d62d4]" onClick={onCreate} disabled={saving || !subject.trim() || !description.trim()}>
                 {saving ? content.submittingLabel : content.submitLabel}
               </Button>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
             <CardHeader>
-              <CardTitle>{content.myTicketsTitle}</CardTitle>
+              <CardTitle className="text-[17px] font-medium text-slate-900">{content.myTicketsTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {loading ? <p className="text-sm text-muted-foreground">{content.loadingTicketsLabel}</p> : null}
@@ -94,9 +91,9 @@ export function SupportClient({ sidebar, content }: Props) {
                 <p className="text-sm text-muted-foreground">{content.noTicketsLabel}</p>
               ) : null}
               {tickets.map((ticket) => (
-                <div key={ticket.id} className="rounded-lg border border-border p-3">
+                <div key={ticket.id} className="rounded-xl border border-[#d9e2ef] bg-[#f9fbff] p-3">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium">{ticket.subject}</p>
+                    <p className="text-[14px] font-medium text-slate-900">{ticket.subject}</p>
                     <p className="text-xs uppercase text-muted-foreground">{ticket.status}</p>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{ticket.description}</p>
@@ -106,6 +103,6 @@ export function SupportClient({ sidebar, content }: Props) {
           </Card>
         </div>
       </section>
-    </div>
+    </UserThemeShell>
   );
 }
