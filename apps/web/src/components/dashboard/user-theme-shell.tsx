@@ -99,7 +99,7 @@ export function UserThemeShell({ activeItem, sidebar, children }: UserThemeShell
           </div>
         </header>
 
-        <nav className="overflow-x-auto bg-[linear-gradient(180deg,#0e4ca2_0%,#0a3779_100%)] px-2 py-2 sm:px-4">
+        <nav className="hidden overflow-x-auto bg-[linear-gradient(180deg,#0e4ca2_0%,#0a3779_100%)] px-2 py-2 sm:block sm:px-4">
           <div className="flex min-w-max items-center gap-2.5">
             {navItems.map((item) => {
               const Icon = item.icon;

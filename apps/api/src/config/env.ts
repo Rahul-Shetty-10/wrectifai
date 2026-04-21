@@ -33,10 +33,11 @@ function parseOrigins(raw: string | undefined, appEnv: AppEnv) {
     .filter(Boolean);
 }
 
-function parseCookieSameSite(raw: string | undefined): CookieSameSite {
+function parseCookieSameSite(raw: string | undefined, appEnv: AppEnv): CookieSameSite {
   const value = raw?.trim().toLowerCase();
   if (value === 'none' || value === 'strict') return value;
-  return 'lax';
+  if (value === 'lax') return 'lax';
+  return appEnv === 'production' ? 'none' : 'lax';
 }
 
 function parseBoolean(raw: string | undefined, fallback = false) {
@@ -96,7 +97,7 @@ function validateEnvOrThrow(config: EnvConfig) {
 
 function resolveEnv(): EnvConfig {
   const appEnv = parseAppEnv(process.env.APP_ENV);
-  const cookieSameSite = parseCookieSameSite(process.env.COOKIE_SAME_SITE);
+  const cookieSameSite = parseCookieSameSite(process.env.COOKIE_SAME_SITE, appEnv);
   const cookieSecure = parseBoolean(
     process.env.COOKIE_SECURE,
     appEnv === 'production' || cookieSameSite === 'none'

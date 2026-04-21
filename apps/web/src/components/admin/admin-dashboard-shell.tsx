@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { BarChart3, Calendar, CreditCard, MessageSquare, Search, Shield, Users, AlertTriangle } from 'lucide-react';
+import { BarChart3, Calendar, CreditCard, MessageSquare, Search, Shield, Users, AlertTriangle, Menu, X } from 'lucide-react';
 import type React from 'react';
 import { LogoutButton } from '@/components/auth/logout-button';
 import { SessionGuard } from '@/components/auth/session-guard';
@@ -31,13 +31,62 @@ const navItems: Array<{
 
 export function AdminDashboardShell({ activeItem, children }: AdminDashboardShellProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#ecf4ff_0%,#dfe7f5_52%)] px-2 py-2 sm:px-3 sm:py-3">
       <SessionGuard requiredRole="admin" />
       <div className="w-full min-h-[calc(100vh-1rem)] overflow-hidden rounded-xl border border-[#cddbef] bg-[linear-gradient(180deg,#edf3fd_0%,#e8f0fb_100%)] shadow-[0_16px_42px_rgba(38,67,122,0.16)] sm:min-h-[calc(100vh-1.5rem)]">
         <main className="overflow-y-auto bg-[linear-gradient(180deg,#f4f7fd_0%,#edf2f9_100%)]">
-          <header className="border-b border-[#dbe5f4] bg-[#f8fbff] px-3 py-2 sm:px-4 sm:py-2.5">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="fixed right-4 top-4 z-50 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d4def0] bg-white text-slate-700 shadow-md md:hidden"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+
+          {mobileMenuOpen ? (
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-slate-900/45 md:hidden"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <aside className="fixed inset-y-0 right-0 z-50 w-[280px] border-l border-[#dbe5f4] bg-white p-4 shadow-2xl md:hidden">
+                <div className="space-y-2">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = item.key === activeItem;
+                    return (
+                      <Link
+                        key={item.key}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          'inline-flex h-10 w-full items-center gap-2 rounded-full px-3.5 text-[13px] font-medium transition',
+                          isActive
+                            ? 'bg-[#1e83f6] text-white shadow-[0_8px_20px_rgba(0,0,0,0.15)]'
+                            : 'text-slate-700 hover:bg-[#edf4ff]'
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                  <LogoutButton
+                    withIcon
+                    label="Logout"
+                    variant="ghost"
+                    className="inline-flex h-10 w-full items-center justify-start gap-2 rounded-full px-3.5 text-[13px] font-medium text-slate-700 transition hover:bg-[#edf4ff]"
+                  />
+                </div>
+              </aside>
+            </>
+          ) : null}
+
+          <header className="hidden border-b border-[#dbe5f4] bg-[#f8fbff] px-3 py-2 sm:px-4 sm:py-2.5 md:block">
             <div className="flex items-center gap-2.5 sm:gap-4">
               <div className="hidden h-[62px] w-[320px] shrink-0 overflow-hidden rounded-xl bg-white p-0.5 shadow-sm sm:flex">
                 <img src="/wrectifai_logo_cropped.png?v=4" alt="WrectifAI" className="h-full w-full object-contain" />
@@ -54,7 +103,7 @@ export function AdminDashboardShell({ activeItem, children }: AdminDashboardShel
             </div>
           </header>
 
-          <nav className="overflow-x-auto bg-[linear-gradient(180deg,#0e4ca2_0%,#0a3779_100%)] px-2 py-2 sm:px-4">
+          <nav className="hidden overflow-x-auto bg-[linear-gradient(180deg,#0e4ca2_0%,#0a3779_100%)] px-2 py-2 sm:px-4 md:block">
             <div className="flex min-w-max items-center gap-2.5">
               {navItems.map((item) => {
                 const Icon = item.icon;
