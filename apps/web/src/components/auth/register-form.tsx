@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,7 +51,6 @@ export function RegisterForm({
   sendOtpFailedMessage,
   unexpectedErrorMessage,
 }: RegisterFormProps) {
-  const router = useRouter();
   const [step, setStep] = useState<Step>('details');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -61,6 +59,13 @@ export function RegisterForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ fullName?: string; phone?: string; terms?: string }>({});
+  
+  function persistRoleHint(roleCode?: string) {
+    const normalized = roleCode?.trim().toLowerCase();
+    if (!normalized) return;
+    if (!['user', 'garage', 'vendor', 'admin'].includes(normalized)) return;
+    document.cookie = `wrect_role_hint=${encodeURIComponent(normalized)}; Path=/; Max-Age=600; SameSite=Lax`;
+  }
   
   const roleCode = initialRoleCode;
 
@@ -132,7 +137,7 @@ export function RegisterForm({
       if (!response.ok) {
         throw new Error(data.message ?? "Verification failed");
       }
-      
+      persistRoleHint(data.roleCode);
       window.location.assign(data.redirectPath ?? '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : unexpectedErrorMessage);

@@ -24,6 +24,10 @@ export function LogoutButton({
 }: LogoutButtonProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  function clearRoleHint() {
+    document.cookie = 'wrect_role_hint=; Path=/; Max-Age=0; SameSite=Lax';
+  }
+
   const logoutEndpoints = useMemo(() => {
     const endpoints = ['/api/auth/logout'];
     const apiLogout = `${API_BASE_URL.replace(/\/+$/, '')}/auth/logout`;
@@ -55,6 +59,7 @@ export function LogoutButton({
     }
 
     if (requestSucceeded) {
+      clearRoleHint();
       window.location.href = '/auth/login';
       return;
     }

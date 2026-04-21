@@ -43,6 +43,13 @@ export function VerifyForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  function persistRoleHint(roleCode?: string) {
+    const normalized = roleCode?.trim().toLowerCase();
+    if (!normalized) return;
+    if (!['user', 'garage', 'vendor', 'admin'].includes(normalized)) return;
+    document.cookie = `wrect_role_hint=${encodeURIComponent(normalized)}; Path=/; Max-Age=600; SameSite=Lax`;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -74,6 +81,7 @@ export function VerifyForm({
       if (!response.ok) {
         throw new Error(data.message ?? verifyFailedMessage);
       }
+      persistRoleHint((data as { roleCode?: string }).roleCode);
       const target = data.redirectPath ?? '/';
       // Use a full navigation so auth cookies set by the verify response
       // are definitely applied before protected middleware checks run.

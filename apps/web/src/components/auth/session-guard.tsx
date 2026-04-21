@@ -15,6 +15,10 @@ export function SessionGuard({ requiredRole }: SessionGuardProps) {
   useEffect(() => {
     let active = true;
 
+    function clearRoleHint() {
+      document.cookie = 'wrect_role_hint=; Path=/; Max-Age=0; SameSite=Lax';
+    }
+
     async function redirectToLoginAfterLogout() {
       try {
         await fetch(`${API_BASE_URL}/auth/logout`, {
@@ -25,6 +29,7 @@ export function SessionGuard({ requiredRole }: SessionGuardProps) {
       } catch {
         // Ignore logout API failures and force local redirect.
       } finally {
+        clearRoleHint();
         router.replace('/auth/login');
       }
     }

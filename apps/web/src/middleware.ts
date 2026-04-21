@@ -10,6 +10,14 @@ const publicPaths = [
   '/auth/verify',
 ];
 const rolePrefixes = ['/user', '/garage', '/vendor', '/admin'] as const;
+const authRoles = ['user', 'garage', 'vendor', 'admin'] as const;
+type AuthRole = (typeof authRoles)[number];
+
+function parseRoleCookie(value: string | undefined): AuthRole | null {
+  const normalized = value?.replace(/^"|"$/g, '').toLowerCase();
+  if (!normalized) return null;
+  return authRoles.includes(normalized as AuthRole) ? (normalized as AuthRole) : null;
+}
 
 function getApiBaseUrl(req: NextRequest) {
   return resolveApiBaseUrl(req.nextUrl.origin);
@@ -23,7 +31,7 @@ function withNoStore(res: NextResponse) {
 }
 
 function clearAuthCookies(res: NextResponse) {
-  const cookieNames = ['wrect_at', 'wrect_rt', 'wrect_role'];
+  const cookieNames = ['wrect_at', 'wrect_rt', 'wrect_role', 'wrect_role_hint'];
   for (const cookieName of cookieNames) {
     res.cookies.set(cookieName, '', {
       path: '/',
@@ -37,11 +45,7 @@ function clearAuthCookies(res: NextResponse) {
 async function getSessionRole(req: NextRequest) {
   const accessToken = req.cookies.get('wrect_at')?.value;
   const refreshToken = req.cookies.get('wrect_rt')?.value;
-  const roleCookie = req.cookies.get('wrect_role')?.value?.replace(/^"|"$/g, '').toLowerCase();
-  const roleFromCookie =
-    roleCookie === 'user' || roleCookie === 'garage' || roleCookie === 'vendor' || roleCookie === 'admin'
-      ? roleCookie
-      : null;
+  const roleFromCookie = parseRoleCookie(req.cookies.get('wrect_role')?.value);
 
   async function tryRefreshSession() {
     if (!refreshToken) return false;
@@ -117,9 +121,18 @@ export async function middleware(req: NextRequest) {
 
   const sessionInfo = await getSessionRole(req);
   const role = sessionInfo?.role ?? null;
+  const roleHint = parseRoleCookie(req.cookies.get('wrect_role_hint')?.value);
   const isAuthed = Boolean(role);
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
   const rolePath = rolePrefixes.find((prefix) => pathname.startsWith(prefix));
+  const roleFromPath = rolePath ? (rolePath.slice(1) as AuthRole) : null;
+
+  // Cross-domain production setup can store auth cookies on API domain only.
+  // In that case middleware cannot read HttpOnly cookies from the web domain.
+  // Use short-lived role hint from OTP verification to avoid redirect loops.
+  if (!isAuthed && roleFromPath && roleHint === roleFromPath) {
+    return withNoStore(NextResponse.next());
+  }
 
   if (!isAuthed && rolePath) {
     return clearAuthCookies(withNoStore(NextResponse.redirect(new URL('/auth/login', req.url))));
