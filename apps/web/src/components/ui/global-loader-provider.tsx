@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 type GlobalLoaderContextValue = {
   showLoaderFor: (durationMs?: number) => string;
@@ -26,7 +26,6 @@ function createLoaderId() {
 
 export function GlobalLoaderProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [activeLoaders, setActiveLoaders] = useState<string[]>([]);
   const navLoaderIdRef = useRef<string | null>(null);
   const navLoaderTimeoutRef = useRef<number | null>(null);
@@ -109,7 +108,7 @@ export function GlobalLoaderProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(navLoaderTimeoutRef.current);
       navLoaderTimeoutRef.current = null;
     }
-  }, [pathname, searchParams, stopLoader]);
+  }, [pathname, stopLoader]);
 
   const value = useMemo<GlobalLoaderContextValue>(
     () => ({ showLoaderFor, startLoader, stopLoader }),
