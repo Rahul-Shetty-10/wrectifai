@@ -36,8 +36,35 @@ function clearAuthCookies(res: NextResponse) {
 
 async function getSessionRole(req: NextRequest) {
   const accessToken = req.cookies.get('wrect_at')?.value;
+  const refreshToken = req.cookies.get('wrect_rt')?.value;
+  const roleCookie = req.cookies.get('wrect_role')?.value?.replace(/^"|"$/g, '').toLowerCase();
+  const roleFromCookie =
+    roleCookie === 'user' || roleCookie === 'garage' || roleCookie === 'vendor' || roleCookie === 'admin'
+      ? roleCookie
+      : null;
+
+  async function tryRefreshSession() {
+    if (!refreshToken) return false;
+    try {
+      const apiBaseUrl = getApiBaseUrl(req);
+      const refreshResponse = await fetch(`${apiBaseUrl}/auth/sessions/refresh`, {
+        method: 'POST',
+        headers: {
+          cookie: req.headers.get('cookie') ?? '',
+        },
+        cache: 'no-store',
+      });
+      return refreshResponse.ok;
+    } catch {
+      return false;
+    }
+  }
 
   if (!accessToken) {
+    const refreshed = await tryRefreshSession();
+    if (refreshed && roleFromCookie) {
+      return { role: roleFromCookie, garageApproved: undefined as boolean | undefined };
+    }
     return null;
   }
 
@@ -51,6 +78,10 @@ async function getSessionRole(req: NextRequest) {
       cache: 'no-store',
     });
     if (!response.ok) {
+      const refreshed = await tryRefreshSession();
+      if (refreshed && roleFromCookie) {
+        return { role: roleFromCookie, garageApproved: undefined as boolean | undefined };
+      }
       return null;
     }
     const data = (await response.json()) as {
@@ -65,6 +96,10 @@ async function getSessionRole(req: NextRequest) {
       garageApproved: data.user.garageApproved,
     };
   } catch {
+    const refreshed = await tryRefreshSession();
+    if (refreshed && roleFromCookie) {
+      return { role: roleFromCookie, garageApproved: undefined as boolean | undefined };
+    }
     return null;
   }
 }
