@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Bell,
   Car,
@@ -25,17 +26,23 @@ import {
 import { SessionGuard } from '@/components/auth/session-guard';
 import { LogoutButton } from '@/components/auth/logout-button';
 import { UserSidebarMobile } from '@/components/dashboard/user-sidebar';
-import { UserTopLogoHeader } from '@/components/dashboard/user-top-logo-header';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   addUserVehicle,
+  fetchIssueDetail,
+  fetchIssueRequests,
   fetchIssueRequestsWithQuotes,
+  fetchUserProfile,
   fetchUserVehicles,
   setDefaultUserVehicle,
+  submitServiceIntake,
   uploadRcAndSuggest,
   updateUserVehicle,
+  type ServiceIntakePayload,
+  type IssueRequestListItem,
+  type IssueDetail,
   type IssueRequestWithQuotes,
   type UserDashboardContent,
   type UserSidebarContent,
@@ -102,6 +109,34 @@ type DashboardQuoteCard = {
   eta: string;
   amount: string;
   createdAt: string;
+};
+
+type DiagnosisQuestionType = 'single_select' | 'boolean' | 'text';
+type DiagnosisQuestion = {
+  id: string;
+  label: string;
+  type: DiagnosisQuestionType;
+  options?: string[];
+  required: boolean;
+};
+
+type DiagnosisChatMessage = {
+  id: string;
+  sender: 'bot' | 'user';
+  text: string;
+};
+
+type DashboardAiIssueDummy = {
+  id: string;
+  title: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  risk: string;
+  bullets: string[];
+  prices: {
+    low: string;
+    fair: string;
+    high: string;
+  };
 };
 
 const VEHICLE_IMAGES = [
@@ -172,6 +207,73 @@ const quoteCards = [
   },
 ];
 
+const DASHBOARD_AI_TAGS = ['Noise', 'Vibration', 'Warning Light', 'Performance'] as const;
+
+const DASHBOARD_AI_ISSUES: DashboardAiIssueDummy[] = [
+  {
+    id: 'wheel-balancing',
+    title: 'Wheel Balancing',
+    confidence: 'HIGH',
+    risk: 'Tire wear, vibration',
+    bullets: ['Risk: Tire wear, vibration', 'Risk: Safety issue'],
+    prices: { low: 'INR 3,200', fair: 'INR 3,500', high: 'INR 3,900' },
+  },
+  {
+    id: 'brake-pads-wear',
+    title: 'Brake Pads Wear',
+    confidence: 'MEDIUM',
+    risk: 'Safety issue',
+    bullets: ['Risk: Safety issue', 'Risk: Braking instability'],
+    prices: { low: 'INR 1,200', fair: 'INR 2,500', high: 'INR 3,000' },
+  },
+];
+
+const DIAGNOSIS_CATEGORY_OPTIONS = [
+  { value: 'engine', label: 'Engine' },
+  { value: 'battery', label: 'Battery' },
+  { value: 'brake', label: 'Brake' },
+  { value: 'ac', label: 'AC' },
+  { value: 'electrical', label: 'Electrical' },
+  { value: 'tyre', label: 'Tyre' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+const DIAGNOSIS_QUESTION_BANK: Record<string, DiagnosisQuestion[]> = {
+  engine: [
+    { id: 'when_occurs', label: 'When does the issue occur?', type: 'single_select', options: ['Starting', 'While driving', 'Idling'], required: true },
+    { id: 'noise', label: 'Do you hear unusual engine noise?', type: 'boolean', required: true },
+    { id: 'smoke', label: 'Do you see smoke?', type: 'single_select', options: ['No', 'White', 'Black', 'Blue'], required: true },
+    { id: 'power_loss', label: 'Do you feel loss of power while driving?', type: 'boolean', required: true },
+  ],
+  battery: [
+    { id: 'vehicle_start', label: 'Vehicle starting status?', type: 'single_select', options: ['Starts normally', 'Slow start', 'Not starting'], required: true },
+    { id: 'lights_status', label: 'Dashboard lights condition?', type: 'single_select', options: ['Normal', 'Dim', 'Not working'], required: true },
+    { id: 'battery_age', label: 'Battery age?', type: 'single_select', options: ['< 1 year', '1-2 years', '2-3 years', '3+ years'], required: true },
+  ],
+  brake: [
+    { id: 'brake_response', label: 'Brake response?', type: 'single_select', options: ['Normal', 'Soft', 'Hard', 'Not working'], required: true },
+    { id: 'brake_noise', label: 'Do you hear noise while braking?', type: 'boolean', required: true },
+    { id: 'vibration', label: 'Do you feel vibration while braking?', type: 'boolean', required: true },
+  ],
+  ac: [
+    { id: 'cooling', label: 'Cooling performance?', type: 'single_select', options: ['Normal', 'Low cooling', 'No cooling'], required: true },
+    { id: 'cooling_delay', label: 'Does cooling take too long?', type: 'boolean', required: true },
+  ],
+  electrical: [
+    { id: 'electrical_components', label: 'Which electrical item is failing?', type: 'single_select', options: ['Headlights', 'Power windows', 'Infotainment', 'Multiple items'], required: true },
+    { id: 'failure_pattern', label: 'How does the failure occur?', type: 'single_select', options: ['Intermittent', 'Always off', 'Works after restart', 'Flickers'], required: true },
+  ],
+  tyre: [
+    { id: 'puncture', label: 'Is it a puncture?', type: 'boolean', required: true },
+    { id: 'air_loss', label: 'Is air leaking continuously?', type: 'boolean', required: true },
+    { id: 'tyre_condition', label: 'Tyre condition?', type: 'single_select', options: ['Good', 'Worn out', 'Damaged'], required: true },
+  ],
+  other: [
+    { id: 'symptom_pattern', label: 'What exact symptom do you notice most often?', type: 'text', required: true },
+    { id: 'frequency', label: 'How often does this issue occur?', type: 'single_select', options: ['Always', 'Often', 'Sometimes'], required: true },
+  ],
+};
+
 const navItems = [
   { href: '/user/dashboard', label: 'Home', icon: Home, active: true },
   { href: '/user/ai-diagnosis', label: 'Diagnose', icon: Sparkles },
@@ -180,10 +282,8 @@ const navItems = [
   { href: '/user/payments', label: 'History', icon: History },
 ];
 
-const issueQuickTags = ['Noise', 'Vibration', 'Warning Light', 'Performance'] as const;
-
 export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
-  const headerSidebar = { ...sidebar, logoUrl: appLogoUrl || sidebar.logoUrl };
+  const router = useRouter();
   const [registeredVehicles, setRegisteredVehicles] = useState<UserVehicle[]>([]);
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<UserVehicle | null>(null);
@@ -195,9 +295,50 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
   const [settingDefaultVehicleId, setSettingDefaultVehicleId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [issueDraft, setIssueDraft] = useState('');
-  const [activeIssueTag, setActiveIssueTag] = useState<string>('Noise');
+  const [selectedDiagnosisVehicleId, setSelectedDiagnosisVehicleId] = useState('');
   const [vehiclePage, setVehiclePage] = useState(0);
   const [recentQuotes, setRecentQuotes] = useState<DashboardQuoteCard[]>([]);
+  const [recentIssues, setRecentIssues] = useState<IssueRequestListItem[]>([]);
+  const [intakeMode, setIntakeMode] = useState<'diagnosis' | 'direct'>('diagnosis');
+  const [diagnosisChatOpen, setDiagnosisChatOpen] = useState(false);
+  const [diagnosisLogisticsOpen, setDiagnosisLogisticsOpen] = useState(false);
+  const [diagnosisCategory, setDiagnosisCategory] = useState('');
+  const [diagnosisQuestions, setDiagnosisQuestions] = useState<DiagnosisQuestion[]>([]);
+  const [diagnosisAnswers, setDiagnosisAnswers] = useState<Record<string, string>>({});
+  const [diagnosisMessages, setDiagnosisMessages] = useState<DiagnosisChatMessage[]>([]);
+  const [diagnosisCurrentIndex, setDiagnosisCurrentIndex] = useState<number | null>(null);
+  const [diagnosisAwaitingCategory, setDiagnosisAwaitingCategory] = useState(false);
+  const [diagnosisTextAnswer, setDiagnosisTextAnswer] = useState('');
+  const [diagnosisThinking, setDiagnosisThinking] = useState(false);
+  const [diagnosisError, setDiagnosisError] = useState<string | null>(null);
+  const [diagnosisAddress, setDiagnosisAddress] = useState('');
+  const [diagnosisPickup, setDiagnosisPickup] = useState(false);
+  const [diagnosisScheduleMode, setDiagnosisScheduleMode] = useState<'now' | 'scheduled'>('now');
+  const [diagnosisPreferredAt, setDiagnosisPreferredAt] = useState('');
+  const [diagnosisName, setDiagnosisName] = useState('');
+  const [diagnosisPhone, setDiagnosisPhone] = useState('');
+  const [diagnosisAltPhone, setDiagnosisAltPhone] = useState('');
+  const [diagnosisSubmitting, setDiagnosisSubmitting] = useState(false);
+  const [selectedAiTag, setSelectedAiTag] = useState<string>(DASHBOARD_AI_TAGS[0]);
+  const [activeIssueDetailId, setActiveIssueDetailId] = useState<string | null>(null);
+  const [activeIssueDetail, setActiveIssueDetail] = useState<IssueDetail | null>(null);
+  const [activeDummyIssue, setActiveDummyIssue] = useState<DashboardAiIssueDummy | null>(null);
+  const [issueDetailLoading, setIssueDetailLoading] = useState(false);
+  const diagnosisChatScrollRef = useRef<HTMLDivElement | null>(null);
+
+  const possibleIssues = useMemo(() => {
+    if (recentIssues.length > 0) return recentIssues.slice(0, 2);
+    return DASHBOARD_AI_ISSUES.map((issue) => ({
+      id: `dummy-${issue.id}`,
+      summary: issue.title,
+      source: 'diagnosis' as const,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      quoteCount: 0,
+      severity: issue.confidence.toLowerCase(),
+      vehicleLabel: '',
+    }));
+  }, [recentIssues]);
 
   useEffect(() => {
     async function loadVehicles() {
@@ -210,6 +351,31 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
     }
     void loadVehicles();
   }, []);
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const profile = await fetchUserProfile();
+        setDiagnosisName(profile.fullName ?? '');
+        setDiagnosisPhone(profile.phone ?? '');
+      } catch {
+        setDiagnosisName('');
+        setDiagnosisPhone('');
+      }
+    }
+    void loadProfile();
+  }, []);
+
+  useEffect(() => {
+    if (selectedDiagnosisVehicleId) return;
+    const defaultVehicle =
+      registeredVehicles.find((vehicle) => vehicle.isDefault)?.id ??
+      registeredVehicles[0]?.id ??
+      '';
+    if (defaultVehicle) {
+      setSelectedDiagnosisVehicleId(defaultVehicle);
+    }
+  }, [registeredVehicles, selectedDiagnosisVehicleId]);
 
   useEffect(() => {
     async function loadRecentQuotes() {
@@ -238,6 +404,33 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
     void loadRecentQuotes();
   }, []);
 
+  useEffect(() => {
+    if (!diagnosisChatOpen) return;
+    const el = diagnosisChatScrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [diagnosisChatOpen, diagnosisMessages, diagnosisThinking, diagnosisCurrentIndex, diagnosisAwaitingCategory]);
+
+  useEffect(() => {
+    async function loadRecentIssues() {
+      try {
+        const issues = await fetchIssueRequests();
+        const latest = [...issues]
+          .sort((a, b) => {
+            const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return tb - ta;
+          })
+          .slice(0, 2);
+        setRecentIssues(latest);
+      } catch {
+        setRecentIssues([]);
+      }
+    }
+
+    void loadRecentIssues();
+  }, []);
+
   const vehicles = useMemo<VehicleCard[]>(
     () =>
       registeredVehicles
@@ -261,9 +454,221 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
     [registeredVehicles, searchQuery]
   );
 
-  const issueQuery = issueDraft.trim()
-    ? `?issue=${encodeURIComponent(issueDraft.trim())}`
-    : '';
+  const canStartDiagnosis = issueDraft.trim().length > 0 && selectedDiagnosisVehicleId.trim().length > 0;
+  const diagnosisRequiredQuestions = useMemo(
+    () => diagnosisQuestions.filter((question) => question.required),
+    [diagnosisQuestions]
+  );
+  const diagnosisAnsweredRequired = useMemo(
+    () =>
+      diagnosisRequiredQuestions.filter((question) => {
+        const value = diagnosisAnswers[question.id];
+        return typeof value === 'string' && value.trim().length > 0;
+      }).length,
+    [diagnosisAnswers, diagnosisRequiredQuestions]
+  );
+
+  function handleStartDiagnosis() {
+    if (!canStartDiagnosis) return;
+    setIntakeMode('diagnosis');
+    setDiagnosisError(null);
+    setDiagnosisCategory('');
+    setDiagnosisQuestions([]);
+    setDiagnosisAnswers({});
+    setDiagnosisMessages([
+      { id: `bot-intro-${Date.now()}`, sender: 'bot', text: 'Thanks. Let us do a quick guided assessment. Please answer one question at a time.' },
+      { id: `bot-category-${Date.now() + 1}`, sender: 'bot', text: 'What is the issue about?' },
+    ]);
+    setDiagnosisCurrentIndex(null);
+    setDiagnosisAwaitingCategory(true);
+    setDiagnosisTextAnswer('');
+    setDiagnosisThinking(false);
+    setDiagnosisChatOpen(true);
+    setDiagnosisLogisticsOpen(false);
+  }
+
+  async function openIssueDetail(issue: IssueRequestListItem) {
+    setActiveDummyIssue(null);
+    setActiveIssueDetailId(issue.id);
+    setIssueDetailLoading(true);
+    try {
+      const detail = await fetchIssueDetail(issue.id);
+      setActiveIssueDetail(detail);
+    } catch {
+      setActiveIssueDetail(null);
+    } finally {
+      setIssueDetailLoading(false);
+    }
+  }
+
+  function openDummyIssueDetail(issue: DashboardAiIssueDummy) {
+    setActiveIssueDetailId(`dummy-${issue.id}`);
+    setActiveIssueDetail(null);
+    setIssueDetailLoading(false);
+    setActiveDummyIssue(issue);
+  }
+
+  function handleDirectServiceRequest() {
+    const params = new URLSearchParams();
+    if (issueDraft.trim()) {
+      params.set('issue', issueDraft.trim());
+    }
+    if (selectedDiagnosisVehicleId.trim()) {
+      params.set('vehicleId', selectedDiagnosisVehicleId.trim());
+    }
+    router.push(`/user/direct-request${params.toString() ? `?${params.toString()}` : ''}`);
+  }
+
+  function askNextDiagnosisQuestion(index: number, questions: DiagnosisQuestion[]) {
+    setDiagnosisThinking(true);
+    window.setTimeout(() => {
+      const question = questions[index];
+      setDiagnosisMessages((prev) => [
+        ...prev,
+        { id: `bot-${question.id}-${Date.now()}`, sender: 'bot', text: `${question.label}${question.required ? ' *' : ''}` },
+      ]);
+      setDiagnosisCurrentIndex(index);
+      setDiagnosisThinking(false);
+    }, 220);
+  }
+
+  function handleDiagnosisCategoryPick(categoryValue: string) {
+    const label = DIAGNOSIS_CATEGORY_OPTIONS.find((item) => item.value === categoryValue)?.label ?? categoryValue;
+    const questions = DIAGNOSIS_QUESTION_BANK[categoryValue] ?? DIAGNOSIS_QUESTION_BANK.other;
+    setDiagnosisCategory(categoryValue);
+    setDiagnosisQuestions(questions);
+    setDiagnosisAnswers({});
+    setDiagnosisMessages((prev) => [...prev, { id: `user-category-${Date.now()}`, sender: 'user', text: label }]);
+    setDiagnosisAwaitingCategory(false);
+    askNextDiagnosisQuestion(0, questions);
+  }
+
+  function advanceDiagnosisFlow(fromIndex: number, questions = diagnosisQuestions) {
+    const nextIndex = fromIndex + 1;
+    if (nextIndex >= questions.length) {
+      setDiagnosisCurrentIndex(null);
+      setDiagnosisThinking(true);
+      window.setTimeout(() => {
+        setDiagnosisMessages((prev) => [...prev, { id: `bot-done-${Date.now()}`, sender: 'bot', text: 'All questions captured. Click Continue.' }]);
+        setDiagnosisThinking(false);
+      }, 220);
+      return;
+    }
+    askNextDiagnosisQuestion(nextIndex, questions);
+  }
+
+  function submitDiagnosisAnswer(answer: string) {
+    if (diagnosisCurrentIndex === null) return;
+    const question = diagnosisQuestions[diagnosisCurrentIndex];
+    const value = answer.trim();
+    if (!value) return;
+    setDiagnosisAnswers((prev) => ({ ...prev, [question.id]: value }));
+    setDiagnosisMessages((prev) => [...prev, { id: `user-${question.id}-${Date.now()}`, sender: 'user', text: value }]);
+    setDiagnosisTextAnswer('');
+    advanceDiagnosisFlow(diagnosisCurrentIndex);
+  }
+
+  function openDiagnosisLogistics() {
+    if (diagnosisAwaitingCategory || diagnosisCurrentIndex !== null) {
+      setDiagnosisError('Please complete all chat questions first.');
+      return;
+    }
+    if (diagnosisRequiredQuestions.length === 0 || diagnosisAnsweredRequired < diagnosisRequiredQuestions.length) {
+      setDiagnosisError('Please complete all required questions first.');
+      return;
+    }
+    setDiagnosisError(null);
+    setDiagnosisChatOpen(false);
+    setDiagnosisLogisticsOpen(true);
+  }
+
+  async function createDiagnosisIssue() {
+    const selectedVehicle = registeredVehicles.find((vehicle) => vehicle.id === selectedDiagnosisVehicleId);
+    if (!selectedVehicle) {
+      setDiagnosisError('Please select a vehicle first.');
+      return;
+    }
+    if (!diagnosisAddress.trim()) {
+      setDiagnosisError('Please enter service address.');
+      return;
+    }
+    if (!diagnosisName.trim() || !diagnosisPhone.trim()) {
+      setDiagnosisError('Please enter contact name and phone.');
+      return;
+    }
+    if (diagnosisScheduleMode === 'scheduled' && !diagnosisPreferredAt) {
+      setDiagnosisError('Please select a preferred slot.');
+      return;
+    }
+    const answerValues = Object.values(diagnosisAnswers);
+    const severity =
+      intakeMode === 'direct'
+        ? 'can_drive'
+        : inferDashboardSeverity(answerValues);
+    const whenHappens =
+      intakeMode === 'direct'
+        ? 'driving'
+        : mapDashboardWhenHappens(diagnosisAnswers.when_occurs);
+    const sinceWhen =
+      intakeMode === 'direct'
+        ? 'today'
+        : inferDashboardSinceWhen(answerValues);
+
+    const payload: ServiceIntakePayload = {
+      source: intakeMode,
+      vehicle: {
+        id: selectedVehicle.id,
+        type: 'car',
+        brand: selectedVehicle.make,
+        model: selectedVehicle.model,
+        year: selectedVehicle.year,
+        fuel: selectedVehicle.fuelType.toLowerCase(),
+        variant: selectedVehicle.trim ?? undefined,
+      },
+      issue: {
+        category: diagnosisCategory || 'other',
+        symptoms: Object.entries(diagnosisAnswers).map(([key, value]) => `${key}:${value}`),
+        severity,
+        description: issueDraft.trim() || diagnosisAnswers.symptom_pattern?.trim() || 'Direct service request',
+        sinceWhen,
+        whenHappens,
+        answers: diagnosisAnswers,
+      },
+      media: [],
+      location: { address: diagnosisAddress.trim() },
+      serviceType: diagnosisPickup ? 'pickup' : 'visit',
+      schedule: {
+        mode: diagnosisScheduleMode,
+        preferredAt: diagnosisScheduleMode === 'scheduled' ? diagnosisPreferredAt : undefined,
+      },
+      user: {
+        name: diagnosisName.trim(),
+        phone: diagnosisPhone.trim(),
+        alternatePhone: diagnosisAltPhone.trim() || undefined,
+      },
+    };
+
+    try {
+      setDiagnosisSubmitting(true);
+      setDiagnosisError(null);
+      const { issueId } = await submitServiceIntake(payload);
+      setDiagnosisLogisticsOpen(false);
+      const issues = await fetchIssueRequests();
+      const latest = [...issues]
+        .sort((a, b) => {
+          const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return tb - ta;
+        })
+        .slice(0, 2);
+      setRecentIssues(latest);
+      router.push(`/user/quotes-bookings/${issueId}`);
+    } catch (error) {
+      setDiagnosisError(error instanceof Error ? error.message : 'Failed to create issue.');
+    } finally {
+      setDiagnosisSubmitting(false);
+    }
+  }
 
   const VEHICLES_PER_PAGE = 2;
   const totalVehiclePages = Math.max(1, Math.ceil(vehicles.length / VEHICLES_PER_PAGE));
@@ -411,9 +816,8 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
       <SessionGuard requiredRole="user" />
       <UserSidebarMobile activeItem="dashboard" content={sidebar} />
 
-      <div className="mx-auto w-full min-h-[calc(100vh-1rem)] overflow-hidden rounded-xl border border-[#d4deef] bg-[#edf2fb] shadow-[0_12px_36px_rgba(38,67,122,0.14)] sm:min-h-[calc(100vh-1.5rem)]">
-        <UserTopLogoHeader sidebar={headerSidebar} />
-
+      <div className="mx-auto flex h-[calc(100vh-1rem)] w-full flex-col overflow-hidden rounded-xl border border-[#d4deef] bg-[#edf2fb] shadow-[0_12px_36px_rgba(38,67,122,0.14)] sm:h-[calc(100vh-1.5rem)]">
+        <div className="sticky top-0 z-30 shrink-0">
         <header className="border-b border-[#dbe5f4] bg-[#f8fbff] px-2.5 py-2 sm:px-4 sm:py-2.5">
           <div className="flex items-center gap-2.5 sm:gap-4">
             <div className="hidden h-[62px] w-[320px] shrink-0 overflow-hidden rounded-xl bg-white p-0.5 shadow-sm sm:flex">
@@ -481,9 +885,11 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
             />
           </div>
         </nav>
+        </div>
 
-        <section className="p-2.5 sm:p-3.5 md:p-4">
-          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <section className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4">
+          <div className="mx-auto w-full max-w-[1280px]">
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
             <div className="space-y-5">
               <CardShell>
                 <div className="flex items-center justify-between">
@@ -538,70 +944,152 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
               </CardShell>
 
               <CardShell>
-                <h3 className="text-[23px] font-semibold tracking-tight text-slate-800">AI Diagnosis</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-[#1d7ff2]" />
+                    <h3 className="text-[23px] font-semibold tracking-tight text-slate-800">AI Diagnosis</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDirectServiceRequest}
+                    className="inline-flex h-9 items-center justify-center rounded-xl bg-[#1976f2] px-3 text-[13px] font-medium text-white transition hover:bg-[#0d62d4]"
+                  >
+                    Raise Direct Service Request
+                  </button>
+                </div>
                 <p className="mt-1 text-[17px] font-medium text-slate-700">What&apos;s wrong with your car?</p>
 
                 <div className="mt-3.5 rounded-xl border border-[#dbe5f5] bg-white p-4">
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <div className="grid gap-2.5 md:grid-cols-[minmax(0,1fr)_260px]">
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
                       value={issueDraft}
                       onChange={(e) => {
                         setIssueDraft(e.target.value);
-                        setActiveIssueTag('');
                       }}
                       placeholder="Type your issue..."
                       className="h-10 w-full rounded-xl border border-[#d6e2f2] bg-[#fbfdff] pl-9 pr-3 text-[13px] text-slate-700 placeholder:text-slate-500 outline-none"
                     />
+                    </div>
+                    <select
+                      value={selectedDiagnosisVehicleId}
+                      onChange={(e) => setSelectedDiagnosisVehicleId(e.target.value)}
+                      className="h-10 w-full rounded-xl border border-[#d6e2f2] bg-[#fbfdff] px-3 text-[13px] text-slate-700 outline-none"
+                    >
+                      <option value="">Select vehicle</option>
+                      {registeredVehicles.map((vehicle) => (
+                        <option key={vehicle.id} value={vehicle.id}>
+                          {vehicle.year} {vehicle.make} {vehicle.model}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {issueQuickTags.map((tag) => (
-                      <Pill
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {DASHBOARD_AI_TAGS.map((tag) => (
+                      <button
                         key={tag}
-                        active={activeIssueTag === tag}
+                        type="button"
                         onClick={() => {
+                          setSelectedAiTag(tag);
                           setIssueDraft(tag);
-                          setActiveIssueTag(tag);
                         }}
+                        className={cn(
+                          'inline-flex h-9 items-center rounded-xl border px-3 text-[13px] font-medium',
+                          selectedAiTag === tag
+                            ? 'border-[#7bb4ff] bg-[#1d7ff2] text-white'
+                            : 'border-[#d6e2f2] bg-white text-slate-700 hover:bg-[#f6f9ff]'
+                        )}
                       >
                         {tag}
-                      </Pill>
+                      </button>
                     ))}
                   </div>
 
-                  <div className="mt-3.5 space-y-2.5">
-                    <IssueCard
-                      title="Wheel Balancing"
-                      risk="Tire wear, vibration"
-                      confidence="HIGH"
-                      low="INR 3,200"
-                      fair="INR 3,500"
-                      high="INR 3,900"
-                    />
-                    <IssueCard
-                      title="Brake Pads Wear"
-                      risk="Safety issue"
-                      confidence="MEDIUM"
-                      low="INR 1,200"
-                      fair="INR 2,500"
-                      high="INR 3,000"
-                    />
+                  <div className="mt-3 flex items-center justify-between">
+                    <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Possible Issues
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleStartDiagnosis}
+                      disabled={!canStartDiagnosis}
+                      className={cn(
+                        'inline-flex h-11 items-center justify-center rounded-xl px-5 text-[14px] font-semibold transition-all',
+                        canStartDiagnosis
+                          ? 'bg-[linear-gradient(180deg,#2d8cff_0%,#1467d9_100%)] text-white shadow-[0_10px_24px_rgba(20,103,217,0.35)] hover:translate-y-[-1px] hover:shadow-[0_14px_28px_rgba(20,103,217,0.4)]'
+                          : 'cursor-not-allowed border border-[#cfe0f8] bg-[#eaf2ff] text-[#7a93b9] opacity-100',
+                      )}
+                    >
+                      Start Diagnosis
+                    </button>
                   </div>
 
-                  <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                    <Link
-                      href={`/user/ai-diagnosis${issueQuery}`}
-                      className="inline-flex h-9 items-center justify-center rounded-xl border border-[#cde0fc] bg-white px-3 text-[13px] font-medium text-[#0f62d6] transition hover:bg-[#f3f8ff]"
-                    >
-                      Start Guided Assessment
-                    </Link>
-                    <Link
-                      href={`/user/direct-request${issueQuery}`}
-                      className="inline-flex h-9 items-center justify-center rounded-xl bg-[#1976f2] px-3 text-[13px] font-medium text-white transition hover:bg-[#0d62d4]"
-                    >
-                      Raise Direct Service Request
-                    </Link>
+                  <div className="mt-3.5 space-y-2.5">
+                    {possibleIssues.map((issue, index) => (
+                      <button
+                        key={issue.id}
+                        type="button"
+                        onClick={() => {
+                          const matchingDummy = DASHBOARD_AI_ISSUES[index];
+                          if (issue.id.startsWith('dummy-') && matchingDummy) {
+                            openDummyIssueDetail(matchingDummy);
+                            return;
+                          }
+                          void openIssueDetail(issue);
+                        }}
+                        className="w-full rounded-xl border border-[#dce7f5] bg-[#fbfdff] p-3 text-left transition hover:border-[#a9c9f8] hover:bg-white"
+                      >
+                        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_300px]">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-[28px] leading-none text-[#1d7ff2]">•</p>
+                              <p className="text-[22px] font-semibold text-slate-800">
+                                {issue.summary || 'Issue'}
+                              </p>
+                              <span
+                                className={cn(
+                                  'ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                                  String(issue.severity ?? '').toUpperCase() === 'HIGH'
+                                    ? 'bg-[#d9f9e7] text-[#117a43]'
+                                    : String(issue.severity ?? '').toUpperCase() === 'MEDIUM'
+                                    ? 'bg-[#fff5dc] text-[#a76b00]'
+                                    : 'bg-[#e8f2ff] text-[#0f62d6]'
+                                )}
+                              >
+                                {String(issue.severity ?? 'LOW').toUpperCase()}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[13px] font-medium text-slate-600">Confidence:</p>
+                            <div className="mt-1 space-y-1 text-[13px] text-slate-600">
+                              <p>• Source: {issue.source ?? 'diagnosis'}</p>
+                              <p>• Status: {issue.status ?? 'open'}</p>
+                              <p>• Vehicle: {issue.vehicleLabel || 'Vehicle unavailable'}</p>
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-[#e0eaf8] bg-white p-3">
+                            <div className="h-2 rounded-full bg-[linear-gradient(90deg,#2c8bff_0%,#64d774_50%,#f2835f_100%)]" />
+                            <div className="mt-2 grid grid-cols-3 text-[13px] font-semibold text-slate-700">
+                              <span>INR 3,200</span>
+                              <span className="text-center">INR 3,500</span>
+                              <span className="text-right">INR 3,900</span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between text-[12px] text-slate-500">
+                              <span>
+                                Confidence:{' '}
+                                <span className="font-semibold text-[#117a43]">
+                                  {String(issue.severity ?? 'LOW').toUpperCase()}
+                                </span>
+                              </span>
+                              <span>
+                                Market: <span className="font-semibold text-slate-700">FAIR</span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </CardShell>
@@ -717,9 +1205,370 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
                 </div>
               </CardShell>
             </aside>
+            </div>
           </div>
         </section>
       </div>
+
+      <Dialog open={diagnosisChatOpen} onOpenChange={setDiagnosisChatOpen}>
+        <DialogContent className="max-h-[88vh] max-w-[980px] overflow-y-auto rounded-2xl border border-[#d4e0f1] bg-[#f8fbff] p-0">
+          <DialogHeader className="border-b border-[#e0e9f6] px-5 py-4">
+            <DialogTitle className="text-[30px] font-semibold text-slate-900">Wrectfai Chat Bot</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 p-5">
+            <div className="rounded-xl border border-[#dbe5f3] bg-white p-3">
+              <div ref={diagnosisChatScrollRef} className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                {diagnosisMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={cn(
+                      'max-w-[90%] rounded-2xl px-3 py-2 text-sm',
+                      message.sender === 'bot'
+                        ? 'border border-[#dbe5f3] bg-[#f8fbff] text-slate-800'
+                        : 'ml-auto bg-[#1d7ff2] text-white'
+                    )}
+                  >
+                    {message.text}
+                  </div>
+                ))}
+                {diagnosisThinking ? (
+                  <div className="max-w-[90%] rounded-2xl border border-[#dbe5f3] bg-white px-3 py-2 text-xs text-slate-500">
+                    Typing...
+                  </div>
+                ) : null}
+              </div>
+
+              {diagnosisAwaitingCategory ? (
+                <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Current Question</p>
+                  <div className="flex flex-wrap gap-2">
+                    {DIAGNOSIS_CATEGORY_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleDiagnosisCategoryPick(option.value)}
+                        className="h-9 rounded-xl border border-[#d6e3f4] bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-[#f2f7ff]"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : diagnosisCurrentIndex !== null ? (
+                <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Current Question</p>
+                  {diagnosisQuestions[diagnosisCurrentIndex]?.type === 'text' ? (
+                    <div className="flex gap-2">
+                      <input
+                        value={diagnosisTextAnswer}
+                        onChange={(e) => setDiagnosisTextAnswer(e.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            submitDiagnosisAnswer(diagnosisTextAnswer);
+                          }
+                        }}
+                        className="h-10 flex-1 rounded-xl border border-[#d6e2f2] bg-white px-3 text-sm text-slate-700 outline-none"
+                        placeholder="Type answer"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => submitDiagnosisAnswer(diagnosisTextAnswer)}
+                        disabled={!diagnosisTextAnswer.trim()}
+                        className="h-10 rounded-xl bg-[#1d7ff2] px-4 text-sm font-medium text-white disabled:opacity-50"
+                      >
+                        Send
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {(diagnosisQuestions[diagnosisCurrentIndex]?.type === 'boolean'
+                        ? [
+                            { value: 'yes', label: 'Yes' },
+                            { value: 'no', label: 'No' },
+                          ]
+                        : (diagnosisQuestions[diagnosisCurrentIndex]?.options ?? []).map((value) => ({ value, label: value }))).map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => submitDiagnosisAnswer(option.value)}
+                          className="h-9 rounded-xl border border-[#d6e3f4] bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-[#f2f7ff]"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-emerald-700">All questions answered.</p>
+              )}
+            </div>
+
+            {diagnosisError ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{diagnosisError}</p> : null}
+
+            <div className="flex justify-end border-t border-[#e7edf5] pt-4">
+              <button
+                type="button"
+                onClick={openDiagnosisLogistics}
+                disabled={diagnosisAwaitingCategory || diagnosisCurrentIndex !== null}
+                className="h-10 rounded-xl bg-[#1d7ff2] px-5 text-sm font-medium text-white disabled:opacity-50"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(activeIssueDetailId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveIssueDetailId(null);
+            setActiveIssueDetail(null);
+            setActiveDummyIssue(null);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[88vh] max-w-4xl overflow-y-auto rounded-2xl border border-[#d4e0f1] bg-[#f8fbff] p-0">
+          <DialogHeader className="border-b border-[#e0e9f6] px-5 py-4">
+            <DialogTitle className="text-[30px] font-semibold text-slate-900">Issue Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 p-5">
+            {issueDetailLoading ? <p className="text-sm text-slate-500">Loading details...</p> : null}
+            {!issueDetailLoading && activeIssueDetail ? (
+              <>
+                <div className="rounded-xl border border-[#dbe6f5] bg-white p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Summary</p>
+                      <p className="mt-1 text-[18px] font-semibold text-slate-900">
+                        {activeIssueDetail.summary || '-'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-[#cfe0fb] bg-[#f2f7ff] px-2.5 py-1 text-xs font-semibold uppercase text-[#1d65d6]">
+                        {activeIssueDetail.source || '-'}
+                      </span>
+                      <span className="rounded-full border border-[#d8e7dc] bg-[#edf9f0] px-2.5 py-1 text-xs font-semibold uppercase text-[#20844b]">
+                        {activeIssueDetail.status || '-'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+                  <IssueDetailStat label="Vehicle" value={activeIssueDetail.vehicleLabel || '-'} />
+                  <IssueDetailStat label="Created At" value={formatIssueDate(activeIssueDetail.createdAt)} />
+                  <IssueDetailStat label="Quote Count" value={String(activeIssueDetail.quoteCount ?? 0)} />
+                  <IssueDetailStat
+                    label="Severity"
+                    value={String(activeIssueDetail.issuePayload?.issue?.severity ?? '-')}
+                  />
+                </div>
+
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <IssueDetailRow
+                    label="Category"
+                    value={String(activeIssueDetail.issuePayload?.issue?.category ?? '-')}
+                  />
+                  <IssueDetailRow
+                    label="Service Type"
+                    value={String(activeIssueDetail.issuePayload?.serviceType ?? '-')}
+                  />
+                  <IssueDetailRow
+                    label="Address"
+                    value={String(
+                      (activeIssueDetail.issuePayload?.location as { address?: string } | undefined)?.address ?? '-'
+                    )}
+                  />
+                  <IssueDetailRow
+                    label="Schedule"
+                    value={
+                      String((activeIssueDetail.issuePayload?.schedule as { mode?: string } | undefined)?.mode ?? '-') +
+                      (
+                        (activeIssueDetail.issuePayload?.schedule as { preferredAt?: string } | undefined)?.preferredAt
+                          ? ` · ${String((activeIssueDetail.issuePayload?.schedule as { preferredAt?: string }).preferredAt)}`
+                          : ''
+                      )
+                    }
+                  />
+                  <div className="sm:col-span-2">
+                    <IssueDetailRow
+                      label="Description"
+                      value={String(activeIssueDetail.issuePayload?.issue?.description ?? '-')}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-[#dbe6f5] bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Answers</p>
+                  {Object.entries(activeIssueDetail.issuePayload?.issue?.answers ?? {}).length > 0 ? (
+                    <div className="mt-2 overflow-x-auto rounded-lg border border-[#e7eef8]">
+                      <table className="w-full text-left text-xs text-slate-700">
+                        <tbody>
+                          {Object.entries(activeIssueDetail.issuePayload?.issue?.answers ?? {}).map(([key, value]) => (
+                            <tr key={key} className="border-b border-[#eef3fb] last:border-b-0">
+                              <td className="w-[40%] bg-[#f9fbff] px-3 py-2 font-semibold text-slate-600">{key}</td>
+                              <td className="px-3 py-2">{String(value || '-')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-500">No answers captured.</p>
+                  )}
+                </div>
+              </>
+            ) : null}
+            {!issueDetailLoading && !activeIssueDetail && activeDummyIssue ? (
+              <>
+                <div className="rounded-xl border border-[#dbe6f5] bg-white p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Issue</p>
+                      <p className="mt-1 text-[18px] font-semibold text-slate-900">{activeDummyIssue.title}</p>
+                    </div>
+                    <span
+                      className={cn(
+                        'rounded-full px-2.5 py-1 text-xs font-semibold',
+                        activeDummyIssue.confidence === 'HIGH'
+                          ? 'bg-[#d9f9e7] text-[#117a43]'
+                          : activeDummyIssue.confidence === 'MEDIUM'
+                          ? 'bg-[#fff5dc] text-[#a76b00]'
+                          : 'bg-[#e8f2ff] text-[#0f62d6]'
+                      )}
+                    >
+                      {activeDummyIssue.confidence}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid gap-2.5 sm:grid-cols-3">
+                  <IssueDetailStat label="Low Estimate" value={activeDummyIssue.prices.low} />
+                  <IssueDetailStat label="Fair Estimate" value={activeDummyIssue.prices.fair} />
+                  <IssueDetailStat label="High Estimate" value={activeDummyIssue.prices.high} />
+                </div>
+                <IssueDetailRow label="Risk" value={activeDummyIssue.risk} />
+                <div className="rounded-xl border border-[#dbe6f5] bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Potential Notes</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                    {activeDummyIssue.bullets.map((bullet) => (
+                      <li key={bullet}>{bullet}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={diagnosisLogisticsOpen} onOpenChange={setDiagnosisLogisticsOpen}>
+        <DialogContent className="max-h-[88vh] max-w-[760px] overflow-y-auto rounded-2xl border border-[#d4e0f1] bg-[#f8fbff] p-0">
+          <DialogHeader className="border-b border-[#e0e9f6] px-5 py-4">
+            <DialogTitle className="text-[28px] font-semibold text-slate-900">Address & Slot</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 p-5">
+            <div className="rounded-xl border border-[#dbe5f3] bg-white p-4">
+              <p className="mb-1 text-sm font-medium text-slate-700">Service Address</p>
+              <input
+                value={diagnosisAddress}
+                onChange={(e) => setDiagnosisAddress(e.target.value)}
+                className="h-10 w-full rounded-xl border border-[#d6e2f2] bg-[#fbfdff] px-3 text-sm text-slate-700 outline-none"
+                placeholder="Enter service address"
+              />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDiagnosisPickup(false)}
+                  className={cn(
+                    'h-9 rounded-xl border px-3 text-[13px] font-medium',
+                    !diagnosisPickup ? 'border-[#7bb4ff] bg-[#1d7ff2] text-white' : 'border-[#d5e2f3] bg-white text-slate-700'
+                  )}
+                >
+                  Visit Garage
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDiagnosisPickup(true)}
+                  className={cn(
+                    'h-9 rounded-xl border px-3 text-[13px] font-medium',
+                    diagnosisPickup ? 'border-[#7bb4ff] bg-[#1d7ff2] text-white' : 'border-[#d5e2f3] bg-white text-slate-700'
+                  )}
+                >
+                  Need Pickup
+                </button>
+              </div>
+              <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.09em] text-slate-500">Schedule</p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDiagnosisScheduleMode('now')}
+                    className={cn(
+                      'h-9 rounded-xl border px-3 text-[13px] font-medium',
+                      diagnosisScheduleMode === 'now' ? 'border-[#7bb4ff] bg-[#1d7ff2] text-white' : 'border-[#d5e2f3] bg-white text-slate-700'
+                    )}
+                  >
+                    Now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiagnosisScheduleMode('scheduled')}
+                    className={cn(
+                      'h-9 rounded-xl border px-3 text-[13px] font-medium',
+                      diagnosisScheduleMode === 'scheduled' ? 'border-[#7bb4ff] bg-[#1d7ff2] text-white' : 'border-[#d5e2f3] bg-white text-slate-700'
+                    )}
+                  >
+                    Schedule Time
+                  </button>
+                </div>
+                {diagnosisScheduleMode === 'scheduled' ? (
+                  <input
+                    type="datetime-local"
+                    value={diagnosisPreferredAt}
+                    onChange={(e) => setDiagnosisPreferredAt(e.target.value)}
+                    className="mt-2 h-10 w-full rounded-xl border border-[#d6e2f2] bg-white px-3 text-sm text-slate-700 outline-none"
+                  />
+                ) : null}
+              </div>
+            </div>
+            <div className="rounded-xl border border-[#dbe5f3] bg-white p-4">
+              <p className="mb-2 text-sm font-medium text-slate-700">Contact Details</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input value={diagnosisName} onChange={(e) => setDiagnosisName(e.target.value)} className="h-10 rounded-xl border border-[#d6e2f2] px-3 text-sm outline-none" placeholder="Name" />
+                <input value={diagnosisPhone} onChange={(e) => setDiagnosisPhone(e.target.value)} className="h-10 rounded-xl border border-[#d6e2f2] px-3 text-sm outline-none" placeholder="Phone" />
+                <input value={diagnosisAltPhone} onChange={(e) => setDiagnosisAltPhone(e.target.value)} className="h-10 rounded-xl border border-[#d6e2f2] px-3 text-sm outline-none sm:col-span-2" placeholder="Alternate Phone (optional)" />
+              </div>
+            </div>
+
+            {diagnosisError ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{diagnosisError}</p> : null}
+
+            <div className="flex justify-end gap-2 border-t border-[#e7edf5] pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setDiagnosisLogisticsOpen(false);
+                  setDiagnosisChatOpen(true);
+                }}
+                className="h-10 rounded-xl border border-[#d6e2f2] bg-white px-4 text-sm font-medium text-slate-700"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => void createDiagnosisIssue()}
+                disabled={diagnosisSubmitting}
+                className="h-10 rounded-xl bg-[#1d7ff2] px-5 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {diagnosisSubmitting ? 'Creating...' : 'Continue'}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showVehicleForm} onOpenChange={setShowVehicleForm}>
         <DialogContent className="max-h-[92vh] overflow-y-auto rounded-2xl border border-[#cfdff6] bg-[linear-gradient(180deg,#f7fbff_0%,#f3f8ff_100%)] p-0 shadow-[0_28px_64px_rgba(26,54,101,0.26)] sm:max-w-4xl [&>button]:right-5 [&>button]:top-5 [&>button]:rounded-full [&>button]:border [&>button]:border-[#c9daf2] [&>button]:bg-white [&>button]:p-1 [&>button]:text-[#5f7598] [&>button]:opacity-100">
@@ -817,6 +1666,29 @@ function formatInr(amount: number | string) {
   const parsedAmount = Number(amount);
   if (!Number.isFinite(parsedAmount)) return 'INR 0';
   return `INR ${Math.round(parsedAmount).toLocaleString('en-IN')}`;
+}
+
+function inferDashboardSeverity(values: string[]): ServiceIntakePayload['issue']['severity'] {
+  const lowered = values.map((value) => value.toLowerCase());
+  if (lowered.some((value) => value.includes('not') && value.includes('start'))) return 'not_starting';
+  if (lowered.some((value) => value.includes('not working'))) return 'not_starting';
+  if (lowered.some((value) => value.includes('hard') || value.includes('danger') || value.includes('unsafe'))) return 'risky';
+  return 'can_drive';
+}
+
+function mapDashboardWhenHappens(value?: string): ServiceIntakePayload['issue']['whenHappens'] {
+  const lower = (value ?? '').toLowerCase();
+  if (lower.includes('driv')) return 'driving';
+  if (lower.includes('idl')) return 'idling';
+  if (lower.includes('brak')) return 'braking';
+  return 'starting';
+}
+
+function inferDashboardSinceWhen(values: string[]): ServiceIntakePayload['issue']['sinceWhen'] {
+  const joined = values.join(' ').toLowerCase();
+  if (joined.includes('week')) return 'weeks';
+  if (joined.includes('few day')) return 'few_days';
+  return 'today';
 }
 
 function formatQuoteTime(input: string) {
@@ -1002,6 +1874,36 @@ function IssueCard({
       </div>
     </div>
   );
+}
+
+function IssueDetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[#dbe6f5] bg-white p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{label}</p>
+      <p className="mt-1 text-sm text-slate-800">{value || '-'}</p>
+    </div>
+  );
+}
+
+function IssueDetailStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[#dbe6f5] bg-white p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">{label}</p>
+      <p className="mt-1 truncate text-[14px] font-semibold text-slate-900">{value || '-'}</p>
+    </div>
+  );
+}
+
+function formatIssueDate(input: string | Date) {
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) return 'Invalid date';
+  return new Intl.DateTimeFormat('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
 }
 
 function GarageBlock({ garage }: { garage: GarageCard }) {

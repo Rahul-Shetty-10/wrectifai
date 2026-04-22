@@ -57,7 +57,8 @@ export function UserThemeShell({ activeItem, sidebar, children }: UserThemeShell
       <SessionGuard requiredRole="user" />
       <UserSidebarMobile activeItem={activeItem} content={sidebar} />
 
-      <div className="mx-auto w-full min-h-[calc(100vh-1rem)] overflow-hidden rounded-xl border border-[#d4deef] bg-[#edf2fb] shadow-[0_12px_36px_rgba(38,67,122,0.14)] sm:min-h-[calc(100vh-1.5rem)]">
+      <div className="mx-auto flex h-[calc(100vh-1rem)] w-full flex-col overflow-hidden rounded-xl border border-[#d4deef] bg-[#edf2fb] shadow-[0_12px_36px_rgba(38,67,122,0.14)] sm:h-[calc(100vh-1.5rem)]">
+        <div className="sticky top-0 z-30 shrink-0">
         <header className="border-b border-[#dbe5f4] bg-[#f8fbff] px-2.5 py-2 sm:px-4 sm:py-2.5">
           <div className="flex items-center gap-2.5 sm:gap-4">
             <div className="hidden h-[62px] w-[320px] shrink-0 overflow-hidden rounded-xl bg-white p-0.5 shadow-sm sm:flex">
@@ -126,8 +127,9 @@ export function UserThemeShell({ activeItem, sidebar, children }: UserThemeShell
             />
           </div>
         </nav>
+        </div>
 
-        <section className="p-2.5 sm:p-3.5 md:p-4">{children}</section>
+        <section className="flex-1 overflow-y-auto p-2.5 sm:p-3.5 md:p-4">{children}</section>
       </div>
     </main>
   );

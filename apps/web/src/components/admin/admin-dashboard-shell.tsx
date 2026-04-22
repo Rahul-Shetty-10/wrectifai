@@ -36,8 +36,8 @@ export function AdminDashboardShell({ activeItem, children }: AdminDashboardShel
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#ecf4ff_0%,#dfe7f5_52%)] px-2 py-2 sm:px-3 sm:py-3">
       <SessionGuard requiredRole="admin" />
-      <div className="w-full min-h-[calc(100vh-1rem)] overflow-hidden rounded-xl border border-[#cddbef] bg-[linear-gradient(180deg,#edf3fd_0%,#e8f0fb_100%)] shadow-[0_16px_42px_rgba(38,67,122,0.16)] sm:min-h-[calc(100vh-1.5rem)]">
-        <main className="overflow-y-auto bg-[linear-gradient(180deg,#f4f7fd_0%,#edf2f9_100%)]">
+      <div className="w-full h-[calc(100vh-1rem)] overflow-hidden rounded-xl border border-[#cddbef] bg-[linear-gradient(180deg,#edf3fd_0%,#e8f0fb_100%)] shadow-[0_16px_42px_rgba(38,67,122,0.16)] sm:h-[calc(100vh-1.5rem)]">
+        <main className="flex h-full flex-col overflow-hidden bg-[linear-gradient(180deg,#f4f7fd_0%,#edf2f9_100%)]">
           <button
             type="button"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -86,6 +86,7 @@ export function AdminDashboardShell({ activeItem, children }: AdminDashboardShel
             </>
           ) : null}
 
+          <div className="sticky top-0 z-30 shrink-0">
           <header className="hidden border-b border-[#dbe5f4] bg-[#f8fbff] px-3 py-2 sm:px-4 sm:py-2.5 md:block">
             <div className="flex items-center gap-2.5 sm:gap-4">
               <div className="hidden h-[62px] w-[320px] shrink-0 overflow-hidden rounded-xl bg-white p-0.5 shadow-sm sm:flex">
@@ -130,10 +131,11 @@ export function AdminDashboardShell({ activeItem, children }: AdminDashboardShel
               />
             </div>
           </nav>
-
-          <div className="w-full p-4 sm:p-6 md:p-8">
-            {children}
           </div>
+
+          <section className="flex-1 overflow-y-auto p-2.5 sm:p-3.5 md:p-4">
+            <div className="mx-auto w-full max-w-7xl">{children}</div>
+          </section>
         </main>
       </div>
     </div>

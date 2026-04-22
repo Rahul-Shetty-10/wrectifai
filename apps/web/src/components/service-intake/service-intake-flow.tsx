@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CalendarClock, Car, ClipboardList, MapPin, Phone, Sparkles, Upload, Wrench, X } from 'lucide-react';
@@ -37,6 +37,12 @@ type DiagnosisQuestion = {
   label: string;
   options?: string[];
   required: boolean;
+};
+
+type ChatMessage = {
+  id: string;
+  sender: 'bot' | 'user';
+  text: string;
 };
 
 const CATEGORY_QUESTION_BANK: Record<string, DiagnosisQuestion[]> = {
@@ -91,6 +97,21 @@ const CATEGORY_FALLBACKS = [
   { value: 'tyre', label: 'Tyre' },
   { value: 'other', label: 'Other' },
 ];
+
+const CATEGORY_LABEL_MAP = Object.fromEntries(
+  CATEGORY_FALLBACKS.map((item) => [item.value, item.label])
+) as Record<string, string>;
+
+function buildQuestionsFromCategories(categories: string[]) {
+  return categories.flatMap((category) =>
+    (CATEGORY_QUESTION_BANK[category] ?? CATEGORY_QUESTION_BANK.other ?? []).map((question) => ({
+      ...question,
+      id: `${category}__${question.id}`,
+      baseId: question.id,
+      category,
+    }))
+  );
+}
 
 function mapSeverity(value: string): Severity {
   const lower = value.toLowerCase();
@@ -251,6 +272,12 @@ export function ServiceIntakeFlow({
   const [dynamicQuestionsLoading, setDynamicQuestionsLoading] = useState(false);
   const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>({});
   const [questionPopupOpen, setQuestionPopupOpen] = useState(false);
+  const [logisticsPopupOpen, setLogisticsPopupOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatCurrentIndex, setChatCurrentIndex] = useState<number | null>(null);
+  const [chatAwaitingCategory, setChatAwaitingCategory] = useState(false);
+  const [chatTextAnswer, setChatTextAnswer] = useState('');
+  const [chatThinking, setChatThinking] = useState(false);
   const [diagnosisReport, setDiagnosisReport] = useState<{
     riskLevel: RiskLevel;
     severity: Severity;
@@ -270,6 +297,9 @@ export function ServiceIntakeFlow({
   const [lat, setLat] = useState<number | undefined>();
   const [lng, setLng] = useState<number | undefined>();
   const [media, setMedia] = useState<Array<{ type: 'image' | 'video' | 'audio'; name: string }>>([]);
+  const chatTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasAutoStartedRef = useRef(false);
+  const CHAT_REPLY_DELAY_MS = 260;
   const minimumScheduleTime = useMemo(() => formatDateTimeLocal(new Date()), []);
 
   const scheduleValidationError = useMemo(() => {
@@ -283,10 +313,23 @@ export function ServiceIntakeFlow({
 
   useEffect(() => {
     const issueFromQuery = searchParams.get('issue');
+    const vehicleIdFromQuery = searchParams.get('vehicleId');
     if (issueFromQuery && issueFromQuery.trim()) {
       setProblem(issueFromQuery.trim());
     }
+    if (vehicleIdFromQuery && vehicleIdFromQuery.trim()) {
+      setSelectedVehicleId(vehicleIdFromQuery.trim());
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    const shouldAutoStart = searchParams.get('startDiagnosis') === '1';
+    if (!shouldAutoStart || hasAutoStartedRef.current) return;
+    if (loading) return;
+    if (!problem.trim() || !selectedVehicleId.trim()) return;
+    hasAutoStartedRef.current = true;
+    void handleIssueSubmit();
+  }, [loading, problem, searchParams, selectedVehicleId]);
 
   useEffect(() => {
     let active = true;
@@ -319,34 +362,54 @@ export function ServiceIntakeFlow({
   }, []);
 
   useEffect(() => {
+    // Do not reset flow state while user is inside chat/logistics popups.
+    // Category selection in chat updates selectedCategories and should not close the dialog.
+    if (questionPopupOpen || logisticsPopupOpen || chatAwaitingCategory || chatCurrentIndex !== null) {
+      return;
+    }
     setDynamicQuestions([]);
     setQuestionAnswers({});
     setDiagnosisReport(null);
-  }, [problem, selectedCategories]);
+    setChatMessages([]);
+    setChatCurrentIndex(null);
+    setChatAwaitingCategory(false);
+    setChatTextAnswer('');
+    setChatThinking(false);
+    setQuestionPopupOpen(false);
+    setLogisticsPopupOpen(false);
+  }, [
+    problem,
+    selectedCategories,
+    questionPopupOpen,
+    logisticsPopupOpen,
+    chatAwaitingCategory,
+    chatCurrentIndex,
+  ]);
 
-  async function ensureDynamicQuestions() {
-    if (dynamicQuestions.length > 0) return true;
+  useEffect(() => {
+    return () => {
+      if (chatTimerRef.current) {
+        clearTimeout(chatTimerRef.current);
+      }
+    };
+  }, []);
+
+  async function ensureDynamicQuestions(): Promise<DiagnosisQuestion[] | null> {
+    if (dynamicQuestions.length > 0) return dynamicQuestions;
     if (selectedCategories.length === 0) {
       setError('Select at least one issue category first.');
-      return false;
+      return null;
     }
 
     try {
       setDynamicQuestionsLoading(true);
       setError(null);
-      const generated = selectedCategories.flatMap((category) =>
-        (CATEGORY_QUESTION_BANK[category] ?? CATEGORY_QUESTION_BANK.other ?? []).map((question) => ({
-          ...question,
-          id: `${category}__${question.id}`,
-          baseId: question.id,
-          category,
-        }))
-      );
+      const generated = buildQuestionsFromCategories(selectedCategories);
       setDynamicQuestions(generated);
-      return true;
+      return generated;
     } catch {
       setError('Failed to load category questions.');
-      return false;
+      return null;
     } finally {
       setDynamicQuestionsLoading(false);
     }
@@ -377,22 +440,153 @@ export function ServiceIntakeFlow({
     setQuestionAnswers((prev) => ({ ...prev, [id]: value }));
   }
 
+  function askChatQuestion(question: DiagnosisQuestion) {
+    const prompt = question.required ? `${question.label} *` : question.label;
+    setChatMessages((prev) => [
+      ...prev,
+      { id: `bot-${question.id}-${Date.now()}`, sender: 'bot', text: prompt },
+    ]);
+  }
+
+  function startQuestionChat() {
+    if (chatTimerRef.current) {
+      clearTimeout(chatTimerRef.current);
+    }
+    setDynamicQuestions([]);
+    setQuestionAnswers({});
+    setChatMessages([
+      {
+        id: `bot-intro-${Date.now()}`,
+        sender: 'bot',
+        text: 'Thanks. Let us do a quick guided assessment. Please answer one question at a time.',
+      },
+      {
+        id: `bot-category-${Date.now() + 1}`,
+        sender: 'bot',
+        text: 'What is the issue about?',
+      },
+    ]);
+    setChatAwaitingCategory(true);
+    setChatCurrentIndex(null);
+    setChatTextAnswer('');
+    setChatThinking(false);
+  }
+
+  function submitCategorySelection(categoryValue: string) {
+    const label = CATEGORY_LABEL_MAP[categoryValue] ?? categoryValue;
+    const generated = buildQuestionsFromCategories([categoryValue]);
+    if (generated.length === 0) {
+      setError('No questions found for selected category.');
+      return;
+    }
+
+    setSelectedCategories([categoryValue]);
+    setDynamicQuestions(generated);
+    setQuestionAnswers({});
+    setChatMessages((prev) => [
+      ...prev,
+      { id: `user-category-${Date.now()}`, sender: 'user', text: label },
+    ]);
+    setChatAwaitingCategory(false);
+    setChatCurrentIndex(0);
+    setChatThinking(true);
+    chatTimerRef.current = setTimeout(() => {
+      askChatQuestion(generated[0]);
+      setChatThinking(false);
+    }, CHAT_REPLY_DELAY_MS);
+  }
+
+  function advanceChat(fromIndex: number) {
+    if (chatTimerRef.current) {
+      clearTimeout(chatTimerRef.current);
+    }
+    const nextIndex = fromIndex + 1;
+    if (nextIndex >= dynamicQuestions.length) {
+      setChatCurrentIndex(null);
+      setChatThinking(true);
+      chatTimerRef.current = setTimeout(() => {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `bot-done-${Date.now()}`,
+            sender: 'bot',
+            text: 'All required follow-up questions are captured. You can now generate report or raise issue.',
+          },
+        ]);
+        setChatThinking(false);
+      }, CHAT_REPLY_DELAY_MS);
+      return;
+    }
+    setChatCurrentIndex(nextIndex);
+    setChatThinking(true);
+    chatTimerRef.current = setTimeout(() => {
+      askChatQuestion(dynamicQuestions[nextIndex]);
+      setChatThinking(false);
+    }, CHAT_REPLY_DELAY_MS);
+  }
+
+  function submitChatAnswer(answerValue: string) {
+    if (chatCurrentIndex === null) return;
+    const question = dynamicQuestions[chatCurrentIndex];
+    const normalizedAnswer = answerValue.trim();
+    if (!normalizedAnswer) return;
+    answerQuestion(question.id, normalizedAnswer);
+    setChatMessages((prev) => [
+      ...prev,
+      { id: `user-${question.id}-${Date.now()}`, sender: 'user', text: normalizedAnswer },
+    ]);
+    setChatTextAnswer('');
+    advanceChat(chatCurrentIndex);
+  }
+
   async function handleIssueSubmit() {
     setError(null);
-    if (selectedCategories.length === 0) {
+    if (!problem.trim()) {
+      setError('Please type your issue before starting assessment.');
+      return;
+    }
+    if (mode !== 'diagnosis' && selectedCategories.length === 0) {
       setError('Please select at least one issue category first.');
       return;
     }
-    const ok = await ensureDynamicQuestions();
-    if (!ok) return;
+    const selected = vehicles.find((item) => item.id === selectedVehicleId);
+    if (!selected && !useManualVehicle) {
+      setError('Please select a vehicle first.');
+      return;
+    }
+    if (mode !== 'diagnosis') {
+      const questions = await ensureDynamicQuestions();
+      if (!questions) return;
+    }
+    setLogisticsPopupOpen(false);
     setQuestionPopupOpen(true);
+    if (mode === 'diagnosis') {
+      startQuestionChat();
+    }
+  }
+
+  function proceedToLogisticsStep() {
+    if (chatAwaitingCategory || chatCurrentIndex !== null) {
+      setError('Please complete all chat questions first.');
+      return;
+    }
+    for (const question of requiredQuestions) {
+      const value = questionAnswers[question.id];
+      if (!value || !value.trim()) {
+        setError(`Please answer: ${question.label}`);
+        return;
+      }
+    }
+    setError(null);
+    setQuestionPopupOpen(false);
+    setLogisticsPopupOpen(true);
   }
 
   async function buildPayload() {
-    const hasQuestions = await ensureDynamicQuestions();
-    if (!hasQuestions) throw new Error('Unable to load follow-up questions.');
+    const questions = await ensureDynamicQuestions();
+    if (!questions) throw new Error('Unable to load follow-up questions.');
 
-    for (const question of dynamicQuestions) {
+    for (const question of questions) {
       if (question.required && !questionAnswers[question.id]) {
         throw new Error(`Please answer: ${question.label}`);
       }
@@ -415,7 +609,7 @@ export function ServiceIntakeFlow({
     const selectedSince = inferSinceWhenFromAnswers(questionAnswers);
     const selectedWhen = mapWhenHappens(getWhenOccursAnswer(questionAnswers));
 
-    const categorySymptoms = dynamicQuestions
+    const categorySymptoms = questions
       .map((q) =>
         questionAnswers[q.id]
           ? `${q.category ?? 'other'}:${q.baseId ?? q.id}:${questionAnswers[q.id]}`
@@ -518,6 +712,7 @@ export function ServiceIntakeFlow({
       const { issueId } = await submitServiceIntake(payload);
       await raiseIssueToGarageApi(issueId);
       setQuestionPopupOpen(false);
+      setLogisticsPopupOpen(false);
       router.push(`/user/quotes-bookings/${issueId}`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to submit request.');
@@ -551,8 +746,8 @@ export function ServiceIntakeFlow({
     <UserThemeShell activeItem="ai-diagnosis" sidebar={sidebar}>
       <section className="overflow-y-auto">
         <div className="mx-auto max-w-7xl p-4 sm:p-6 md:p-8">
-          <Card className="mt-3 overflow-hidden rounded-xl border-[#d9e2ef] bg-white shadow-[0_6px_16px_rgba(94,126,179,0.10)]">
-            <CardHeader className="border-b border-[#e7edf5] bg-[linear-gradient(135deg,#f8fbff_0%,#f3f8ff_100%)] p-4 sm:p-6">
+          <Card className="mt-2 overflow-hidden rounded-2xl border-[#d9e2ef] bg-white shadow-[0_8px_20px_rgba(94,126,179,0.10)]">
+            <CardHeader className="border-b border-[#e7edf5] bg-[linear-gradient(135deg,#f8fbff_0%,#f3f8ff_100%)] p-5 sm:p-7">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <CardTitle className="text-xl font-bold text-slate-900 sm:text-2xl md:text-3xl">
@@ -571,11 +766,63 @@ export function ServiceIntakeFlow({
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+            <CardContent className="space-y-5 sm:space-y-7 p-5 sm:p-7">
               {loading ? <p className="text-sm text-slate-500">{content.labels.loading}</p> : null}
 
               {!loading ? (
                 <SectionCard icon={Wrench} title={content.sections.categoriesTitle} subtitle={content.sections.categoriesSubtitle}>
+                  <div className="rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Select Vehicle First
+                    </p>
+                    <div className="flex flex-wrap gap-2.5">
+                      <Button type="button" variant={!useManualVehicle ? 'default' : 'outline'} onClick={() => setUseManualVehicle(false)}>
+                        {content.labels.useSaved}
+                      </Button>
+                      <Button type="button" variant={useManualVehicle ? 'default' : 'outline'} onClick={() => setUseManualVehicle(true)}>
+                        {content.labels.manual}
+                      </Button>
+                    </div>
+
+                    {!useManualVehicle ? (
+                      <select
+                        value={selectedVehicleId}
+                        onChange={(e) => setSelectedVehicleId(e.target.value)}
+                        className="mt-3 h-11 w-full rounded-xl border border-[#d6e1ee] bg-white px-3 text-sm"
+                      >
+                        <option value="">{content.labels.selectVehicle}</option>
+                        {vehicles.map((vehicle) => (
+                          <option key={vehicle.id} value={vehicle.id}>
+                            {vehicle.year} {vehicle.make} {vehicle.model}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                        <select
+                          value={manualVehicle.type}
+                          onChange={(e) =>
+                            setManualVehicle((prev) => ({
+                              ...prev,
+                              type: e.target.value as 'car' | 'bike' | 'other',
+                            }))
+                          }
+                          className="h-11 rounded-xl border border-[#d6e1ee] px-3 text-sm"
+                        >
+                          <option value="car">{content.labels.car}</option>
+                          <option value="bike">{content.labels.bike}</option>
+                          <option value="other">{content.labels.other}</option>
+                        </select>
+                        <Input value={manualVehicle.brand} onChange={(e) => setManualVehicle((prev) => ({ ...prev, brand: e.target.value }))} placeholder={content.placeholders.brand} />
+                        <Input value={manualVehicle.model} onChange={(e) => setManualVehicle((prev) => ({ ...prev, model: e.target.value }))} placeholder={content.placeholders.model} />
+                        <Input value={manualVehicle.year} onChange={(e) => setManualVehicle((prev) => ({ ...prev, year: e.target.value }))} placeholder={content.placeholders.year} />
+                        <Input value={manualVehicle.fuel} onChange={(e) => setManualVehicle((prev) => ({ ...prev, fuel: e.target.value }))} placeholder={content.placeholders.fuelType} />
+                        <Input value={manualVehicle.variant} onChange={(e) => setManualVehicle((prev) => ({ ...prev, variant: e.target.value }))} placeholder={content.placeholders.variantOptional} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Issue Categories</p>
                   <MultiOptionChips
                     values={categoryOptions}
                     valuesSelected={selectedCategories}
@@ -585,13 +832,20 @@ export function ServiceIntakeFlow({
                       )
                     }
                   />
+                  </div>
                   <textarea
                     value={problem}
                     onChange={(e) => setProblem(e.target.value)}
-                    className="min-h-24 w-full rounded-xl border border-[#d6e1ee] p-3 text-sm sm:min-h-28"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        void handleIssueSubmit();
+                      }
+                    }}
+                    className="min-h-28 w-full rounded-xl border border-[#d6e1ee] bg-white p-3.5 text-sm leading-6 sm:min-h-32"
                     placeholder={content.placeholders.shortDescription}
                   />
-                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                  <div className="mt-1 flex flex-col gap-2.5 border-t border-[#e8eef7] pt-3 sm:flex-row sm:flex-wrap sm:items-center">
                     <Badge variant="outline" className="w-fit border-[#cddaf0] text-[#335889]">
                       {content.labels.selectedCategories}:{' '}
                       {selectedCategories.length > 0
@@ -602,7 +856,7 @@ export function ServiceIntakeFlow({
                       type="button"
                       onClick={() => void handleIssueSubmit()}
                       disabled={dynamicQuestionsLoading || selectedCategories.length === 0}
-                      className="w-full sm:w-auto"
+                      className="w-full px-5 sm:w-auto"
                     >
                       {dynamicQuestionsLoading ? content.labels.loadingQuestions : content.labels.continue}
                     </Button>
@@ -621,11 +875,8 @@ export function ServiceIntakeFlow({
                   <div>
                     <DialogTitle className="flex items-center gap-2 text-[23px] font-semibold text-slate-900">
                       <Sparkles className="h-4 w-4 text-[#2f6ac6] sm:h-5 sm:w-5" />
-                      {content.labels.smartQuestionsTitle}
+                      Wrectfai Chat Bot
                     </DialogTitle>
-                    <p className="text-[13px] text-slate-500">
-                      {content.labels.smartQuestionsSubtitle}
-                    </p>
                   </div>
                   <Button
                     type="button"
@@ -639,118 +890,359 @@ export function ServiceIntakeFlow({
                   </Button>
                 </div>
               </DialogHeader>
-              <div className="space-y-6 px-4 py-4 sm:px-6 sm:py-5">
-                {requiredQuestions.length > 0 ? (
-                  <div className="rounded-xl border border-[#dce7f6] bg-[#f7fbff] p-3">
-                    <div className="mb-2 flex items-center justify-between text-[13px]">
-                      <p className="font-medium text-slate-700">Required Questions Progress</p>
-                      <p className="font-semibold text-[#2456f5]">
-                        {answeredRequiredQuestions}/{requiredQuestions.length}
-                      </p>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-[#e8effa]">
-                      <div
-                        className="h-full rounded-full bg-[linear-gradient(90deg,#2a82f6_0%,#57a5ff_100%)] transition-all duration-300"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            Math.round((answeredRequiredQuestions / requiredQuestions.length) * 100)
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ) : null}
+              <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-5">
+              {chatAwaitingCategory || dynamicQuestions.length > 0 ? (
+                mode === 'diagnosis' ? (
+                  <div className="rounded-xl border border-[#dbe5f3] bg-[#f8fbff] p-3">
+                      <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                        {chatMessages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={cn(
+                              'max-w-[90%] rounded-2xl px-3 py-2 text-sm',
+                              message.sender === 'bot'
+                                ? 'bg-white text-slate-800 border border-[#dbe5f3]'
+                                : 'ml-auto bg-[#1d7ff2] text-white'
+                            )}
+                          >
+                            {message.text}
+                          </div>
+                        ))}
+                        {chatThinking ? (
+                          <div className="max-w-[90%] rounded-2xl border border-[#dbe5f3] bg-white px-3 py-2 text-xs text-slate-500">
+                            Typing...
+                          </div>
+                        ) : null}
+                      </div>
 
-              {dynamicQuestions.length > 0 ? (
-                <SectionCard icon={ClipboardList} title={content.sections.questionsTitle} subtitle={content.sections.questionsSubtitle}>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {dynamicQuestions.map((question) => (
-                      <div key={question.id} className="rounded-xl border border-[#dbe5f3] bg-white p-3 shadow-[0_4px_12px_rgba(94,126,179,0.08)]">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-[16px] font-medium text-slate-900">
-                            {question.label} {question.required ? <span className="text-red-500">*</span> : null}
-                          </p>
-                          <Badge variant="outline" className="border-[#d3deef] bg-[#f7fbff] text-[10px] font-medium uppercase text-[#45628b]">
-                            {question.category}
-                          </Badge>
-                        </div>
-                        <div className="mt-2">
-                          <QuestionInput
-                            question={question}
-                            value={questionAnswers[question.id] ?? ''}
-                            onChange={(value) => answerQuestion(question.id, value)}
-                            textPlaceholder={content.placeholders.answer}
+                      {chatAwaitingCategory ? (
+                        <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-white p-3">
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                              Current Question
+                            </p>
+                            <Badge variant="outline" className="border-[#d3deef] bg-[#f7fbff] text-[10px] font-medium uppercase text-[#45628b]">
+                              Category
+                            </Badge>
+                          </div>
+                          <OptionChips
+                            values={categoryOptions.map((option) => ({
+                              value: option.value,
+                              label: option.label,
+                            }))}
+                            value={selectedCategories[0] ?? ''}
+                            onPick={submitCategorySelection}
                           />
                         </div>
-                      </div>
-                    ))}
+                      ) : chatCurrentIndex !== null ? (
+                        <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-white p-3">
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                              Current Question
+                            </p>
+                            <Badge variant="outline" className="border-[#d3deef] bg-[#f7fbff] text-[10px] font-medium uppercase text-[#45628b]">
+                              {dynamicQuestions[chatCurrentIndex]?.category}
+                            </Badge>
+                          </div>
+                          {dynamicQuestions[chatCurrentIndex]?.type === 'text' ? (
+                            <div className="flex gap-2">
+                              <Input
+                                value={chatTextAnswer}
+                                onChange={(e) => setChatTextAnswer(e.target.value)}
+                                placeholder={content.placeholders.answer}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    submitChatAnswer(chatTextAnswer);
+                                  }
+                                }}
+                              />
+                              <Button type="button" onClick={() => submitChatAnswer(chatTextAnswer)} disabled={!chatTextAnswer.trim() || chatThinking}>
+                                Send
+                              </Button>
+                            </div>
+                          ) : (
+                            <OptionChips
+                              values={
+                                dynamicQuestions[chatCurrentIndex]?.type === 'boolean'
+                                  ? [
+                                      { value: 'yes', label: 'Yes' },
+                                      { value: 'no', label: 'No' },
+                                    ]
+                                  : (dynamicQuestions[chatCurrentIndex]?.options ?? []).map((option) => ({
+                                      value: option,
+                                      label: option,
+                                    }))
+                              }
+                              value={questionAnswers[dynamicQuestions[chatCurrentIndex]?.id ?? ''] ?? ''}
+                              onPick={(value) => submitChatAnswer(value)}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-sm text-emerald-700">All questions answered.</p>
+                      )}
                   </div>
-                </SectionCard>
+                ) : (
+                  <SectionCard icon={ClipboardList} title={content.sections.questionsTitle} subtitle={content.sections.questionsSubtitle}>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {dynamicQuestions.map((question) => (
+                        <div key={question.id} className="rounded-xl border border-[#dbe5f3] bg-white p-3 shadow-[0_4px_12px_rgba(94,126,179,0.08)]">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-[16px] font-medium text-slate-900">
+                              {question.label} {question.required ? <span className="text-red-500">*</span> : null}
+                            </p>
+                            <Badge variant="outline" className="border-[#d3deef] bg-[#f7fbff] text-[10px] font-medium uppercase text-[#45628b]">
+                              {question.category}
+                            </Badge>
+                          </div>
+                          <div className="mt-2">
+                            <QuestionInput
+                              question={question}
+                              value={questionAnswers[question.id] ?? ''}
+                              onChange={(value) => answerQuestion(question.id, value)}
+                              textPlaceholder={content.placeholders.answer}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </SectionCard>
+                )
               ) : null}
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                <SectionCard icon={Upload} title={content.sections.evidenceTitle} subtitle={content.sections.evidenceSubtitle}>
-                  <input type="file" multiple accept="image/*,video/*,audio/*" onChange={onMediaChange} />
-                  {media.length > 0 ? (
-                    <ul className="mt-2 list-inside list-disc text-xs text-slate-600">
-                      {media.slice(0, 5).map((file, index) => (
-                        <li key={`${file.name}-${index}`}>{file.name}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </SectionCard>
+              {mode !== 'diagnosis' ? (
+                <>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <SectionCard icon={Upload} title={content.sections.evidenceTitle} subtitle={content.sections.evidenceSubtitle}>
+                      <input type="file" multiple accept="image/*,video/*,audio/*" onChange={onMediaChange} />
+                      {media.length > 0 ? (
+                        <ul className="mt-2 list-inside list-disc text-xs text-slate-600">
+                          {media.slice(0, 5).map((file, index) => (
+                            <li key={`${file.name}-${index}`}>{file.name}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </SectionCard>
 
-                <SectionCard icon={Car} title={content.sections.vehicleTitle} subtitle={content.sections.vehicleSubtitle}>
-                  <div className="flex gap-2">
-                    <Button type="button" variant={!useManualVehicle ? 'default' : 'outline'} onClick={() => setUseManualVehicle(false)}>
-                      {content.labels.useSaved}
-                    </Button>
-                    <Button type="button" variant={useManualVehicle ? 'default' : 'outline'} onClick={() => setUseManualVehicle(true)}>
-                      {content.labels.manual}
-                    </Button>
+                    <SectionCard icon={Car} title={content.sections.vehicleTitle} subtitle={content.sections.vehicleSubtitle}>
+                      <div className="flex gap-2">
+                        <Button type="button" variant={!useManualVehicle ? 'default' : 'outline'} onClick={() => setUseManualVehicle(false)}>
+                          {content.labels.useSaved}
+                        </Button>
+                        <Button type="button" variant={useManualVehicle ? 'default' : 'outline'} onClick={() => setUseManualVehicle(true)}>
+                          {content.labels.manual}
+                        </Button>
+                      </div>
+
+                      {!useManualVehicle ? (
+                        <select
+                          value={selectedVehicleId}
+                          onChange={(e) => setSelectedVehicleId(e.target.value)}
+                          className="mt-2 h-11 w-full rounded-xl border border-[#d6e1ee] px-3 text-sm"
+                        >
+                          <option value="">{content.labels.selectVehicle}</option>
+                          {vehicles.map((vehicle) => (
+                            <option key={vehicle.id} value={vehicle.id}>
+                              {vehicle.year} {vehicle.make} {vehicle.model}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          <select
+                            value={manualVehicle.type}
+                            onChange={(e) =>
+                              setManualVehicle((prev) => ({
+                                ...prev,
+                                type: e.target.value as 'car' | 'bike' | 'other',
+                              }))
+                            }
+                            className="h-11 rounded-xl border border-[#d6e1ee] px-3 text-sm"
+                          >
+                            <option value="car">{content.labels.car}</option>
+                            <option value="bike">{content.labels.bike}</option>
+                            <option value="other">{content.labels.other}</option>
+                          </select>
+                          <Input value={manualVehicle.brand} onChange={(e) => setManualVehicle((prev) => ({ ...prev, brand: e.target.value }))} placeholder={content.placeholders.brand} />
+                          <Input value={manualVehicle.model} onChange={(e) => setManualVehicle((prev) => ({ ...prev, model: e.target.value }))} placeholder={content.placeholders.model} />
+                          <Input value={manualVehicle.year} onChange={(e) => setManualVehicle((prev) => ({ ...prev, year: e.target.value }))} placeholder={content.placeholders.year} />
+                          <Input value={manualVehicle.fuel} onChange={(e) => setManualVehicle((prev) => ({ ...prev, fuel: e.target.value }))} placeholder={content.placeholders.fuelType} />
+                          <Input value={manualVehicle.variant} onChange={(e) => setManualVehicle((prev) => ({ ...prev, variant: e.target.value }))} placeholder={content.placeholders.variantOptional} />
+                        </div>
+                      )}
+                    </SectionCard>
                   </div>
 
-                  {!useManualVehicle ? (
-                    <select
-                      value={selectedVehicleId}
-                      onChange={(e) => setSelectedVehicleId(e.target.value)}
-                      className="mt-2 h-11 w-full rounded-xl border border-[#d6e1ee] px-3 text-sm"
-                    >
-                      <option value="">{content.labels.selectVehicle}</option>
-                      {vehicles.map((vehicle) => (
-                        <option key={vehicle.id} value={vehicle.id}>
-                          {vehicle.year} {vehicle.make} {vehicle.model}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <SectionCard icon={MapPin} title={content.sections.logisticsTitle} subtitle={content.sections.logisticsSubtitle}>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Button type="button" variant="outline" onClick={askGeo}>{content.labels.useGps}</Button>
+                          {lat && lng ? <Badge variant="outline">{lat.toFixed(4)}, {lng.toFixed(4)}</Badge> : null}
+                        </div>
+                        <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={content.placeholders.serviceAddress} />
+
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{content.labels.pickupRequired}</p>
+                        <OptionChips
+                          values={[
+                            { value: 'no', label: content.labels.visitGarage },
+                            { value: 'yes', label: content.labels.needPickup },
+                          ]}
+                          value={pickup ? 'yes' : 'no'}
+                          onPick={(value) => setPickup(value === 'yes')}
+                        />
+
+                        <div className="rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3">
+                          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{content.labels.schedule}</p>
+                          <div className="mt-2">
+                            <OptionChips
+                              values={[
+                                { value: 'now', label: content.labels.nowEmergency },
+                                { value: 'scheduled', label: content.labels.scheduleTime },
+                              ]}
+                              value={scheduleMode}
+                              onPick={(value) => setScheduleMode(value as 'now' | 'scheduled')}
+                            />
+                            {scheduleMode === 'scheduled' ? (
+                              <>
+                                <Input
+                                  className="mt-2"
+                                  type="datetime-local"
+                                  min={minimumScheduleTime}
+                                  value={preferredAt}
+                                  onChange={(e) => setPreferredAt(e.target.value)}
+                                />
+                                {scheduleValidationError ? (
+                                  <p className="mt-1 text-xs text-red-600">{scheduleValidationError}</p>
+                                ) : null}
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    </SectionCard>
+
+                    <SectionCard icon={Phone} title={content.sections.contactTitle} subtitle={content.sections.contactSubtitle}>
+                      <div className="space-y-2">
+                        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={content.placeholders.name} />
+                        <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={content.placeholders.phone} />
+                        <Input value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value)} placeholder={content.placeholders.alternatePhoneOptional} />
+                      </div>
+
+                      <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3 text-sm">
+                        <p><span className="font-semibold text-slate-900">{content.labels.vehicleLabel}</span> {selectedVehicleLabel}</p>
+                        <p className="mt-1"><span className="font-semibold text-slate-900">{content.labels.serviceTypeLabel}</span> {pickup ? content.labels.pickupRequiredValue : content.labels.visitGarageValue}</p>
+                        <p className="mt-1"><span className="font-semibold text-slate-900">{content.labels.scheduleLabel}</span> {scheduleMode === 'scheduled' ? preferredAt || content.labels.scheduledValue : content.labels.nowValue}</p>
+                        <p className="mt-1"><span className="font-semibold text-slate-900">{content.labels.questionsAnsweredLabel}</span> {Object.keys(questionAnswers).length}</p>
+                      </div>
+                    </SectionCard>
+                  </div>
+                </>
+              ) : null}
+
+              {mode !== 'diagnosis' && diagnosisReport ? (
+                <SectionCard icon={Sparkles} title={content.sections.reportTitle} subtitle={content.sections.reportSubtitle}>
+                  <div className="rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3 text-sm">
+                    <p>
+                      <span className="font-semibold text-slate-900">{content.labels.riskLevelLabel}</span>{' '}
+                      <span className={
+                        diagnosisReport.riskLevel === 'low'
+                          ? 'text-emerald-700'
+                          : diagnosisReport.riskLevel === 'medium'
+                            ? 'text-amber-700'
+                            : 'text-red-700'
+                      }>
+                        {diagnosisReport.riskLevel.toUpperCase()}
+                      </span>
+                    </p>
+                    <p className="mt-1">
+                      <span className="font-semibold text-slate-900">{content.labels.severityLabel}</span> {diagnosisReport.severity}
+                    </p>
+                    <p className="mt-1">
+                      <span className="font-semibold text-slate-900">{content.labels.summaryLabel}</span> {diagnosisReport.summary}
+                    </p>
+                    <p className="mt-1">
+                      <span className="font-semibold text-slate-900">{content.labels.recommendationLabel}</span> {diagnosisReport.recommendation}
+                    </p>
+                  </div>
+
+                  {diagnosisReport.diyEligible && diagnosisReport.diySteps.length > 0 ? (
+                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                      <p className="text-sm font-semibold text-emerald-800">{content.labels.diyStepsTitle}</p>
+                      <ul className="mt-2 list-inside list-disc text-sm text-emerald-900">
+                        {diagnosisReport.diySteps.map((step, index) => (
+                          <li key={`${step}-${index}`}>{step}</li>
+                        ))}
+                      </ul>
+                    </div>
                   ) : (
-                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                      <select
-                        value={manualVehicle.type}
-                        onChange={(e) =>
-                          setManualVehicle((prev) => ({
-                            ...prev,
-                            type: e.target.value as 'car' | 'bike' | 'other',
-                          }))
-                        }
-                        className="h-11 rounded-xl border border-[#d6e1ee] px-3 text-sm"
-                      >
-                        <option value="car">{content.labels.car}</option>
-                        <option value="bike">{content.labels.bike}</option>
-                        <option value="other">{content.labels.other}</option>
-                      </select>
-                      <Input value={manualVehicle.brand} onChange={(e) => setManualVehicle((prev) => ({ ...prev, brand: e.target.value }))} placeholder={content.placeholders.brand} />
-                      <Input value={manualVehicle.model} onChange={(e) => setManualVehicle((prev) => ({ ...prev, model: e.target.value }))} placeholder={content.placeholders.model} />
-                      <Input value={manualVehicle.year} onChange={(e) => setManualVehicle((prev) => ({ ...prev, year: e.target.value }))} placeholder={content.placeholders.year} />
-                      <Input value={manualVehicle.fuel} onChange={(e) => setManualVehicle((prev) => ({ ...prev, fuel: e.target.value }))} placeholder={content.placeholders.fuelType} />
-                      <Input value={manualVehicle.variant} onChange={(e) => setManualVehicle((prev) => ({ ...prev, variant: e.target.value }))} placeholder={content.placeholders.variantOptional} />
+                    <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                      {content.labels.diyBlocked}
                     </div>
                   )}
                 </SectionCard>
-              </div>
+              ) : null}
 
-              <div className="grid gap-6 lg:grid-cols-2">
+              {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p> : null}
+
+              <div className="flex justify-end gap-2 border-t border-[#e7edf5] pt-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {mode !== 'diagnosis' ? (
+                    <Button type="button" variant="outline" onClick={generateDiagnosisReport} disabled={submitting || dynamicQuestionsLoading}>
+                      {submitting ? content.labels.generating : content.labels.generateReport}
+                    </Button>
+                  ) : null}
+                  {mode === 'diagnosis' ? (
+                    <Button
+                      type="button"
+                      onClick={proceedToLogisticsStep}
+                      disabled={chatCurrentIndex !== null || dynamicQuestionsLoading || submitting}
+                    >
+                      Continue
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={submitIssueToGarage}
+                      disabled={submitting || dynamicQuestionsLoading}
+                    >
+                      {submitting ? content.labels.submitting : content.labels.raiseIssue}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={logisticsPopupOpen} onOpenChange={setLogisticsPopupOpen}>
+            <DialogContent className="max-h-[92vh] max-w-[760px] overflow-y-auto rounded-xl border-[#d9e2ef] bg-white p-0 shadow-[0_20px_52px_rgba(33,61,105,0.24)]">
+              <DialogHeader className="sticky top-0 z-20 border-b border-[#e5edf8] bg-white/95 px-4 py-4 backdrop-blur-sm sm:px-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <DialogTitle className="flex items-center gap-2 text-[23px] font-semibold text-slate-900">
+                      <MapPin className="h-4 w-4 text-[#2f6ac6] sm:h-5 sm:w-5" />
+                      Address & Slot
+                    </DialogTitle>
+                    <p className="text-[13px] text-slate-500">
+                      Add service address and preferred time to continue.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                    onClick={() => setLogisticsPopupOpen(false)}
+                    aria-label="Close address and slot popup"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-5">
                 <SectionCard icon={MapPin} title={content.sections.logisticsTitle} subtitle={content.sections.logisticsSubtitle}>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -799,89 +1291,27 @@ export function ServiceIntakeFlow({
                   </div>
                 </SectionCard>
 
-                <SectionCard icon={Phone} title={content.sections.contactTitle} subtitle={content.sections.contactSubtitle}>
-                  <div className="space-y-2">
-                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={content.placeholders.name} />
-                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={content.placeholders.phone} />
-                    <Input value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value)} placeholder={content.placeholders.alternatePhoneOptional} />
-                  </div>
+                {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p> : null}
 
-                  <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3 text-sm">
-                    <p><span className="font-semibold text-slate-900">{content.labels.vehicleLabel}</span> {selectedVehicleLabel}</p>
-                    <p className="mt-1"><span className="font-semibold text-slate-900">{content.labels.serviceTypeLabel}</span> {pickup ? content.labels.pickupRequiredValue : content.labels.visitGarageValue}</p>
-                    <p className="mt-1"><span className="font-semibold text-slate-900">{content.labels.scheduleLabel}</span> {scheduleMode === 'scheduled' ? preferredAt || content.labels.scheduledValue : content.labels.nowValue}</p>
-                    <p className="mt-1"><span className="font-semibold text-slate-900">{content.labels.questionsAnsweredLabel}</span> {Object.keys(questionAnswers).length}</p>
-                  </div>
-                </SectionCard>
-              </div>
-
-              {mode === 'diagnosis' && diagnosisReport ? (
-                <SectionCard icon={Sparkles} title={content.sections.reportTitle} subtitle={content.sections.reportSubtitle}>
-                  <div className="rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3 text-sm">
-                    <p>
-                      <span className="font-semibold text-slate-900">{content.labels.riskLevelLabel}</span>{' '}
-                      <span className={
-                        diagnosisReport.riskLevel === 'low'
-                          ? 'text-emerald-700'
-                          : diagnosisReport.riskLevel === 'medium'
-                            ? 'text-amber-700'
-                            : 'text-red-700'
-                      }>
-                        {diagnosisReport.riskLevel.toUpperCase()}
-                      </span>
-                    </p>
-                    <p className="mt-1">
-                      <span className="font-semibold text-slate-900">{content.labels.severityLabel}</span> {diagnosisReport.severity}
-                    </p>
-                    <p className="mt-1">
-                      <span className="font-semibold text-slate-900">{content.labels.summaryLabel}</span> {diagnosisReport.summary}
-                    </p>
-                    <p className="mt-1">
-                      <span className="font-semibold text-slate-900">{content.labels.recommendationLabel}</span> {diagnosisReport.recommendation}
-                    </p>
-                  </div>
-
-                  {diagnosisReport.diyEligible && diagnosisReport.diySteps.length > 0 ? (
-                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                      <p className="text-sm font-semibold text-emerald-800">{content.labels.diyStepsTitle}</p>
-                      <ul className="mt-2 list-inside list-disc text-sm text-emerald-900">
-                        {diagnosisReport.diySteps.map((step, index) => (
-                          <li key={`${step}-${index}`}>{step}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : (
-                    <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                      {content.labels.diyBlocked}
-                    </div>
-                  )}
-                </SectionCard>
-              ) : null}
-
-              {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p> : null}
-
-              <div className="flex flex-col justify-between gap-3 border-t border-[#e7edf5] pt-4 sm:flex-row sm:items-center">
-                <div className="inline-flex items-center gap-2 text-xs text-slate-500">
-                  <CalendarClock className="h-4 w-4" />
-                  {mode === 'diagnosis'
-                    ? content.labels.diagnosisHint
-                    : content.labels.directHint}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {mode === 'diagnosis' ? (
-                    <Button type="button" variant="outline" onClick={generateDiagnosisReport} disabled={submitting || dynamicQuestionsLoading}>
-                      {submitting ? content.labels.generating : content.labels.generateReport}
-                    </Button>
-                  ) : null}
+                <div className="flex justify-end gap-2 border-t border-[#e7edf5] pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setLogisticsPopupOpen(false);
+                      setQuestionPopupOpen(true);
+                    }}
+                  >
+                    Back
+                  </Button>
                   <Button
                     type="button"
                     onClick={submitIssueToGarage}
                     disabled={submitting || dynamicQuestionsLoading}
                   >
-                    {submitting ? content.labels.submitting : content.labels.raiseIssue}
+                    {submitting ? content.labels.submitting : 'Continue'}
                   </Button>
                 </div>
-              </div>
               </div>
             </DialogContent>
           </Dialog>
@@ -903,9 +1333,9 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-[#dbe5f3] bg-[linear-gradient(180deg,#fcfdff_0%,#f7fbff_100%)] p-4 shadow-[0_4px_12px_rgba(94,126,179,0.08)]">
-      <div className="mb-3 flex items-start gap-3">
-        <div className="rounded-xl bg-[#e9f2ff] p-2 text-[#2f6ac6]">
+    <div className="rounded-xl border border-[#dbe5f3] bg-[linear-gradient(180deg,#fcfdff_0%,#f7fbff_100%)] p-4 sm:p-5 shadow-[0_4px_12px_rgba(94,126,179,0.08)]">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="rounded-xl bg-[#e9f2ff] p-2.5 text-[#2f6ac6]">
           <Icon className="h-4 w-4" />
         </div>
         <div>
@@ -913,7 +1343,7 @@ function SectionCard({
           {subtitle ? <p className="text-xs text-slate-500">{subtitle}</p> : null}
         </div>
       </div>
-      <div>{children}</div>
+      <div className="space-y-3">{children}</div>
     </div>
   );
 }
@@ -935,7 +1365,7 @@ function OptionChips({
           type="button"
           variant="outline"
           className={cn(
-            'h-9 rounded-xl border px-3 text-[13px] font-medium transition-all',
+            'h-9 rounded-xl border px-3.5 text-[13px] font-medium transition-all',
             value === item.value
               ? 'border-[#7bb4ff] bg-[#1d7ff2] text-white hover:bg-[#146ad4] hover:text-white'
               : 'border-[#d6e1f1] bg-[#f7faff] text-slate-700 hover:bg-white'
@@ -968,7 +1398,7 @@ function MultiOptionChips({
             type="button"
             variant="outline"
             className={cn(
-              'h-9 rounded-xl border px-3 text-[13px] font-medium transition-all',
+            'h-9 rounded-xl border px-3.5 text-[13px] font-medium transition-all',
               selected
                 ? 'border-[#7bb4ff] bg-[#1d7ff2] text-white hover:bg-[#146ad4] hover:text-white'
                 : 'border-[#d6e1f1] bg-[#f7faff] text-slate-700 hover:bg-white'
