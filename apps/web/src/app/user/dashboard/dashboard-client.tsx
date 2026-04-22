@@ -49,6 +49,7 @@ import {
   type UserVehicle,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import diagnosisQuestionBankJson from '@/data/diagnosis-question-bank.json';
 
 type Props = {
   sidebar: UserSidebarContent;
@@ -124,6 +125,18 @@ type DiagnosisChatMessage = {
   id: string;
   sender: 'bot' | 'user';
   text: string;
+};
+
+type DiagnosisSummary = {
+  summary: string;
+  probableProblem: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  risk: string;
+  diySteps: string[];
+  likelyCauses: string[];
+  recommendedActions: string[];
+  serviceSuggestion: string;
+  estimatedCostRange: string;
 };
 
 type DashboardAiIssueDummy = {
@@ -238,41 +251,7 @@ const DIAGNOSIS_CATEGORY_OPTIONS = [
   { value: 'other', label: 'Other' },
 ] as const;
 
-const DIAGNOSIS_QUESTION_BANK: Record<string, DiagnosisQuestion[]> = {
-  engine: [
-    { id: 'when_occurs', label: 'When does the issue occur?', type: 'single_select', options: ['Starting', 'While driving', 'Idling'], required: true },
-    { id: 'noise', label: 'Do you hear unusual engine noise?', type: 'boolean', required: true },
-    { id: 'smoke', label: 'Do you see smoke?', type: 'single_select', options: ['No', 'White', 'Black', 'Blue'], required: true },
-    { id: 'power_loss', label: 'Do you feel loss of power while driving?', type: 'boolean', required: true },
-  ],
-  battery: [
-    { id: 'vehicle_start', label: 'Vehicle starting status?', type: 'single_select', options: ['Starts normally', 'Slow start', 'Not starting'], required: true },
-    { id: 'lights_status', label: 'Dashboard lights condition?', type: 'single_select', options: ['Normal', 'Dim', 'Not working'], required: true },
-    { id: 'battery_age', label: 'Battery age?', type: 'single_select', options: ['< 1 year', '1-2 years', '2-3 years', '3+ years'], required: true },
-  ],
-  brake: [
-    { id: 'brake_response', label: 'Brake response?', type: 'single_select', options: ['Normal', 'Soft', 'Hard', 'Not working'], required: true },
-    { id: 'brake_noise', label: 'Do you hear noise while braking?', type: 'boolean', required: true },
-    { id: 'vibration', label: 'Do you feel vibration while braking?', type: 'boolean', required: true },
-  ],
-  ac: [
-    { id: 'cooling', label: 'Cooling performance?', type: 'single_select', options: ['Normal', 'Low cooling', 'No cooling'], required: true },
-    { id: 'cooling_delay', label: 'Does cooling take too long?', type: 'boolean', required: true },
-  ],
-  electrical: [
-    { id: 'electrical_components', label: 'Which electrical item is failing?', type: 'single_select', options: ['Headlights', 'Power windows', 'Infotainment', 'Multiple items'], required: true },
-    { id: 'failure_pattern', label: 'How does the failure occur?', type: 'single_select', options: ['Intermittent', 'Always off', 'Works after restart', 'Flickers'], required: true },
-  ],
-  tyre: [
-    { id: 'puncture', label: 'Is it a puncture?', type: 'boolean', required: true },
-    { id: 'air_loss', label: 'Is air leaking continuously?', type: 'boolean', required: true },
-    { id: 'tyre_condition', label: 'Tyre condition?', type: 'single_select', options: ['Good', 'Worn out', 'Damaged'], required: true },
-  ],
-  other: [
-    { id: 'symptom_pattern', label: 'What exact symptom do you notice most often?', type: 'text', required: true },
-    { id: 'frequency', label: 'How often does this issue occur?', type: 'single_select', options: ['Always', 'Often', 'Sometimes'], required: true },
-  ],
-};
+const DIAGNOSIS_QUESTION_BANK = diagnosisQuestionBankJson as Record<string, DiagnosisQuestion[]>;
 
 const navItems = [
   { href: '/user/dashboard', label: 'Home', icon: Home, active: true },
@@ -307,9 +286,9 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
   const [diagnosisAnswers, setDiagnosisAnswers] = useState<Record<string, string>>({});
   const [diagnosisMessages, setDiagnosisMessages] = useState<DiagnosisChatMessage[]>([]);
   const [diagnosisCurrentIndex, setDiagnosisCurrentIndex] = useState<number | null>(null);
-  const [diagnosisAwaitingCategory, setDiagnosisAwaitingCategory] = useState(false);
   const [diagnosisTextAnswer, setDiagnosisTextAnswer] = useState('');
   const [diagnosisThinking, setDiagnosisThinking] = useState(false);
+  const [diagnosisSummary, setDiagnosisSummary] = useState<DiagnosisSummary | null>(null);
   const [diagnosisError, setDiagnosisError] = useState<string | null>(null);
   const [diagnosisAddress, setDiagnosisAddress] = useState('');
   const [diagnosisPickup, setDiagnosisPickup] = useState(false);
@@ -409,7 +388,7 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
     const el = diagnosisChatScrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [diagnosisChatOpen, diagnosisMessages, diagnosisThinking, diagnosisCurrentIndex, diagnosisAwaitingCategory]);
+  }, [diagnosisChatOpen, diagnosisMessages, diagnosisThinking, diagnosisCurrentIndex]);
 
   useEffect(() => {
     async function loadRecentIssues() {
@@ -454,7 +433,7 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
     [registeredVehicles, searchQuery]
   );
 
-  const canStartDiagnosis = issueDraft.trim().length > 0 && selectedDiagnosisVehicleId.trim().length > 0;
+  const canStartDiagnosis = issueDraft.trim().length > 0;
   const diagnosisRequiredQuestions = useMemo(
     () => diagnosisQuestions.filter((question) => question.required),
     [diagnosisQuestions]
@@ -468,23 +447,90 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
     [diagnosisAnswers, diagnosisRequiredQuestions]
   );
 
-  function handleStartDiagnosis() {
+  async function pushBotMessage(text: string) {
+    setDiagnosisThinking(true);
+    await new Promise((resolve) => window.setTimeout(resolve, 850));
+    setDiagnosisMessages((prev) => [...prev, { id: `bot-${Date.now()}-${Math.random()}`, sender: 'bot', text }]);
+    setDiagnosisThinking(false);
+  }
+
+  async function classifyIssueCategory(issueText: string) {
+    try {
+      const response = await fetch('/api/diagnosis-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'classify', issue: issueText }),
+      });
+      if (!response.ok) throw new Error('Unable to classify issue');
+
+      const data = (await response.json()) as {
+        category?: string;
+      };
+      const category = String(data.category ?? 'other').toLowerCase();
+      const known = DIAGNOSIS_CATEGORY_OPTIONS.some((item) => item.value === category);
+      const nextCategory = known ? category : 'other';
+      return { category: nextCategory };
+    } catch {
+      return { category: 'other' };
+    }
+  }
+
+  async function generateDiagnosisSummary(
+    category: string,
+    answers: Record<string, string>
+  ): Promise<DiagnosisSummary | null> {
+    try {
+      const response = await fetch('/api/diagnosis-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'summarize',
+          issue: issueDraft.trim(),
+          category,
+          answers,
+        }),
+      });
+      if (!response.ok) throw new Error('Unable to generate summary');
+      const data = (await response.json()) as DiagnosisSummary;
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleStartDiagnosis() {
     if (!canStartDiagnosis) return;
+    const normalizedIssue = issueDraft.trim();
+    const firstName = diagnosisName.trim().split(/\s+/)[0] || 'there';
+
     setIntakeMode('diagnosis');
     setDiagnosisError(null);
     setDiagnosisCategory('');
     setDiagnosisQuestions([]);
     setDiagnosisAnswers({});
-    setDiagnosisMessages([
-      { id: `bot-intro-${Date.now()}`, sender: 'bot', text: 'Thanks. Let us do a quick guided assessment. Please answer one question at a time.' },
-      { id: `bot-category-${Date.now() + 1}`, sender: 'bot', text: 'What is the issue about?' },
-    ]);
+    setDiagnosisMessages([]);
     setDiagnosisCurrentIndex(null);
-    setDiagnosisAwaitingCategory(true);
     setDiagnosisTextAnswer('');
     setDiagnosisThinking(false);
+    setDiagnosisSummary(null);
     setDiagnosisChatOpen(true);
     setDiagnosisLogisticsOpen(false);
+
+    await pushBotMessage(`Hi ${firstName}, welcome to wrectifai.`);
+    await pushBotMessage(`You reported: "${normalizedIssue}". Let me ask a few questions to diagnose this.`);
+
+    const classified = await classifyIssueCategory(normalizedIssue);
+    const category = classified.category;
+    const categoryLabel =
+      DIAGNOSIS_CATEGORY_OPTIONS.find((item) => item.value === category)?.label ?? 'Other';
+    setDiagnosisCategory(category);
+
+    const questions = DIAGNOSIS_QUESTION_BANK[category] ?? DIAGNOSIS_QUESTION_BANK.other;
+    setDiagnosisQuestions(questions);
+    setDiagnosisAnswers({});
+
+    await pushBotMessage(`I mapped this to ${categoryLabel}. Please answer the following questions.`);
+    await askNextDiagnosisQuestion(0, questions);
   }
 
   async function openIssueDetail(issue: IssueRequestListItem) {
@@ -519,42 +565,35 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
     router.push(`/user/direct-request${params.toString() ? `?${params.toString()}` : ''}`);
   }
 
-  function askNextDiagnosisQuestion(index: number, questions: DiagnosisQuestion[]) {
-    setDiagnosisThinking(true);
-    window.setTimeout(() => {
-      const question = questions[index];
-      setDiagnosisMessages((prev) => [
-        ...prev,
-        { id: `bot-${question.id}-${Date.now()}`, sender: 'bot', text: `${question.label}${question.required ? ' *' : ''}` },
-      ]);
-      setDiagnosisCurrentIndex(index);
-      setDiagnosisThinking(false);
-    }, 220);
+  async function askNextDiagnosisQuestion(index: number, questions: DiagnosisQuestion[]) {
+    const question = questions[index];
+    await pushBotMessage(`${question.label}${question.required ? ' *' : ''}`);
+    setDiagnosisCurrentIndex(index);
   }
 
-  function handleDiagnosisCategoryPick(categoryValue: string) {
-    const label = DIAGNOSIS_CATEGORY_OPTIONS.find((item) => item.value === categoryValue)?.label ?? categoryValue;
-    const questions = DIAGNOSIS_QUESTION_BANK[categoryValue] ?? DIAGNOSIS_QUESTION_BANK.other;
-    setDiagnosisCategory(categoryValue);
-    setDiagnosisQuestions(questions);
-    setDiagnosisAnswers({});
-    setDiagnosisMessages((prev) => [...prev, { id: `user-category-${Date.now()}`, sender: 'user', text: label }]);
-    setDiagnosisAwaitingCategory(false);
-    askNextDiagnosisQuestion(0, questions);
-  }
-
-  function advanceDiagnosisFlow(fromIndex: number, questions = diagnosisQuestions) {
+  async function advanceDiagnosisFlow(
+    fromIndex: number,
+    questions = diagnosisQuestions,
+    answersSnapshot = diagnosisAnswers
+  ) {
     const nextIndex = fromIndex + 1;
     if (nextIndex >= questions.length) {
       setDiagnosisCurrentIndex(null);
-      setDiagnosisThinking(true);
-      window.setTimeout(() => {
-        setDiagnosisMessages((prev) => [...prev, { id: `bot-done-${Date.now()}`, sender: 'bot', text: 'All questions captured. Click Continue.' }]);
-        setDiagnosisThinking(false);
-      }, 220);
+      const summary = await generateDiagnosisSummary(diagnosisCategory || 'other', answersSnapshot);
+      setDiagnosisSummary(summary);
+      if (summary) {
+        await pushBotMessage(`Summary: ${summary.summary}`);
+        await pushBotMessage(
+          `Probable problem: ${summary.probableProblem}\nSeverity: ${summary.severity} | Risk: ${summary.risk}\nLikely causes: ${summary.likelyCauses.join(', ')}`
+        );
+        await pushBotMessage(
+          `DIY steps: ${summary.diySteps.join(' -> ')}\nRecommended actions: ${summary.recommendedActions.join(', ')}\nService: ${summary.serviceSuggestion}\nEstimated cost: ${summary.estimatedCostRange}`
+        );
+      }
+      await pushBotMessage('All questions captured. Click Continue.');
       return;
     }
-    askNextDiagnosisQuestion(nextIndex, questions);
+    await askNextDiagnosisQuestion(nextIndex, questions);
   }
 
   function submitDiagnosisAnswer(answer: string) {
@@ -562,14 +601,15 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
     const question = diagnosisQuestions[diagnosisCurrentIndex];
     const value = answer.trim();
     if (!value) return;
-    setDiagnosisAnswers((prev) => ({ ...prev, [question.id]: value }));
+    const nextAnswers = { ...diagnosisAnswers, [question.id]: value };
+    setDiagnosisAnswers(nextAnswers);
     setDiagnosisMessages((prev) => [...prev, { id: `user-${question.id}-${Date.now()}`, sender: 'user', text: value }]);
     setDiagnosisTextAnswer('');
-    advanceDiagnosisFlow(diagnosisCurrentIndex);
+    void advanceDiagnosisFlow(diagnosisCurrentIndex, diagnosisQuestions, nextAnswers);
   }
 
   function openDiagnosisLogistics() {
-    if (diagnosisAwaitingCategory || diagnosisCurrentIndex !== null) {
+    if (diagnosisCurrentIndex !== null || diagnosisThinking) {
       setDiagnosisError('Please complete all chat questions first.');
       return;
     }
@@ -601,10 +641,13 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
       return;
     }
     const answerValues = Object.values(diagnosisAnswers);
+    const severityFromSummary = diagnosisSummary?.severity
+      ? mapAiSeverityToIssueSeverity(diagnosisSummary.severity)
+      : null;
     const severity =
       intakeMode === 'direct'
         ? 'can_drive'
-        : inferDashboardSeverity(answerValues);
+        : severityFromSummary ?? inferDashboardSeverity(answerValues);
     const whenHappens =
       intakeMode === 'direct'
         ? 'driving'
@@ -629,7 +672,7 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
         category: diagnosisCategory || 'other',
         symptoms: Object.entries(diagnosisAnswers).map(([key, value]) => `${key}:${value}`),
         severity,
-        description: issueDraft.trim() || diagnosisAnswers.symptom_pattern?.trim() || 'Direct service request',
+        description: issueDraft.trim() || diagnosisSummary?.summary || diagnosisAnswers.symptom_pattern?.trim() || 'Direct service request',
         sinceWhen,
         whenHappens,
         answers: diagnosisAnswers,
@@ -1211,13 +1254,13 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
       </div>
 
       <Dialog open={diagnosisChatOpen} onOpenChange={setDiagnosisChatOpen}>
-        <DialogContent className="max-h-[88vh] max-w-[980px] overflow-y-auto rounded-2xl border border-[#d4e0f1] bg-[#f8fbff] p-0">
+        <DialogContent className="flex h-[82vh] max-h-[88vh] max-w-[980px] flex-col overflow-hidden rounded-2xl border border-[#d4e0f1] bg-[#f8fbff] p-0">
           <DialogHeader className="border-b border-[#e0e9f6] px-5 py-4">
             <DialogTitle className="text-[30px] font-semibold text-slate-900">Wrectfai Chat Bot</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 p-5">
-            <div className="rounded-xl border border-[#dbe5f3] bg-white p-3">
-              <div ref={diagnosisChatScrollRef} className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 p-5">
+            <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-[#dbe5f3] bg-white p-3">
+              <div ref={diagnosisChatScrollRef} className="min-h-[260px] flex-1 space-y-2 overflow-y-auto pr-1">
                 {diagnosisMessages.map((message) => (
                   <div
                     key={message.id}
@@ -1232,31 +1275,18 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
                   </div>
                 ))}
                 {diagnosisThinking ? (
-                  <div className="max-w-[90%] rounded-2xl border border-[#dbe5f3] bg-white px-3 py-2 text-xs text-slate-500">
-                    Typing...
+                  <div className="max-w-[90%] rounded-2xl border border-[#dbe5f3] bg-white px-3 py-2">
+                    <div className="flex items-center gap-1">
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.25s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.12s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400" />
+                    </div>
                   </div>
                 ) : null}
               </div>
 
-              {diagnosisAwaitingCategory ? (
+              {diagnosisCurrentIndex !== null ? (
                 <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Current Question</p>
-                  <div className="flex flex-wrap gap-2">
-                    {DIAGNOSIS_CATEGORY_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => handleDiagnosisCategoryPick(option.value)}
-                        className="h-9 rounded-xl border border-[#d6e3f4] bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-[#f2f7ff]"
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : diagnosisCurrentIndex !== null ? (
-                <div className="mt-3 rounded-xl border border-[#dbe5f3] bg-[#fbfdff] p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Current Question</p>
                   {diagnosisQuestions[diagnosisCurrentIndex]?.type === 'text' ? (
                     <div className="flex gap-2">
                       <input
@@ -1311,7 +1341,7 @@ export function DashboardClient({ sidebar, content, appLogoUrl }: Props) {
               <button
                 type="button"
                 onClick={openDiagnosisLogistics}
-                disabled={diagnosisAwaitingCategory || diagnosisCurrentIndex !== null}
+                disabled={diagnosisCurrentIndex !== null || diagnosisThinking}
                 className="h-10 rounded-xl bg-[#1d7ff2] px-5 text-sm font-medium text-white disabled:opacity-50"
               >
                 Continue
@@ -1673,6 +1703,14 @@ function inferDashboardSeverity(values: string[]): ServiceIntakePayload['issue']
   if (lowered.some((value) => value.includes('not') && value.includes('start'))) return 'not_starting';
   if (lowered.some((value) => value.includes('not working'))) return 'not_starting';
   if (lowered.some((value) => value.includes('hard') || value.includes('danger') || value.includes('unsafe'))) return 'risky';
+  return 'can_drive';
+}
+
+function mapAiSeverityToIssueSeverity(
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+): ServiceIntakePayload['issue']['severity'] {
+  if (severity === 'CRITICAL' || severity === 'HIGH') return 'not_starting';
+  if (severity === 'MEDIUM') return 'risky';
   return 'can_drive';
 }
 

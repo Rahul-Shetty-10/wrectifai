@@ -14,6 +14,13 @@ export default async function LoginPage() {
       appName={ui.appName}
       motto={ui.hero.body}
       rightPane={
+        <div>
+          <p className="mb-6 text-right text-sm text-muted-foreground">
+            {ui.links.needAccountPrefix}{' '}
+            <Link href="/auth/register" className="text-primary hover:underline">
+              {ui.links.needAccountCta}
+            </Link>
+          </p>
           <LoginForm
             title={ui.form.title}
             subtitle={ui.form.subtitle}
@@ -28,6 +35,7 @@ export default async function LoginPage() {
             sendOtpFailedMessage={ui.errors.sendOtpFailed}
             unexpectedErrorMessage={ui.errors.unexpected}
           />
+        </div>
       }
     />
   );

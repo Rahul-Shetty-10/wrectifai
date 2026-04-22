@@ -14,6 +14,13 @@ export default async function RegisterPage() {
       appName={ui.appName}
       motto={ui.hero.body}
       rightPane={
+        <div>
+          <p className="mb-6 text-right text-sm text-muted-foreground">
+            {ui.links.haveAccountPrefix}{' '}
+            <Link href="/auth/login" className="text-primary hover:underline">
+              {ui.links.haveAccountCta}
+            </Link>
+          </p>
           <RegisterForm
             initialRoleCode="user"
             title={ui.form.title}
@@ -34,6 +41,7 @@ export default async function RegisterPage() {
             sendOtpFailedMessage={ui.errors.sendOtpFailed}
             unexpectedErrorMessage={ui.errors.unexpected}
           />
+        </div>
       }
     />
   );

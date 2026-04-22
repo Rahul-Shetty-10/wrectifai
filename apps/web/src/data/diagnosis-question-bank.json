@@ -1,0 +1,141 @@
+{
+  "engine": [
+    {
+      "id": "when_occurs",
+      "label": "When does the issue occur?",
+      "type": "single_select",
+      "options": ["Starting", "While driving", "Idling"],
+      "required": true
+    },
+    {
+      "id": "noise",
+      "label": "Do you hear unusual engine noise?",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "smoke",
+      "label": "Do you see smoke?",
+      "type": "single_select",
+      "options": ["No", "White", "Black", "Blue"],
+      "required": true
+    },
+    {
+      "id": "power_loss",
+      "label": "Do you feel loss of power while driving?",
+      "type": "boolean",
+      "required": true
+    }
+  ],
+  "battery": [
+    {
+      "id": "vehicle_start",
+      "label": "Vehicle starting status?",
+      "type": "single_select",
+      "options": ["Starts normally", "Slow start", "Not starting"],
+      "required": true
+    },
+    {
+      "id": "lights_status",
+      "label": "Dashboard lights condition?",
+      "type": "single_select",
+      "options": ["Normal", "Dim", "Not working"],
+      "required": true
+    },
+    {
+      "id": "battery_age",
+      "label": "Battery age?",
+      "type": "single_select",
+      "options": ["< 1 year", "1-2 years", "2-3 years", "3+ years"],
+      "required": true
+    }
+  ],
+  "brake": [
+    {
+      "id": "brake_response",
+      "label": "Brake response?",
+      "type": "single_select",
+      "options": ["Normal", "Soft", "Hard", "Not working"],
+      "required": true
+    },
+    {
+      "id": "brake_noise",
+      "label": "Do you hear noise while braking?",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "vibration",
+      "label": "Do you feel vibration while braking?",
+      "type": "boolean",
+      "required": true
+    }
+  ],
+  "ac": [
+    {
+      "id": "cooling",
+      "label": "Cooling performance?",
+      "type": "single_select",
+      "options": ["Normal", "Low cooling", "No cooling"],
+      "required": true
+    },
+    {
+      "id": "cooling_delay",
+      "label": "Does cooling take too long?",
+      "type": "boolean",
+      "required": true
+    }
+  ],
+  "electrical": [
+    {
+      "id": "electrical_components",
+      "label": "Which electrical item is failing?",
+      "type": "single_select",
+      "options": ["Headlights", "Power windows", "Infotainment", "Multiple items"],
+      "required": true
+    },
+    {
+      "id": "failure_pattern",
+      "label": "How does the failure occur?",
+      "type": "single_select",
+      "options": ["Intermittent", "Always off", "Works after restart", "Flickers"],
+      "required": true
+    }
+  ],
+  "tyre": [
+    {
+      "id": "puncture",
+      "label": "Is it a puncture?",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "air_loss",
+      "label": "Is air leaking continuously?",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "tyre_condition",
+      "label": "Tyre condition?",
+      "type": "single_select",
+      "options": ["Good", "Worn out", "Damaged"],
+      "required": true
+    }
+  ],
+  "other": [
+    {
+      "id": "symptom_pattern",
+      "label": "What exact symptom do you notice most often?",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "frequency",
+      "label": "How often does this issue occur?",
+      "type": "single_select",
+      "options": ["Always", "Often", "Sometimes"],
+      "required": true
+    }
+  ]
+}
