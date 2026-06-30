@@ -17,14 +17,14 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/web",
-        "command": "next dev"
+        "command": "next dev --port 3000"
       }
     },
     "start": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/web",
-        "command": "next start"
+        "command": "next start --port 3000"
       }
     }
   }

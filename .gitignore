@@ -25,6 +25,12 @@ node_modules
 !.vscode/extensions.json
 
 # misc
+/.env
+/.env.*
+!/.env.example
+apps/*/.env
+apps/*/.env.*
+!apps/*/.env.example
 /.sass-cache
 /connect.lock
 /coverage
@@ -32,6 +38,7 @@ node_modules
 npm-debug.log
 yarn-error.log
 testem.log
+/.codex-*.log
 /typings
 
 # System Files
