@@ -6,11 +6,13 @@
     "node": "22.x"
   },
   "scripts": {
-    "api": "nx serve api",
-    "web": "nx dev web",
+    "dev": "node tools/scripts/dev-stack.mjs",
+    "api": "node tools/scripts/dev-api.mjs",
+    "web": "node tools/scripts/dev-web.mjs",
     "mobile": "nx start mobile",
     "lint": "nx run-many -t lint --all",
-    "seed:test-user": "node tools/scripts/seed-test-user.mjs"
+    "seed:test-user": "node tools/scripts/seed-test-user.mjs",
+    "seed:app-data": "node tools/scripts/seed-app-data.mjs"
   },
   "private": true,
   "devDependencies": {

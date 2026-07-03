@@ -1,9 +1,12 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/home/sidebar';
 import { cn } from '@/utils/cn';
+
+const TOKEN_STORAGE_KEY = 'wrectifai_token';
 
 export function DashboardShell({
   header,
@@ -14,12 +17,70 @@ export function DashboardShell({
   children: ReactNode;
   aside?: ReactNode;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [authChecked, setAuthChecked] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const redirectToLogin = useCallback(() => {
+    const redirect =
+      pathname && pathname !== '/'
+        ? `?redirect=${encodeURIComponent(pathname)}`
+        : '';
+    setAuthChecked(false);
+    router.replace(`/login${redirect}`);
+  }, [pathname, router]);
+
+  const verifySession = useCallback(() => {
+    const token = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+
+    if (!token) {
+      redirectToLogin();
+      return;
+    }
+
+    setAuthChecked(true);
+  }, [redirectToLogin]);
 
   const handleToggle = () => {
     setCollapsed((current) => !current);
   };
+
+  useEffect(() => {
+    verifySession();
+
+    const handlePageShow = () => verifySession();
+    const handleFocus = () => verifySession();
+    const handlePopState = () => verifySession();
+    const handleAuthChange = () => verifySession();
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === TOKEN_STORAGE_KEY) {
+        verifySession();
+      }
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        verifySession();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('wrectifai-auth-changed', handleAuthChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('wrectifai-auth-changed', handleAuthChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [verifySession]);
 
   useEffect(() => {
     const handleToggleMobile = () => setMobileOpen((curr) => !curr);
@@ -27,6 +88,16 @@ export function DashboardShell({
     return () =>
       window.removeEventListener('toggle-mobile-sidebar', handleToggleMobile);
   }, []);
+
+  if (!authChecked) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f6f8fe] px-4">
+        <div className="rounded-[14px] border border-[#dbe6ff] bg-white px-5 py-4 text-[13px] font-semibold text-[#17307a] shadow-sm">
+          Checking secure access...
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main id="top" className="min-h-screen bg-[#f6f8fe]">

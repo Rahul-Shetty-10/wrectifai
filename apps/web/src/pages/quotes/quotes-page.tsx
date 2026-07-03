@@ -27,6 +27,7 @@ import {
   quotesList,
 } from '@/components/quotes/quotes-shared';
 import { resultIssues } from '@/components/ai-diagnose/diagnose-flow-shared';
+import { useApiResource } from '@/lib/resource-data';
 import { cn } from '@/utils/cn';
 import type { QuoteStatus } from '@/components/quotes/quotes-shared';
 
@@ -50,6 +51,18 @@ const actionItems = [
 
 export function QuotesPage() {
   const quotesPerPage = 5;
+  const screenContent = useApiResource('quotes', {
+    quotesList,
+    defaults: {
+      issueIds: quoteContextDefaultIssueIds,
+      aiEstimatedQuoteRange,
+    },
+  });
+  const screenQuotes = screenContent.quotesList?.length
+    ? screenContent.quotesList
+    : quotesList;
+  const defaultIssueIds =
+    screenContent.defaults?.issueIds ?? quoteContextDefaultIssueIds;
   const router = useRouter();
   const searchParams = useSearchParams();
   const pageRootRef = useRef<HTMLDivElement>(null);
@@ -74,33 +87,33 @@ export function QuotesPage() {
 
   const quoteTabs = useMemo(
     () => [
-      { key: 'all' as const, label: `All Quotes (${quotesList.length})` },
+      { key: 'all' as const, label: `All Quotes (${screenQuotes.length})` },
       {
         key: 'new' as const,
         label: `New (${
-          quotesList.filter((quote) => quote.status === 'new').length
+          screenQuotes.filter((quote) => quote.status === 'new').length
         })`,
       },
       {
         key: 'viewed' as const,
         label: `Viewed (${
-          quotesList.filter((quote) => quote.status === 'viewed').length
+          screenQuotes.filter((quote) => quote.status === 'viewed').length
         })`,
       },
       {
         key: 'expired' as const,
         label: `Expired (${
-          quotesList.filter((quote) => quote.status === 'expired').length
+          screenQuotes.filter((quote) => quote.status === 'expired').length
         })`,
       },
     ],
-    []
+    [screenQuotes]
   );
 
   const filteredQuotes =
     activeTab === 'all'
-      ? quotesList
-      : quotesList.filter((quote) => quote.status === activeTab);
+      ? screenQuotes
+      : screenQuotes.filter((quote) => quote.status === activeTab);
   const totalPages = Math.max(
     1,
     Math.ceil(filteredQuotes.length / quotesPerPage)
@@ -115,11 +128,11 @@ export function QuotesPage() {
   const selectedLimitReached = selectedQuoteCount >= 3;
   const issueIds = useMemo(
     () =>
-      (searchParams?.get('issues') || quoteContextDefaultIssueIds.join(','))
+      (searchParams?.get('issues') || defaultIssueIds.join(','))
         .split(',')
         .map((item) => item.trim())
         .filter(Boolean),
-    [searchParams]
+    [defaultIssueIds, searchParams]
   );
   const requestedIssues = useMemo(
     () => resultIssues.filter((issue) => issueIds.includes(issue.id)),

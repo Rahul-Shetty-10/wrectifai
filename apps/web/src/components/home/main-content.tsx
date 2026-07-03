@@ -32,6 +32,7 @@ import {
   maintenanceItems,
   seasonalDeals,
 } from '@/components/home/data';
+import { hydrateByKey, useApiResource } from '@/lib/resource-data';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/utils/cn';
@@ -90,9 +91,11 @@ const moreCategoryItems = [
 function CategoriesModal({
   open,
   onClose,
+  items,
 }: {
   open: boolean;
   onClose: () => void;
+  items: typeof categoryItems;
 }) {
   useEffect(() => {
     if (!open) {
@@ -141,7 +144,7 @@ function CategoriesModal({
               Top Categories
             </h3>
             <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-7">
-              {categoryItems.map(({ label, icon: Icon, image }) => (
+              {items.map(({ label, icon: Icon, image }) => (
                 <Card
                   key={label}
                   className="flex min-h-[86px] flex-col items-center justify-center gap-2 rounded-[12px] border-[#e8eefc] px-2 py-2.5 text-center shadow-none"
@@ -882,6 +885,30 @@ function CareTips({
 export function MainContent() {
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const screenContent = useApiResource('dashboard', {
+    categoryItems,
+    maintenanceItems,
+    garages,
+    seasonalDeals,
+    careTips,
+  });
+  const dashboardCategories = hydrateByKey(
+    screenContent.categoryItems,
+    categoryItems,
+    'label'
+  );
+  const dashboardMaintenance = hydrateByKey(
+    screenContent.maintenanceItems,
+    maintenanceItems,
+    'label'
+  );
+  const dashboardGarages = hydrateByKey(screenContent.garages, garages, 'name');
+  const dashboardDeals = hydrateByKey(
+    screenContent.seasonalDeals,
+    seasonalDeals,
+    'title'
+  );
+  const dashboardTips = hydrateByKey(screenContent.careTips, careTips, 'title');
 
   useEffect(() => {
     const handleSearch = (event: Event) => {
@@ -898,53 +925,57 @@ export function MainContent() {
   const filteredCategories = useMemo(
     () =>
       normalizedSearch
-        ? categoryItems.filter((item) => item.label.toLowerCase().includes(normalizedSearch))
-        : categoryItems,
-    [normalizedSearch]
+        ? dashboardCategories.filter((item) =>
+            item.label.toLowerCase().includes(normalizedSearch)
+          )
+        : dashboardCategories,
+    [dashboardCategories, normalizedSearch]
   );
 
   const filteredMaintenance = useMemo(
     () =>
       normalizedSearch
-        ? maintenanceItems.filter(
+        ? dashboardMaintenance.filter(
             (item) =>
               item.label.toLowerCase().includes(normalizedSearch) ||
               item.due.toLowerCase().includes(normalizedSearch)
           )
-        : maintenanceItems,
-    [normalizedSearch]
+        : dashboardMaintenance,
+    [dashboardMaintenance, normalizedSearch]
   );
 
   const filteredGarages = useMemo(
     () =>
       normalizedSearch
-        ? garages.filter(
+        ? dashboardGarages.filter(
             (item) =>
               item.name.toLowerCase().includes(normalizedSearch) ||
               item.location.toLowerCase().includes(normalizedSearch)
           )
-        : garages,
-    [normalizedSearch]
+        : dashboardGarages,
+    [dashboardGarages, normalizedSearch]
   );
 
   const filteredDeals = useMemo(
     () =>
       normalizedSearch
-        ? seasonalDeals.filter(
+        ? dashboardDeals.filter(
             (item) =>
               item.title.toLowerCase().includes(normalizedSearch) ||
               item.subtitle.toLowerCase().includes(normalizedSearch)
           )
-        : seasonalDeals,
-    [normalizedSearch]
+        : dashboardDeals,
+    [dashboardDeals, normalizedSearch]
   );
 
   const filteredTips = useMemo(
     () =>
       normalizedSearch
-        ? careTips.filter((item) => item.title.toLowerCase().includes(normalizedSearch))
-        : careTips,
-    [normalizedSearch]
+        ? dashboardTips.filter((item) =>
+            item.title.toLowerCase().includes(normalizedSearch)
+          )
+        : dashboardTips,
+    [dashboardTips, normalizedSearch]
   );
 
   const hasResults =
@@ -982,6 +1013,7 @@ export function MainContent() {
       <CategoriesModal
         open={isCategoriesModalOpen}
         onClose={() => setIsCategoriesModalOpen(false)}
+        items={dashboardCategories}
       />
     </>
   );

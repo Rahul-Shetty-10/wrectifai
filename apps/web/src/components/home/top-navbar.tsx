@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, LogOut, Search } from 'lucide-react';
 import { Input } from '@/components/common/input';
 import { topNavIcons } from '@/components/home/data';
 import { cn } from '@/utils/cn';
@@ -22,10 +22,13 @@ const CITIES = [
 export function TopNavbar() {
   const [query, setQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [userName, setUserName] = useState('Rahul');
   const [selectedCity, setSelectedCity] = useState('Hyderabad');
   const [citySearch, setCitySearch] = useState('');
   
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -33,9 +36,29 @@ export function TopNavbar() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const storedUser = window.localStorage.getItem('wrectifai_user');
+
+    if (!storedUser) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser) as { name?: string };
+      if (parsed.name?.trim()) {
+        setUserName(parsed.name.trim().split(' ')[0]);
+      }
+    } catch {
+      // Keep the default display name if local storage contains invalid JSON.
+    }
   }, []);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -45,6 +68,13 @@ export function TopNavbar() {
   const filteredCities = CITIES.filter(city =>
     city.toLowerCase().includes(citySearch.toLowerCase())
   );
+
+  const handleLogout = () => {
+    window.localStorage.removeItem('wrectifai_token');
+    window.localStorage.removeItem('wrectifai_user');
+    window.dispatchEvent(new Event('wrectifai-auth-changed'));
+    window.location.replace('/login');
+  };
 
   return (
     <header className="w-full flex flex-wrap items-center justify-between gap-3 lg:flex-nowrap lg:gap-6">
@@ -176,10 +206,52 @@ export function TopNavbar() {
           </div>
         ))}
 
-        <div className="ml-[5px] flex h-9 lg:h-10 shrink-0 items-center gap-2 rounded-full border border-[#dbe6ff] bg-white p-0.5 lg:py-1 lg:pl-1.5 lg:pr-3">
-          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Rahul" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full object-cover" />
-          <span className="hidden text-[13px] font-semibold text-[#17307a] lg:block">Hi, Rahul</span>
-          <ChevronDown className="hidden h-4 w-4 text-[#17307a] lg:block" />
+        <div className="relative ml-[5px]" ref={profileRef}>
+          <button
+            type="button"
+            onClick={() => setIsProfileOpen((current) => !current)}
+            className="flex h-9 lg:h-10 shrink-0 items-center gap-2 rounded-full border border-[#dbe6ff] bg-white p-0.5 lg:py-1 lg:pl-1.5 lg:pr-3"
+            aria-expanded={isProfileOpen}
+            aria-haspopup="menu"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+              alt={userName}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full object-cover"
+            />
+            <span className="hidden text-[13px] font-semibold text-[#17307a] lg:block">
+              Hi, {userName}
+            </span>
+            <ChevronDown
+              className={cn(
+                'hidden h-4 w-4 text-[#17307a] transition-transform lg:block',
+                isProfileOpen && 'rotate-180'
+              )}
+            />
+          </button>
+
+          {isProfileOpen ? (
+            <div
+              role="menu"
+              className="absolute right-0 top-full z-50 mt-2 w-[190px] rounded-xl border border-[#e4ecff] bg-white p-2 shadow-[0_14px_34px_rgba(23,48,122,0.14)]"
+            >
+              <div className="border-b border-[#eef3ff] px-2.5 py-2">
+                <p className="text-[11px] font-medium text-[#7182ad]">Signed in as</p>
+                <p className="mt-0.5 truncate text-[13px] font-bold text-[#17307a]">
+                  {userName}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleLogout}
+                className="mt-2 flex h-10 w-full items-center gap-2 rounded-lg px-2.5 text-left text-[13px] font-semibold text-[#c22535] transition-colors hover:bg-[#fff2f4]"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </header>

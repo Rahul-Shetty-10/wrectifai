@@ -32,6 +32,7 @@ import {
 import { resultIssues } from '@/components/ai-diagnose/diagnose-flow-shared';
 
 import { GarageDetailPage } from '@/components/garages/garage-detail-page';
+import { getIcon, useApiResource } from '@/lib/resource-data';
 
 type FilterKey =
   | 'rating'
@@ -567,6 +568,25 @@ function GarageCard({
 function GaragesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const screenContent = useApiResource('garages', {
+    garages,
+    filterOptions,
+    filterPills,
+    sortOptions,
+  });
+  const screenGarages = screenContent.garages?.length
+    ? (screenContent.garages as Garage[])
+    : garages;
+  const screenFilterOptions = screenContent.filterOptions ?? filterOptions;
+  const screenFilterPills = screenContent.filterPills?.length
+    ? screenContent.filterPills.map((pill, index) => ({
+        ...pill,
+        icon: getIcon(pill.icon, filterPills[index]?.icon),
+      }))
+    : filterPills;
+  const screenSortOptions = screenContent.sortOptions?.length
+    ? screenContent.sortOptions
+    : sortOptions;
   const [selectedGarage, setSelectedGarage] = useState<Garage | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [sortBy, setSortBy] = useState<SortOption>('best');
@@ -583,7 +603,7 @@ function GaragesContent() {
   });
 
   const filteredGarages = useMemo(() => {
-    const filtered = garages.filter((garage) => {
+    const filtered = screenGarages.filter((garage) => {
       if (filters.rating !== 'all' && garage.rating < Number(filters.rating)) {
         return false;
       }
@@ -668,7 +688,7 @@ function GaragesContent() {
         b.rating * 10 + b.reviews / 100 - (a.rating * 10 + a.reviews / 100)
       );
     });
-  }, [filters, sortBy]);
+  }, [filters, screenGarages, sortBy]);
 
   const itemsPerPage = viewMode === 'map' ? 6 : 8;
   const totalPages = Math.max(
@@ -737,7 +757,7 @@ function GaragesContent() {
 
     const quote = quotesList.find((item) => item.id === quoteId);
     const garageFromQuote = quote
-      ? garages.find((item) => item.name === quote.garage)
+      ? screenGarages.find((item) => item.name === quote.garage)
       : null;
     const issueIds = (searchParams?.get('issues') || '')
       .split(',')
@@ -756,7 +776,7 @@ function GaragesContent() {
       issueIds,
       aiEstimateRange: aiEstimatedQuoteRange,
     };
-  }, [searchParams]);
+  }, [screenGarages, searchParams]);
 
   const garageFromQuery = useMemo(() => {
     const garageName = searchParams?.get('garage');
@@ -765,8 +785,8 @@ function GaragesContent() {
       return null;
     }
 
-    return garages.find((garage) => garage.name === garageName) ?? null;
-  }, [searchParams]);
+    return screenGarages.find((garage) => garage.name === garageName) ?? null;
+  }, [screenGarages, searchParams]);
   const sourceFromQuery = searchParams?.get('source');
 
   if (quoteContext) {
@@ -871,12 +891,12 @@ function GaragesContent() {
               }}
               className="flex h-[34px] items-center gap-2 rounded-[10px] border border-[#dbe6ff] bg-white px-3 text-[11.5px] font-semibold text-[#17307a] shadow-[0_6px_15px_rgba(30,58,138,0.03)]"
             >
-              {sortOptions.find((option) => option.value === sortBy)?.label}
+              {screenSortOptions.find((option) => option.value === sortBy)?.label}
               <ChevronDown className="h-4 w-4 text-[#6173a1]" />
             </button>
             {sortOpen ? (
               <div className="absolute right-0 top-[39px] z-20 min-w-[190px] rounded-[12px] border border-[#dbe6ff] bg-white p-2 shadow-[0_16px_36px_rgba(30,58,138,0.11)]">
-                {sortOptions.map((option) => (
+                {screenSortOptions.map((option) => (
                   <button
                     key={option.value}
                     type="button"
@@ -906,12 +926,12 @@ function GaragesContent() {
 
       {/* Filters */}
       <div className="mt-6 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-        {filterPills.map(({ key, label, icon }, index) => (
+        {screenFilterPills.map(({ key, label, icon }, index) => (
           <FilterMenu
             key={key}
             label={label}
             icon={icon}
-            options={filterOptions[key]}
+            options={screenFilterOptions[key]}
             value={filters[key]}
             open={openFilter === key}
             align={index % 3 === 2 ? 'right' : 'left'}

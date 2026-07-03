@@ -1,9 +1,10 @@
 import { ChevronDown } from 'lucide-react';
 import { Card } from '@/components/common/card';
 import { emergencyItems, overviewItems, promoItems } from '@/components/home/data';
+import { hydrateByKey, useApiResource } from '@/lib/resource-data';
 import { cn } from '@/utils/cn';
 
-function OverviewPanel() {
+function OverviewPanel({ items }: { items: typeof overviewItems }) {
   return (
     <Card id="overview" className="p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -17,7 +18,7 @@ function OverviewPanel() {
       </div>
 
       <div className="space-y-2">
-        {overviewItems.map(({ title, value, description, cta, icon: Icon, colors }) => (
+        {items.map(({ title, value, description, cta, icon: Icon, colors }) => (
           <div key={title} className="flex items-center gap-3 rounded-[14px] py-0">
             <div
               className={cn(
@@ -42,7 +43,7 @@ function OverviewPanel() {
   );
 }
 
-function EmergencyHelp() {
+function EmergencyHelp({ items }: { items: typeof emergencyItems }) {
   return (
     <Card id="emergency" className="p-4 border-[#fff0f0] bg-[#fffbfa]">
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -58,7 +59,7 @@ function EmergencyHelp() {
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {emergencyItems.map(({ title, image, imageClass }) => {
+        {items.map(({ title, image, imageClass }) => {
           const isLarge = imageClass?.includes('h-10');
           return (
             <div
@@ -158,7 +159,7 @@ function OfferCard({
   );
 }
 
-function OffersPanel() {
+function OffersPanel({ items }: { items: typeof promoItems }) {
   return (
     <Card id="offers" className="p-4 border-[#f0f4ff] bg-white">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -170,7 +171,7 @@ function OffersPanel() {
         </span>
       </div>
       <div className="space-y-4">
-        {promoItems.map(({ href: _href, ...promo }) => (
+        {items.map(({ href: _href, ...promo }) => (
           <OfferCard key={promo.eyebrow} {...promo} />
         ))}
       </div>
@@ -179,11 +180,28 @@ function OffersPanel() {
 }
 
 export function RightPanel() {
+  const screenContent = useApiResource('dashboard', {
+    overviewItems,
+    emergencyItems,
+    promoItems,
+  });
+  const dashboardOverview = hydrateByKey(
+    screenContent.overviewItems,
+    overviewItems,
+    'title'
+  );
+  const dashboardEmergency = hydrateByKey(
+    screenContent.emergencyItems,
+    emergencyItems,
+    'title'
+  );
+  const dashboardPromos = hydrateByKey(screenContent.promoItems, promoItems, 'title');
+
   return (
     <aside className="space-y-4">
-      <OverviewPanel />
-      <EmergencyHelp />
-      <OffersPanel />
+      <OverviewPanel items={dashboardOverview} />
+      <EmergencyHelp items={dashboardEmergency} />
+      <OffersPanel items={dashboardPromos} />
     </aside>
   );
 }

@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { ensureAuthSchema, hasDatabase, query } from '../../config/db';
 import { getEnv } from '../../config/env';
 import { HttpError } from '../../utils/http-error';
+import { signJwt } from '../../utils/jwt';
 
 type RoleCode = 'customer' | 'garage' | 'vendor';
 
@@ -38,14 +39,11 @@ function normalizeOtp(otp: unknown) {
 }
 
 function createToken(user: AuthUser) {
-  const payload = {
+  return signJwt({
     sub: user.id,
     phone: user.phone,
     role: user.role,
-    issuedAt: new Date().toISOString(),
-  };
-
-  return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  });
 }
 
 function publicUser(user: AuthUser) {

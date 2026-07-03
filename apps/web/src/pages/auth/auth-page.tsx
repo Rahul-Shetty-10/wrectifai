@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   CarFront,
@@ -86,6 +87,7 @@ function AuthField({
 }
 
 export function AuthPage({ mode }: { mode: AuthMode }) {
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -160,8 +162,9 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
       window.localStorage.setItem('wrectifai_token', data.token);
       window.localStorage.setItem('wrectifai_user', JSON.stringify(data.user));
+      window.dispatchEvent(new Event('wrectifai-auth-changed'));
       setStatusMessage('Verified. Taking you to your dashboard...');
-      window.location.href = '/';
+      window.location.replace(searchParams?.get('redirect') || '/');
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Could not verify OTP.'

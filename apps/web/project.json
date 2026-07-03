@@ -16,15 +16,13 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "apps/web",
-        "command": "next dev --port 3000"
+        "command": "node tools/scripts/dev-web.mjs"
       }
     },
     "start": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "apps/web",
-        "command": "next start --port 3000"
+        "command": "node tools/scripts/start-web.mjs"
       }
     }
   }

@@ -28,6 +28,7 @@ import { Button } from '@/components/common/button';
 import { Card } from '@/components/common/card';
 import { DashboardShell } from '@/components/home/dashboard-shell';
 import { TopNavbar } from '@/components/home/top-navbar';
+import { getIcon, useApiResource } from '@/lib/resource-data';
 import { cn } from '@/utils/cn';
 
 type DealCategory =
@@ -782,6 +783,24 @@ const filterOptions: Record<FilterKey, { label: string; value: string }[]> = {
 };
 
 function DealsPageContent() {
+  const screenContent = useApiResource('deals', {
+    deals,
+    dealFilters,
+    filterOptions,
+  });
+  const screenDeals = (screenContent.deals?.length ? screenContent.deals : deals).map(
+    (deal) => ({
+      ...deal,
+      icon: getIcon(deal.icon, Wrench) as LucideIcon,
+    })
+  );
+  const screenDealFilters = (
+    screenContent.dealFilters?.length ? screenContent.dealFilters : dealFilters
+  ).map((filter) => ({
+    ...filter,
+    icon: getIcon(filter.icon, filter.icon) as LucideIcon | undefined,
+  }));
+  const screenFilterOptions = screenContent.filterOptions ?? filterOptions;
   const [filters, setFilters] = useState<Record<FilterKey, string>>({
     category: 'all',
     offerType: 'all',
@@ -823,7 +842,7 @@ function DealsPageContent() {
   }, []);
 
   const filteredDeals = useMemo(() => {
-    let nextDeals = deals.filter((deal) => {
+    let nextDeals = screenDeals.filter((deal) => {
       const matchesFilter =
         filters.category === 'all'
           ? true
@@ -861,7 +880,7 @@ function DealsPageContent() {
     });
 
     return nextDeals;
-  }, [filters, searchTerm, sortBy]);
+  }, [filters, screenDeals, searchTerm, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredDeals.length / pageSize));
 
@@ -929,7 +948,7 @@ function DealsPageContent() {
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:flex-nowrap pb-1">
           <div className="flex items-center gap-1.5 xl:gap-2 shrink-0 flex-wrap lg:flex-nowrap">
-            {dealFilters.map(({ label, displayLabel, icon }) => {
+            {screenDealFilters.map(({ label, displayLabel, icon }) => {
               if (label === 'More Filters') {
                 return (
                   <div key={label} className="relative" ref={moreFiltersRef}>
@@ -957,7 +976,7 @@ function DealsPageContent() {
                                 {pillLabel}
                               </div>
                               <div className="flex flex-col gap-0.5">
-                                {filterOptions[key].map((option) => {
+                                {screenFilterOptions[key].map((option) => {
                                   const isSelected = filters[key] === option.value;
                                   return (
                                     <button

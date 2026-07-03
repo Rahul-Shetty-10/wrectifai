@@ -30,6 +30,7 @@ import {
   quoteContextDefaultIssueIds,
   quotesList,
 } from '@/components/quotes/quotes-shared';
+import { getIcon, useApiResource } from '@/lib/resource-data';
 import { cn } from '@/utils/cn';
 
 const RUPEE = '\u20B9';
@@ -252,6 +253,30 @@ function serviceIcon(state: DetailCellState) {
 export function CompareQuotesPage({ ids }: { ids?: string }) {
   const router = useRouter();
   const pageRootRef = useRef<HTMLDivElement>(null);
+  const screenContent = useApiResource('quotes', {
+    quotesList,
+    priceRows,
+    detailRows,
+    actionItems,
+  });
+  const screenQuotes = screenContent.quotesList?.length
+    ? screenContent.quotesList
+    : quotesList;
+  const screenPriceRows = screenContent.priceRows?.length
+    ? screenContent.priceRows
+    : priceRows;
+  const screenDetailRows = screenContent.detailRows?.length
+    ? screenContent.detailRows.map((row) => ({
+        ...row,
+        icon: getIcon(row.icon, CalendarClock),
+      }))
+    : detailRows;
+  const screenActionItems = screenContent.actionItems?.length
+    ? screenContent.actionItems.map((item) => ({
+        ...item,
+        icon: getIcon(item.icon, MoreHorizontal),
+      }))
+    : actionItems;
 
   useEffect(() => {
     const pageScroller = (() => {
@@ -281,15 +306,15 @@ export function CompareQuotesPage({ ids }: { ids?: string }) {
     useState<string[]>(initialSelectedIds);
   const [showOnlyDifferences, setShowOnlyDifferences] = useState(false);
   const selectedQuotes = useMemo(() => {
-    const matches = quotesList.filter((quote) =>
+    const matches = screenQuotes.filter((quote) =>
       selectedQuoteIds.includes(quote.id)
     );
     return selectedQuoteIds.length ? matches : [];
-  }, [selectedQuoteIds]);
+  }, [screenQuotes, selectedQuoteIds]);
 
   const availableQuotes = useMemo(
-    () => quotesList.filter((quote) => !selectedQuoteIds.includes(quote.id)),
-    [selectedQuoteIds]
+    () => screenQuotes.filter((quote) => !selectedQuoteIds.includes(quote.id)),
+    [screenQuotes, selectedQuoteIds]
   );
 
   const selectedCount = selectedQuotes.length;
@@ -329,22 +354,22 @@ export function CompareQuotesPage({ ids }: { ids?: string }) {
   }
 
   const visiblePriceRows = useMemo(() => {
-    if (!showOnlyDifferences || selectedCount < 2) return priceRows;
-    return priceRows.filter((row) =>
+    if (!showOnlyDifferences || selectedCount < 2) return screenPriceRows;
+    return screenPriceRows.filter((row) =>
       rowHasDifferences(
         selectedQuotes.map((quote) => row.quoteValues[quote.id] ?? '')
       )
     );
-  }, [selectedCount, selectedQuotes, showOnlyDifferences]);
+  }, [screenPriceRows, selectedCount, selectedQuotes, showOnlyDifferences]);
 
   const visibleDetailRows = useMemo(() => {
-    if (!showOnlyDifferences || selectedCount < 2) return detailRows;
-    return detailRows.filter((row) =>
+    if (!showOnlyDifferences || selectedCount < 2) return screenDetailRows;
+    return screenDetailRows.filter((row) =>
       rowHasDifferences(
         selectedQuotes.map((quote) => row.quoteValues[quote.id]?.value ?? '')
       )
     );
-  }, [selectedCount, selectedQuotes, showOnlyDifferences]);
+  }, [screenDetailRows, selectedCount, selectedQuotes, showOnlyDifferences]);
 
   return (
     <DashboardShell header={<TopNavbar />}>
@@ -507,7 +532,7 @@ export function CompareQuotesPage({ ids }: { ids?: string }) {
                   </div>
 
                   <div className="mt-4 grid grid-cols-4 gap-1.5">
-                    {actionItems.map(({ label, icon: Icon, tone }) => {
+                    {screenActionItems.map(({ label, icon: Icon, tone }) => {
                       if (label === 'More') {
                         return (
                           <GarageMoreMenu
