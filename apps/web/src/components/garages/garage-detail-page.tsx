@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -26,11 +27,13 @@ import {
 import { Card } from '@/components/common/card';
 import { Button } from '@/components/common/button';
 import { cn } from '@/utils/cn';
+import Image from 'next/image';
 import { PageLoader } from '@/components/common/page-loader';
 import type { Garage } from '@/pages/garages/garages-page';
 import { BookingConfirmed } from '@/components/garages/booking-confirmed';
 import type { QuoteItem } from '@/components/quotes/quotes-shared';
 import type { DiagnoseIssue } from '@/components/ai-diagnose/diagnose-flow-shared';
+import { createBooking } from '@/lib/bookings-api';
 
 interface GarageDetailPageProps {
   garage: Garage;
@@ -44,14 +47,6 @@ interface GarageDetailPageProps {
     aiEstimateRange: string;
   };
 }
-
-const appointmentDates = [
-  { day: 'Fri', date: '23', month: 'May' },
-  { day: 'Sat', date: '24', month: 'May' },
-  { day: 'Sun', date: '25', month: 'May' },
-  { day: 'Mon', date: '26', month: 'May' },
-  { day: 'Tue', date: '27', month: 'May' },
-];
 
 const timeSlots = [
   '09:00 AM',
@@ -86,11 +81,33 @@ export function GarageDetailPage({
   mode = 'default',
   quoteContext,
 }: GarageDetailPageProps) {
+  const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('23');
+
+  const appointmentDates = useMemo(() => {
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const list = [];
+    const today = new Date();
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      list.push({
+        day: daysOfWeek[d.getDay()],
+        date: String(d.getDate()),
+        month: months[d.getMonth()],
+        year: d.getFullYear(),
+        monthIndex: d.getMonth(),
+      });
+    }
+    return list;
+  }, []);
+
+  const [selectedDate, setSelectedDate] = useState(appointmentDates[0]?.date || '9');
   const [selectedSlot, setSelectedSlot] = useState('04:00 PM');
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
+  const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
   const [reviewPage, setReviewPage] = useState(0);
 
   const detailImageSources = [garage.image].filter((src): src is string =>
@@ -133,8 +150,60 @@ export function GarageDetailPage({
     },
   ];
 
-  const handleBookAppointment = () => {
-    setBookingConfirmed(true);
+  const handleBookAppointment = async () => {
+    try {
+      const timeMatch = selectedSlot.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      let hour = 10;
+      let minute = 0;
+      if (timeMatch) {
+        hour = parseInt(timeMatch[1], 10);
+        minute = parseInt(timeMatch[2], 10);
+        const isPm = timeMatch[3].toUpperCase() === 'PM';
+        if (isPm && hour < 12) hour += 12;
+        if (!isPm && hour === 12) hour = 0;
+      }
+      const selectedDayObj = appointmentDates.find((d) => d.date === selectedDate) || appointmentDates[0];
+      const scheduledAt = new Date(
+        selectedDayObj.year,
+        selectedDayObj.monthIndex,
+        parseInt(selectedDayObj.date, 10),
+        hour,
+        minute
+      ).toISOString();
+      const amountStr = quoteContext?.quote?.price ? String(quoteContext.quote.price).replace(/[^\d.]/g, '') : '150';
+      const totalAmount = parseFloat(amountStr) || 150.0;
+
+      let vehicleId = '00000000-0000-0000-0000-000000000002';
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('wrectifai_selected_vehicle');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.id) {
+              vehicleId = parsed.id;
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+
+      const response = await createBooking({
+        garageId: garage.id,
+        vehicleId,
+        scheduledAt,
+        totalAmount,
+        bookingType: isQuoteContext ? 'quoteBased' : 'instant',
+        quoteId: quoteContext?.quote?.id || null,
+      });
+
+      if (response && response.id) {
+        setConfirmedBookingId(response.id);
+      }
+      setBookingConfirmed(true);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Booking creation failed');
+    }
   };
 
   if (bookingConfirmed) {
@@ -144,9 +213,9 @@ export function GarageDetailPage({
         selectedDate={selectedDate}
         selectedSlot={selectedSlot}
         quoteContext={isQuoteContext ? quoteContext : undefined}
+        bookingId={confirmedBookingId || undefined}
         onViewBookings={() => {
-          setBookingConfirmed(false);
-          onBack();
+          router.push('/bookings');
         }}
       />
     );
@@ -171,10 +240,12 @@ export function GarageDetailPage({
             {/* Banner Container */}
             <div className="relative h-[240px] w-full overflow-hidden rounded-[16px] border border-white/60 bg-gradient-to-r from-slate-900 to-slate-800 shadow-[0_16px_40px_rgba(22,48,112,0.08)] sm:h-[300px]">
               {garage.image && (
-                <img
+                <Image
                   src={garage.image}
                   alt={garage.name}
-                  className="absolute inset-0 h-full w-full object-cover opacity-90"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 70vw"
+                  className="object-cover opacity-90"
                 />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
@@ -622,7 +693,7 @@ export function GarageDetailPage({
                         </div>
 
                         <p className="mt-2.5 text-[11px] font-medium leading-[1.5] text-[#536891]">
-                          "{reviews[reviewPage].text}"
+                          &quot;{reviews[reviewPage].text}&quot;
                         </p>
                       </div>
 
@@ -780,7 +851,7 @@ export function GarageDetailPage({
                 Appointment Confirmed!
               </div>
               <div className="text-[10px] font-semibold text-[#536891]">
-                For May {selectedDate} at {selectedSlot} with {garage.name}
+                For {appointmentDates.find((d) => d.date === selectedDate)?.month} {selectedDate} at {selectedSlot} with {garage.name}
               </div>
             </div>
           </div>

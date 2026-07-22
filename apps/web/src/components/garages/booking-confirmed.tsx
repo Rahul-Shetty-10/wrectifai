@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Calendar,
   Wrench,
@@ -18,6 +18,8 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/common/card';
 import { Button } from '@/components/common/button';
 import { cn } from '@/utils/cn';
@@ -35,7 +37,17 @@ interface BookingConfirmedProps {
     issueIds: string[];
     aiEstimateRange: string;
   };
+  bookingId?: string;
   onViewBookings: () => void;
+}
+
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  vin?: string;
+  mileage?: number;
 }
 
 export function BookingConfirmed({
@@ -43,10 +55,58 @@ export function BookingConfirmed({
   selectedDate,
   selectedSlot,
   quoteContext,
+  bookingId: propBookingId,
   onViewBookings,
 }: BookingConfirmedProps) {
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
-  const bookingId = `WRCT-2505${selectedDate}-0420`;
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('wrectifai_selected_vehicle');
+      if (stored) {
+        try {
+          return JSON.parse(stored) as Vehicle;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return null;
+  });
+
+  const appointmentDates = useMemo(() => {
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const list = [];
+    const today = new Date();
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      list.push({
+        day: daysOfWeek[d.getDay()],
+        date: String(d.getDate()),
+        month: months[d.getMonth()],
+        year: d.getFullYear(),
+      });
+    }
+    return list;
+  }, []);
+
+  const selectedDateObj = useMemo(() => {
+    return appointmentDates.find((d) => d.date === selectedDate) || appointmentDates[0] || {
+      day: 'Fri',
+      date: '23',
+      month: 'May',
+      year: 2025,
+    };
+  }, [appointmentDates, selectedDate]);
+  const formattedYear2Digit = String(selectedDateObj.year).slice(-2);
+  const monthsList = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthIdx = monthsList.indexOf(selectedDateObj.month);
+  const formattedMonth = String(monthIdx >= 0 ? monthIdx + 1 : 7).padStart(2, '0');
+  const formattedDate = String(selectedDateObj.date).padStart(2, '0');
+  const bookingId = propBookingId || `WRCT-${formattedYear2Digit}${formattedMonth}${formattedDate}-0420`;
+
 
   const handleCopy = () => {
     navigator.clipboard.writeText(bookingId);
@@ -197,7 +257,7 @@ export function BookingConfirmed({
                     Date &amp; Time
                   </div>
                   <div className="text-[13px] font-extrabold text-[#0f172a]">
-                    Fri, {selectedDate} May 2025 • {selectedSlot}
+                    {selectedDateObj.day}, {selectedDateObj.date} {selectedDateObj.month} {selectedDateObj.year} • {selectedSlot}
                   </div>
                 </div>
               </div>
@@ -267,10 +327,12 @@ export function BookingConfirmed({
                     Vehicle
                   </div>
                   <div className="text-[13px] font-extrabold text-[#0f172a]">
-                    Honda City
+                    {selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model}` : 'Honda City'}
                   </div>
                   <div className="text-[11px] font-semibold text-[#64748b]">
-                    TS07 AB 1234 • Petrol • 2018
+                    {selectedVehicle
+                      ? `${selectedVehicle.vin ? `${selectedVehicle.vin} • ` : ''}${selectedVehicle.vin ? 'VIN Verified' : 'Petrol'} • ${selectedVehicle.year}`
+                      : 'TS07 AB 1234 • Petrol • 2018'}
                   </div>
                 </div>
               </div>
@@ -407,8 +469,8 @@ export function BookingConfirmed({
           {/* View My Bookings trigger */}
           <div className="flex justify-center pt-2">
             <Button
-              disabled
-              className="h-11 rounded-[12px] px-8 text-[12.5px] font-bold bg-[#1a56db] text-white shadow-md disabled:cursor-not-allowed disabled:opacity-100"
+              onClick={() => router.push('/bookings')}
+              className="h-11 rounded-[12px] px-8 text-[12.5px] font-bold bg-[#1a56db] text-white shadow-md hover:bg-[#0b43c4]"
             >
               View My Bookings
             </Button>
@@ -426,10 +488,12 @@ export function BookingConfirmed({
             {/* Mini Garage detail widget */}
             <div className="flex gap-3 items-center">
               {garage.image && (
-                <img
+                <Image
                   src={garage.image}
                   alt={garage.name}
-                  className="w-20 h-14 rounded-[10px] object-cover shrink-0 border border-[#e2eefc]"
+                  width={80}
+                  height={56}
+                  className="rounded-[10px] object-cover shrink-0 border border-[#e2eefc]"
                 />
               )}
               <div className="min-w-0">
@@ -456,7 +520,7 @@ export function BookingConfirmed({
                 { label: 'Service Type', val: 'Standard Service' },
                 {
                   label: 'Date & Time',
-                  val: `Fri, ${selectedDate} May 2025 at ${selectedSlot}`,
+                  val: `${selectedDateObj.day}, ${selectedDateObj.date} ${selectedDateObj.month} ${selectedDateObj.year} at ${selectedSlot}`,
                 },
                 { label: 'Estimated Duration', val: '60-90 mins' },
                 { label: 'Response Time', val: `${garage.responseMins} mins` },
@@ -510,8 +574,8 @@ export function BookingConfirmed({
                 Need to make changes?
               </h3>
               <p className="text-[11px] font-semibold text-[#8a99ad] leading-normal">
-                You can reschedule or cancel your booking before {selectedDate}{' '}
-                May 2025, 02:00 PM.
+                You can reschedule or cancel your booking before {selectedDateObj.date}{' '}
+                {selectedDateObj.month} {selectedDateObj.year}, 02:00 PM.
               </p>
             </div>
 

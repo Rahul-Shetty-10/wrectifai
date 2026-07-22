@@ -1,5 +1,8 @@
 import './global.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import { AuthProvider } from '@/lib/auth-context';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { AuthGuard } from '@/components/common/auth-guard';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -16,6 +19,8 @@ export const metadata = {
   },
 };
 
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'your-google-client-id-here';
+
 export default function RootLayout({
   children,
 }: {
@@ -23,7 +28,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={plusJakartaSans.variable}>
-      <body className="bg-background text-foreground antialiased">{children}</body>
+      <body className="bg-background text-foreground antialiased">
+        <GoogleOAuthProvider clientId={googleClientId}>
+          <AuthProvider>
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+          </AuthProvider>
+        </GoogleOAuthProvider>
+      </body>
     </html>
   );
 }

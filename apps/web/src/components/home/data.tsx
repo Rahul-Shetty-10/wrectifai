@@ -6,7 +6,6 @@ import {
   CalendarDays,
   CarFront,
   CircleHelp,
-  CloudRain,
   Disc3,
   FileText,
   Fuel,
@@ -14,21 +13,18 @@ import {
   House,
   Lightbulb,
   MessageSquare,
-  Package,
-  Phone,
   Settings,
   ShieldCheck,
   ShoppingBag,
-  Siren,
   Snowflake,
   Sparkles,
-  Sun,
   Tag,
   Truck,
   UserRound,
   Wallet,
   Wrench,
 } from 'lucide-react';
+
 
 export type NavItem = {
   label: string;
@@ -63,13 +59,13 @@ export const navItems: NavItem[] = [
 ];
 
 export const categoryItems = [
-  { label: 'Repair Services', icon: Wrench, href: '#garages', image: '/assets/repair-services.png' },
-  { label: 'Maintenance', icon: Fuel, href: '#maintenance', image: '/assets/maintenance.svg' },
-  { label: 'Parts & Components', icon: Settings, href: '#offers', image: '/assets/Parts and components.png' },
-  { label: 'Tyres & Wheels', icon: Disc3, href: '#garages', image: '/assets/tyres_and_wheels.png' },
-  { label: 'Car Care & Detailing', icon: Sparkles, href: '#tips', image: '/assets/car-care.svg' },
-  { label: 'Insurance', icon: ShieldCheck, href: '#offers', image: '/assets/isurance.svg' },
-  { label: 'Accessories & Upgrades', icon: CarFront, href: '#offers', image: '/assets/Accessories.png' },
+  { label: 'Repair Services', icon: Wrench, href: '/shop', image: '/assets/repair-services.png' },
+  { label: 'Maintenance', icon: Fuel, href: '/shop', image: '/assets/maintenance.svg' },
+  { label: 'Parts & Components', icon: Settings, href: '/shop', image: '/assets/Parts and components.png' },
+  { label: 'Tyres & Wheels', icon: Disc3, href: '/shop', image: '/assets/tyres_and_wheels.png' },
+  { label: 'Car Care & Detailing', icon: Sparkles, href: '/shop', image: '/assets/car-care.svg' },
+  { label: 'Insurance', icon: ShieldCheck, href: '/shop', image: '/assets/isurance.svg' },
+  { label: 'Accessories & Upgrades', icon: CarFront, href: '/shop', image: '/assets/Accessories.png' },
 ];
 
 export const maintenanceItems = [
@@ -80,180 +76,7 @@ export const maintenanceItems = [
   { label: 'Battery Check', due: 'Due in 30 Days', icon: BatteryCharging, href: '#garages', image: '/assets/Battery_Check.png' },
 ];
 
-export const garages = [
-  {
-    badge: 'Top Rated',
-    tone: 'green' as const,
-    name: 'SpeedFix Auto Care',
-    rating: '4.6',
-    reviews: 128,
-    location: 'Kondapur, Hyderabad',
-    distance: '2.2 km',
-    price: 'Starting \u20B9499',
-    href: '#offers',
-    artwork: 'from-[#0b121d] via-[#2a241f] to-[#5b3823]',
-    image: '/assets/garage_1_1778071156220.png',
-  },
-  {
-    badge: 'Most Trusted',
-    tone: 'orange' as const,
-    name: 'QuickPit Service Center',
-    rating: '4.5',
-    reviews: 96,
-    location: 'Madhapur, Hyderabad',
-    distance: '3.1 km',
-    price: 'Starting \u20B9599',
-    href: '#offers',
-    artwork: 'from-[#16181f] via-[#362219] to-[#5d2b20]',
-    image: '/assets/garage_2_1778071173295.png',
-  },
-  {
-    badge: 'Best Value',
-    tone: 'blue' as const,
-    name: 'AutoWorks Garage',
-    rating: '4.4',
-    reviews: 110,
-    location: 'Gachibowli, Hyderabad',
-    distance: '4.5 km',
-    price: 'Starting \u20B9449',
-    href: '#offers',
-    artwork: 'from-[#2f2419] via-[#3c3127] to-[#1a1d25]',
-    image: '/assets/garage_3_1778071191282.png',
-  },
-  {
-    badge: '',
-    tone: 'blue' as const,
-    name: 'Five Star Automotive',
-    rating: '4.3',
-    reviews: 78,
-    location: 'Banjara Hills, Hyderabad',
-    distance: '5.2 km',
-    price: 'Starting \u20B9699',
-    href: '#offers',
-    artwork: 'from-[#151515] via-[#343434] to-[#6f4a3e]',
-    image: 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    badge: 'Top Rated',
-    tone: 'green' as const,
-    name: 'Metro Auto Bay',
-    rating: '4.7',
-    reviews: 142,
-    location: 'Hitech City, Hyderabad',
-    distance: '2.8 km',
-    price: 'Starting \u20B9549',
-    href: '#offers',
-    artwork: 'from-[#132135] via-[#29496f] to-[#1b2436]',
-    image: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    badge: '',
-    tone: 'orange' as const,
-    name: 'Prime Service Point',
-    rating: '4.6',
-    reviews: 119,
-    location: 'Secunderabad, Hyderabad',
-    distance: '4.4 km',
-    price: 'Starting \u20B9579',
-    href: '#offers',
-    artwork: 'from-[#2f2420] via-[#5b412f] to-[#171d29]',
-    image: '/assets/garage_1_1778071156220.png',
-  },
-  {
-    badge: 'Best Value',
-    tone: 'blue' as const,
-    name: 'Royal Motor Service',
-    rating: '4.2',
-    reviews: 64,
-    location: 'Jubilee Hills, Hyderabad',
-    distance: '3.8 km',
-    price: 'Starting \u20B9529',
-    href: '#offers',
-    artwork: 'from-[#21242b] via-[#4a3328] to-[#1c2230]',
-    image: 'https://images.unsplash.com/photo-1600661653561-629509216228?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    badge: '',
-    tone: 'green' as const,
-    name: 'PitStop Car Care',
-    rating: '4.1',
-    reviews: 58,
-    location: 'Kukatpally, Hyderabad',
-    distance: '4.9 km',
-    price: 'Starting \u20B9489',
-    href: '#offers',
-    artwork: 'from-[#151a22] via-[#324150] to-[#12161f]',
-    image: '/assets/garage_2_1778071173295.png',
-  },
-];
 
-export const seasonalDeals = [
-  {
-    title: 'Summer Care Combo',
-    subtitle: 'Coolant + AC + Engine Oil Combo',
-    price: '\u20B92,999',
-    strikePrice: '\u20B94,500',
-    discount: '33% OFF',
-    icon: Sun,
-    textColor: 'text-[#ff3b30]',
-    bgColor: '#fff7ed',
-    fadeColor: 'from-[#fff7ed]',
-    href: '#offers',
-    image: '/assets/summner_car.png',
-  },
-  {
-    title: 'Monsoon Care Combo',
-    subtitle: 'Wiper Blades + Tyres + Checkup Combo',
-    price: '\u20B91,999',
-    strikePrice: '\u20B93,000',
-    discount: '33% OFF',
-    icon: CloudRain,
-    textColor: 'text-[#238453]',
-    bgColor: '#f0fdf4',
-    fadeColor: 'from-[#f0fdf4]',
-    href: '#offers',
-    image: '/assets/monsooncare.png',
-  },
-  {
-    title: 'Winter Care Combo',
-    subtitle: 'Battery + Engine Oil + Coolant Combo',
-    price: '\u20B92,499',
-    strikePrice: '\u20B93,800',
-    discount: '34% OFF',
-    icon: Snowflake,
-    textColor: 'text-[#1a56db]',
-    bgColor: '#eff6ff',
-    fadeColor: 'from-[#eff6ff]',
-    href: '#offers',
-    image: '/assets/wintercombo.png',
-  },
-  {
-    title: 'Festival Shine Combo',
-    subtitle: 'Foam Wash + Wax + Interior Dressing',
-    price: '\u20B91,799',
-    strikePrice: '\u20B92,600',
-    discount: '31% OFF',
-    icon: Sparkles,
-    textColor: 'text-[#805ad5]',
-    bgColor: '#faf5ff',
-    fadeColor: 'from-[#faf5ff]',
-    href: '#offers',
-    image: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    title: 'Weekend Check Combo',
-    subtitle: 'Brake Check + Battery Test + Fluid Top-up',
-    price: '\u20B91,499',
-    strikePrice: '\u20B92,200',
-    discount: '32% OFF',
-    icon: Settings,
-    textColor: 'text-[#2f855a]',
-    bgColor: '#f0fff4',
-    fadeColor: 'from-[#f0fff4]',
-    href: '#offers',
-    image: '/assets/weekend_combo_1778071208387.png',
-  },
-];
 
 export const careTips = [
   {
@@ -300,44 +123,7 @@ export const careTips = [
   },
 ];
 
-export const overviewItems = [
-  {
-    title: 'Upcoming Bookings',
-    value: '2',
-    description: 'Next: 25 Apr, 10:00 AM',
-    cta: 'View All',
-    href: '#garages',
-    icon: CalendarDays,
-    colors: 'from-[#7c3aed] to-[#9f67ff]',
-  },
-  {
-    title: 'Part Orders',
-    value: '3',
-    description: '1 Order In Transit',
-    cta: 'View All',
-    href: '#offers',
-    icon: Package,
-    colors: 'from-[#f97316] to-[#f59e0b]',
-  },
-  {
-    title: 'Pending Quotes',
-    value: '2',
-    description: 'Action Required',
-    cta: 'View All',
-    href: '#offers',
-    icon: FileText,
-    colors: 'from-[#3b82f6] to-[#2563eb]',
-  },
-  {
-    title: 'Vehicles',
-    value: '2',
-    description: 'Manage Vehicles',
-    cta: 'Manage',
-    href: '#top',
-    icon: CarFront,
-    colors: 'from-[#10b981] to-[#14b8a6]',
-  },
-];
+
 
 export const emergencyItems = [
   { title: 'Roadside Assistance', image: '/assets/roadside assistance.png', href: 'tel:+919999999999', imageClass: 'h-10 w-10' },
@@ -346,47 +132,22 @@ export const emergencyItems = [
   { title: 'Call Support', image: '/assets/call.jfif', href: 'tel:+919999999999', imageClass: 'h-8 w-8' },
 ];
 
-export const promoItems = [
-  {
-    eyebrow: 'MEGA CAR WASH OFFER',
-    title: 'Premium Wash + Interior Cleaning',
-    price: '\u20B9499',
-    strikePrice: '\u20B9699',
-    discount: '29% OFF',
-    accent: 'text-[#238453]',
-    fill: 'from-[#edf9ef] to-[#f8fbff]',
-    icon: CarFront,
-    href: '#garages',
-    image: '/assets/mega car.png',
-  },
-  {
-    eyebrow: 'BRAKE CARE SPECIAL',
-    title: 'Brake Pads + Disc Inspection',
-    price: '\u20B91,299',
-    strikePrice: '\u20B91,799',
-    discount: '28% OFF',
-    accent: 'text-[#ff3b30]',
-    fill: 'from-[#fff2f2] to-[#fff8f8]',
-    icon: Disc3,
-    href: '#garages',
-    image: '/assets/brake_disc_1778070670609.png',
-  },
-  {
-    eyebrow: 'AC SERVICE OFFER',
-    title: 'AC Checkup + Gas Top-up',
-    price: '\u20B91,199',
-    strikePrice: '\u20B91,599',
-    discount: '26% OFF',
-    accent: 'text-[#1a56db]',
-    fill: 'from-[#eff5ff] to-[#fafcff]',
-    icon: Snowflake,
-    href: '#garages',
-    image: '/assets/ac_vent_1778070688367.png',
-  },
-];
+
 
 export const topNavIcons: IconLink[] = [
   { icon: Bell, badge: '3', href: '#overview', label: 'Notifications' },
   { icon: MessageSquare, href: '#emergency', label: 'Messages' },
   { icon: Heart, href: '#offers', label: 'Wishlist' },
 ];
+
+export type Garage = {
+  badge?: string;
+  name: string;
+  rating: number;
+  reviews: number;
+  location: string;
+  distance?: string;
+  price?: string;
+  image?: string;
+  href: string;
+};

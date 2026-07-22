@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ChevronDown,
   CircleHelp,
+  Clock,
   FileText,
   Gauge,
   Lock,
@@ -24,8 +25,9 @@ import { GarageMoreMenu } from '@/components/quotes/garage-more-menu';
 import {
   aiEstimatedQuoteRange,
   quoteContextDefaultIssueIds,
-  quotesList,
 } from '@/components/quotes/quotes-shared';
+import { fetchQuotes, fetchQuoteRequests, type QuoteRequestResponse } from '@/lib/quotes-api';
+import type { QuoteItem } from '@/components/quotes/quotes-shared';
 import { resultIssues } from '@/components/ai-diagnose/diagnose-flow-shared';
 import { cn } from '@/utils/cn';
 import type { QuoteStatus } from '@/components/quotes/quotes-shared';
@@ -48,7 +50,21 @@ const actionItems = [
   { label: 'More Options', icon: MoreHorizontal, tone: 'blue' as const },
 ];
 
+import { VehicleSelector } from '@/components/common/vehicle-selector';
+
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  vin?: string;
+  mileage?: number;
+}
+
 export function QuotesPage() {
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  
   const quotesPerPage = 5;
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,6 +73,27 @@ export function QuotesPage() {
   const [selectedQuoteIds, setSelectedQuoteIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<QuoteTabKey>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [quotes, setQuotes] = useState<QuoteItem[]>([]);
+  const [quoteRequests, setQuoteRequests] = useState<QuoteRequestResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [quotesData, requestsData] = await Promise.all([
+          fetchQuotes(),
+          fetchQuoteRequests(),
+        ]);
+        setQuotes(quotesData);
+        setQuoteRequests(requestsData);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   useEffect(() => {
     const pageScroller = (() => {
@@ -72,69 +109,88 @@ export function QuotesPage() {
     pageScroller?.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
 
+  const latestRequestForVehicle = useMemo(() => {
+    if (!selectedVehicleId) return null;
+    return quoteRequests.find((req) => req.vehicleId === selectedVehicleId);
+  }, [quoteRequests, selectedVehicleId]);
+
+  const vehicleQuotes = useMemo(() => {
+    if (!selectedVehicleId || !latestRequestForVehicle) return [];
+    return quotes.filter((quote) => quote.quoteRequestId === latestRequestForVehicle.id);
+  }, [quotes, selectedVehicleId, latestRequestForVehicle]);
+
   const quoteTabs = useMemo(
     () => [
-      { key: 'all' as const, label: `All Quotes (${quotesList.length})` },
+      { key: 'all' as const, label: `All Quotes (${vehicleQuotes.length})` },
       {
         key: 'new' as const,
         label: `New (${
-          quotesList.filter((quote) => quote.status === 'new').length
+          vehicleQuotes.filter((quote) => quote.status === 'new').length
         })`,
       },
       {
         key: 'viewed' as const,
         label: `Viewed (${
-          quotesList.filter((quote) => quote.status === 'viewed').length
+          vehicleQuotes.filter((quote) => quote.status === 'viewed').length
         })`,
       },
       {
         key: 'expired' as const,
         label: `Expired (${
-          quotesList.filter((quote) => quote.status === 'expired').length
+          vehicleQuotes.filter((quote) => quote.status === 'expired').length
         })`,
       },
     ],
-    []
+    [vehicleQuotes]
   );
 
-  const filteredQuotes =
-    activeTab === 'all'
-      ? quotesList
-      : quotesList.filter((quote) => quote.status === activeTab);
+  const filteredQuotes = useMemo(() => {
+    return activeTab === 'all'
+      ? vehicleQuotes
+      : vehicleQuotes.filter((quote) => quote.status === activeTab);
+  }, [vehicleQuotes, activeTab]);
+
   const totalPages = Math.max(
     1,
     Math.ceil(filteredQuotes.length / quotesPerPage)
   );
-  const paginatedQuotes = filteredQuotes.slice(
-    (currentPage - 1) * quotesPerPage,
-    currentPage * quotesPerPage
-  );
+  
+  // Clamping pagination page derived from current page state
+  const activePage = Math.min(currentPage, totalPages);
+  const paginatedQuotes = useMemo(() => {
+    return filteredQuotes.slice(
+      (activePage - 1) * quotesPerPage,
+      activePage * quotesPerPage
+    );
+  }, [filteredQuotes, activePage]);
 
   const selectedQuoteCount = selectedQuoteIds.length;
   const canCompare = selectedQuoteCount >= 2;
   const selectedLimitReached = selectedQuoteCount >= 3;
-  const issueIds = useMemo(
-    () =>
-      (searchParams?.get('issues') || quoteContextDefaultIssueIds.join(','))
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
-    [searchParams]
-  );
-  const requestedIssues = useMemo(
-    () => resultIssues.filter((issue) => issueIds.includes(issue.id)),
-    [issueIds]
-  );
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+  const requestedIssues = useMemo(() => {
+    const issuesFromQuery = searchParams?.get('issues');
+    if (issuesFromQuery) {
+      const ids = issuesFromQuery.split(',').map((item) => item.trim()).filter(Boolean);
+      return resultIssues.filter((issue) => ids.includes(issue.id));
     }
-  }, [currentPage, totalPages]);
+    const dbSummary = latestRequestForVehicle?.issueSummary;
+    if (dbSummary) {
+      return dbSummary.split(',').map((name, index) => {
+        const found = resultIssues.find((r) => r.title.toLowerCase() === name.trim().toLowerCase());
+        if (found) return found;
+        return {
+          id: `db_summary_${index}`,
+          title: name.trim(),
+          badge: 'Caution',
+          badgeClass: 'text-[#e27622] bg-[#fdf5ed]',
+          description: `Requested issue: ${name.trim()}`,
+          match: 85,
+          imageSrc: '/assets/mega car.png',
+        };
+      });
+    }
+    return resultIssues.filter((issue) => quoteContextDefaultIssueIds.includes(issue.id));
+  }, [searchParams, latestRequestForVehicle]);
 
   return (
     <DashboardShell header={<TopNavbar />}>
@@ -145,11 +201,11 @@ export function QuotesPage() {
               My Quotes
             </h1>
             <span className="rounded-full bg-[#dff4e7] px-2.5 py-1 text-[11px] font-medium text-[#18965c]">
-              3 New Quotes
+              {vehicleQuotes.filter((q) => q.status === 'new').length} New {vehicleQuotes.filter((q) => q.status === 'new').length === 1 ? 'Quote' : 'Quotes'}
             </span>
           </div>
           <p className="mt-2 ui-caption">
-            Compare quotes from trusted garages and choose the best one for your
+             Compare quotes from trusted garages and choose the best one for your
             car.
           </p>
         </div>
@@ -162,7 +218,10 @@ export function QuotesPage() {
                   <button
                     key={tab.key}
                     type="button"
-                    onClick={() => setActiveTab(tab.key)}
+                    onClick={() => {
+                      setActiveTab(tab.key);
+                      setCurrentPage(1);
+                    }}
                     className={cn(
                       'border-b-2 pb-4 text-[12px] font-medium transition-colors',
                       activeTab === tab.key
@@ -272,9 +331,39 @@ export function QuotesPage() {
             </Card>
 
             <div className="space-y-4">
-              {paginatedQuotes.map((quote) => (
-                <Card
-                  key={quote.id}
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16 bg-white border border-[#e6ecfb] rounded-[18px]">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1a56db] border-t-transparent"></div>
+                  <p className="mt-4 text-[13px] font-medium text-[#5f7099]">Loading quotes...</p>
+                </div>
+              ) : !latestRequestForVehicle ? (
+                <div className="flex flex-col items-center justify-center py-16 bg-white border border-[#e6ecfb] rounded-[18px] px-6 text-center">
+                  <p className="text-[14px] font-semibold text-[#17307a]">No Requests Found</p>
+                  <p className="mt-2 text-[12px] text-[#5f7099] max-w-md">No quote requests found for this vehicle. Try running an AI Diagnosis first to request quotes.</p>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/ai-diagnose')}
+                    className="mt-5 inline-flex h-[36px] items-center justify-center rounded-[10px] bg-[#1a56db] px-5 text-[12px] font-semibold text-white shadow-[0_10px_20px_rgba(26,86,219,0.15)]"
+                  >
+                    Start AI Diagnosis
+                  </button>
+                </div>
+              ) : vehicleQuotes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 bg-white border border-[#e6ecfb] rounded-[18px] px-6 text-center">
+                  <div className="h-10 w-10 rounded-full bg-[#e8f7ee] flex items-center justify-center text-[#1a945a] animate-pulse">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <p className="mt-4 text-[14px] font-semibold text-[#17307a]">Waiting for Quotes</p>
+                  <p className="mt-2 text-[12px] text-[#5f7099] max-w-md">Your request has been submitted to garages. We will notify you as soon as they submit their quotes (usually takes 5-10 minutes).</p>
+                </div>
+              ) : paginatedQuotes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 bg-white border border-[#e6ecfb] rounded-[18px]">
+                  <p className="text-[13px] font-medium text-[#5f7099]">No quotes match the selected status filter.</p>
+                </div>
+              ) : (
+                paginatedQuotes.map((quote) => (
+                  <Card
+                    key={quote.id}
                   className="relative rounded-[18px] border-[#e6ecfb] bg-white px-5 pt-7 pb-4 shadow-[0_12px_30px_rgba(37,73,153,0.04)]"
                 >
                   <div className="absolute right-5 top-0 flex items-start gap-2">
@@ -396,7 +485,7 @@ export function QuotesPage() {
                                 router.push(
                                   `/garages?source=quotes&quote=${
                                     quote.id
-                                  }&issues=${issueIds.join(',')}`
+                                  }&issues=${requestedIssues.map((i) => i.id).join(',')}`
                                 );
                               }
                             }}
@@ -428,7 +517,7 @@ export function QuotesPage() {
                     </div>
                   </div>
                 </Card>
-              ))}
+              )))}
             </div>
 
             {totalPages > 1 ? (
@@ -438,18 +527,18 @@ export function QuotesPage() {
                   onClick={() =>
                     setCurrentPage((page) => Math.max(1, page - 1))
                   }
-                  disabled={currentPage === 1}
+                  disabled={activePage === 1}
                   className={cn(
                     'flex h-[30px] min-w-[30px] items-center justify-center rounded-[8px] border px-2 text-[11px] font-medium',
-                    currentPage === 1
+                    activePage === 1
                       ? 'cursor-not-allowed border-[#edf2fb] bg-[#f8faff] text-[#a7b4d3]'
                       : 'border-[#e1e8fb] bg-white text-[#5f7099]'
                   )}
                 >
                   {PREV}
                 </button>
-
-                {Array.from(
+ 
+                 {Array.from(
                   { length: totalPages },
                   (_, index) => index + 1
                 ).map((page) => (
@@ -459,7 +548,7 @@ export function QuotesPage() {
                     onClick={() => setCurrentPage(page)}
                     className={cn(
                       'flex h-[30px] min-w-[30px] items-center justify-center rounded-[8px] border px-2 text-[11px] font-medium',
-                      page === currentPage
+                      page === activePage
                         ? 'border-[#1a56db] bg-[#1a56db] text-white'
                         : 'border-[#e1e8fb] bg-white text-[#5f7099]'
                     )}
@@ -473,10 +562,10 @@ export function QuotesPage() {
                   onClick={() =>
                     setCurrentPage((page) => Math.min(totalPages, page + 1))
                   }
-                  disabled={currentPage === totalPages}
+                  disabled={activePage === totalPages}
                   className={cn(
                     'flex h-[30px] min-w-[30px] items-center justify-center rounded-[8px] border px-2 text-[11px] font-medium',
-                    currentPage === totalPages
+                    activePage === totalPages
                       ? 'cursor-not-allowed border-[#edf2fb] bg-[#f8faff] text-[#a7b4d3]'
                       : 'border-[#e1e8fb] bg-white text-[#5f7099]'
                   )}
@@ -531,16 +620,40 @@ export function QuotesPage() {
               <div className="mt-4 space-y-4">
                 <div>
                   <div className={homeBodyClass}>Vehicle</div>
-                  <div className="ui-subheading mt-2">
-                    Honda City (TS07 AB 1234)
+                  <div className="mt-2 mb-3">
+                    <VehicleSelector 
+                      value={selectedVehicleId} 
+                      onChange={(id, vehicle) => {
+                        setSelectedVehicleId(id);
+                        setSelectedVehicle(vehicle ?? null);
+                      }} 
+                    />
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2.5 text-[11px] text-[#5f7099]">
-                    <span>Petrol</span>
-                    <span>{BULLET}</span>
-                    <span>2018</span>
-                    <span>{BULLET}</span>
-                    <span>58,320 km</span>
-                  </div>
+                  {selectedVehicle || latestRequestForVehicle?.vehicle ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2.5 text-[11px] text-[#5f7099]">
+                      {(selectedVehicle || latestRequestForVehicle?.vehicle)?.vin && (
+                        <>
+                          <span className="font-mono">{(selectedVehicle || latestRequestForVehicle?.vehicle)?.vin}</span>
+                          <span>{BULLET}</span>
+                        </>
+                      )}
+                      <span>{(selectedVehicle || latestRequestForVehicle?.vehicle)?.year}</span>
+                      {(selectedVehicle || latestRequestForVehicle?.vehicle)?.mileage !== undefined && (selectedVehicle || latestRequestForVehicle?.vehicle)?.mileage !== null && (
+                        <>
+                          <span>{BULLET}</span>
+                          <span>{(selectedVehicle || latestRequestForVehicle?.vehicle)?.mileage?.toLocaleString()} miles</span>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-2 flex flex-wrap items-center gap-2.5 text-[11px] text-[#5f7099]">
+                      <span>Petrol</span>
+                      <span>{BULLET}</span>
+                      <span>2018</span>
+                      <span>{BULLET}</span>
+                      <span>58,320 km</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -559,7 +672,16 @@ export function QuotesPage() {
                 <div className="border-t border-[#edf2fb] pt-4">
                   <div className={homeBodyClass}>Request sent on</div>
                   <div className="mt-2 text-[12px] text-[#17307a]">
-                    20 May 2024, 10:30 AM
+                    {latestRequestForVehicle?.createdAt
+                      ? new Date(latestRequestForVehicle.createdAt).toLocaleString('en-US', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true,
+                        })
+                      : 'No active request'}
                   </div>
                 </div>
               </div>

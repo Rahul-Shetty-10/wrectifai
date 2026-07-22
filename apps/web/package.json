@@ -5,10 +5,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node -r @swc-node/register --test src/lib/api-client.test.ts",
     "vercel-build": "next build"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
+    "@react-oauth/google": "^0.13.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.8.0",

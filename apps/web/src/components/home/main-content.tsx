@@ -1,12 +1,12 @@
 'use client';
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import {
   BadgeIndianRupee,
   BatteryCharging,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
   Heart,
   MapPin,
   Search,
@@ -18,8 +18,10 @@ import {
   Snowflake,
   X,
   FileText,
-  CarFront,
   Gift,
+  Sun,
+  CloudRain,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/common/button';
@@ -28,10 +30,10 @@ import { Input } from '@/components/common/input';
 import {
   careTips,
   categoryItems,
-  garages,
   maintenanceItems,
-  seasonalDeals,
+  type Garage,
 } from '@/components/home/data';
+import { apiClient } from '@/lib/api-client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/utils/cn';
@@ -77,14 +79,14 @@ function HoverComingSoon({
 }
 
 const moreCategoryItems = [
-  { label: 'Loans', icon: BadgeIndianRupee, image: '/assets/loans.png' },
-  { label: 'Used Cars', icon: Sticker, image: '/assets/Used_cars.png' },
-  { label: 'Electrical & Battery Systems', icon: BatteryCharging, image: '/assets/Electrical.png' },
-  { label: 'AC & Cooling Systems', icon: Snowflake, image: '/assets/new_ac.png' },
-  { label: 'Vehicle Protection & Safety', icon: ShieldCheck, image: '/assets/isurance.svg' },
-  { label: 'Documentation & Compliance', icon: FileText, image: '/assets/Documentation.png' },
-  { label: 'EV Services', icon: Zap, image: '/assets/ev.png' },
-  { label: 'Subscription & Bundles', icon: Gift, image: '/assets/subscription.png' },
+  { label: 'Loans', icon: BadgeIndianRupee, image: '/assets/loans.png', href: '/shop' },
+  { label: 'Used Cars', icon: Sticker, image: '/assets/Used_cars.png', href: '/shop' },
+  { label: 'Electrical & Battery Systems', icon: BatteryCharging, image: '/assets/Electrical.png', href: '/shop' },
+  { label: 'AC & Cooling Systems', icon: Snowflake, image: '/assets/new_ac.png', href: '/shop' },
+  { label: 'Vehicle Protection & Safety', icon: ShieldCheck, image: '/assets/isurance.svg', href: '/shop' },
+  { label: 'Documentation & Compliance', icon: FileText, image: '/assets/Documentation.png', href: '/shop' },
+  { label: 'EV Services', icon: Zap, image: '/assets/ev.png', href: '/shop' },
+  { label: 'Subscription & Bundles', icon: Gift, image: '/assets/subscription.png', href: '/shop' },
 ];
 
 function CategoriesModal({
@@ -141,26 +143,30 @@ function CategoriesModal({
               Top Categories
             </h3>
             <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-7">
-              {categoryItems.map(({ label, icon: Icon, image }) => (
-                <Card
-                  key={label}
-                  className="flex min-h-[86px] flex-col items-center justify-center gap-2 rounded-[12px] border-[#e8eefc] px-2 py-2.5 text-center shadow-none"
-                >
-                  {image ? (
-                    <img 
-                      src={image} 
-                      alt={label}
-                      className="h-11 w-11 object-contain"
-                    />
-                  ) : (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f9ff] text-[#173fcf]">
-                      <Icon className="h-5.5 w-5.5" strokeWidth={1.8} />
+              {categoryItems.map(({ label, icon: Icon, image, href }) => (
+                <Link key={label} href={href}>
+                  <Card
+                    className="flex min-h-[86px] flex-col items-center justify-center gap-2 rounded-[12px] border-[#e8eefc] px-2 py-2.5 text-center shadow-none transition-all duration-200 hover:shadow-[0_4px_12px_rgba(26,86,219,0.12)] hover:border-[#c0d0f0] cursor-pointer"
+                  >
+                    {image ? (
+                      <Image 
+                        src={image} 
+                        alt={label}
+                        width={44}
+                        height={44}
+                        className="object-contain"
+                        style={{ width: '44px', height: 'auto' }}
+                      />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f9ff] text-[#173fcf]">
+                        <Icon className="h-5.5 w-5.5" strokeWidth={1.8} />
+                      </div>
+                    )}
+                    <div className="max-w-[82px] text-[10.5px] font-semibold leading-[1.25] text-[#17307a]">
+                      {label}
                     </div>
-                  )}
-                  <div className="max-w-[82px] text-[10.5px] font-semibold leading-[1.25] text-[#17307a]">
-                    {label}
-                  </div>
-                </Card>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>
@@ -170,33 +176,37 @@ function CategoriesModal({
               More Categories
             </h3>
             <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-              {moreCategoryItems.map(({ label, icon: Icon, image }) => (
-                <Card
-                  key={label}
-                  className="flex min-h-[54px] items-center gap-3 rounded-[12px] border-[#e8eefc] px-4 py-2 shadow-none"
-                >
-                  {image ? (
-                    <img 
-                      src={image} 
+              {moreCategoryItems.map(({ label, icon: Icon, image, href }) => (
+                <Link key={label} href={href}>
+                  <Card
+                    className="flex min-h-[54px] items-center gap-3 rounded-[12px] border-[#e8eefc] px-4 py-2 shadow-none transition-all duration-200 hover:shadow-[0_4px_12px_rgba(26,86,219,0.12)] hover:border-[#c0d0f0] cursor-pointer"
+                  >
+                    {image ? (
+                      <Image 
+                        src={image} 
                         alt={label}
-                        className="h-9 w-9 object-contain"
+                        width={36}
+                        height={36}
+                        className="object-contain"
+                        style={{ width: '36px', height: 'auto' }}
                       />
-                  ) : (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f9ff] text-[#1a56db]">
-                      <Icon className="h-5 w-5 stroke-[1.8]" />
-                    </div>
-                  )}
-                  <div className="max-w-[124px] text-[10.5px] font-semibold leading-[1.35] text-[#17307a]">
-                    {label === 'Vehicle Protection & Safety' ? (
-                      <>
-                        <span className="block whitespace-nowrap">Vehicle Protection</span>
-                        <span className="block">&amp; Safety</span>
-                      </>
                     ) : (
-                      label
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f9ff] text-[#1a56db]">
+                        <Icon className="h-5 w-5 stroke-[1.8]" />
+                      </div>
                     )}
-                  </div>
-                </Card>
+                    <div className="max-w-[124px] text-[10.5px] font-semibold leading-[1.35] text-[#17307a]">
+                      {label === 'Vehicle Protection & Safety' ? (
+                        <>
+                          <span className="block whitespace-nowrap">Vehicle Protection</span>
+                          <span className="block">&amp; Safety</span>
+                        </>
+                      ) : (
+                        label
+                      )}
+                    </div>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>
@@ -288,10 +298,12 @@ function HeroBanner() {
       
       <div className="absolute right-0 top-0 bottom-0 hidden lg:block w-[35%] xl:w-[42%] overflow-hidden rounded-r-[inherit] z-20">
         <div className="group relative h-full w-full">
-          <img
+          <Image
             src={activeBanner.src}
             alt="Diagnose Car"
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 1024px) 100vw, 42vw"
+            className="object-cover"
           />
 
           {imageIndex > 0 && (
@@ -415,24 +427,29 @@ function CategoryGrid({
       </div>
       <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="grid grid-cols-7 gap-3 min-w-[840px]">
-          {items.map(({ label, icon: Icon, image }) => (
+          {items.map(({ label, icon: Icon, image, href }) => (
             <HoverComingSoon key={label}>
-              <Card className="flex h-[110px] w-full cursor-default flex-col items-center justify-center gap-2 rounded-[12px] px-2 py-3 text-center shadow-[0_6px_16px_rgba(20,44,112,0.04)] border-[#edf2fd]">
-                {image ? (
-                  <img 
-                    src={image} 
-                    alt={label}
-                    className="h-16 w-16 object-contain"
-                  />
-                ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f4f8ff] text-[#173fcf]">
-                    <Icon className="h-6 w-6" strokeWidth={1.8} />
+              <Link href={href}>
+                <Card className="flex h-[110px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-[12px] px-2 py-3 text-center shadow-[0_6px_16px_rgba(20,44,112,0.04)] border-[#edf2fd] transition-all duration-200 hover:shadow-[0_4px_12px_rgba(26,86,219,0.12)] hover:border-[#c0d0f0]">
+                  {image ? (
+                    <Image 
+                      src={image} 
+                      alt={label}
+                      width={64}
+                      height={64}
+                      className="object-contain"
+                      style={{ width: '64px', height: 'auto' }}
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f4f8ff] text-[#173fcf]">
+                      <Icon className="h-6 w-6" strokeWidth={1.8} />
+                    </div>
+                  )}
+                  <div className="max-w-full text-[11.5px] font-semibold leading-[1.3] text-[#17307a] px-1">
+                    {label}
                   </div>
-                )}
-                <div className="max-w-full text-[11.5px] font-semibold leading-[1.3] text-[#17307a] px-1">
-                  {label}
-                </div>
-              </Card>
+                </Card>
+              </Link>
             </HoverComingSoon>
           ))}
         </div>
@@ -460,10 +477,13 @@ function MaintenanceStrip({
             <HoverComingSoon key={label}>
               <Card className="flex h-[60px] w-full cursor-default items-center gap-2 px-2 py-1.5 shadow-[0_8px_20px_rgba(20,44,112,0.05)]">
                 {image ? (
-                  <img 
+                  <Image 
                     src={image} 
                     alt={label}
-                    className="h-12 w-12 object-contain shrink-0"
+                    width={48}
+                    height={48}
+                    className="object-contain shrink-0"
+                    style={{ width: '48px', height: 'auto' }}
                   />
                 ) : (
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f5f8ff] text-[#1a56db]">
@@ -487,20 +507,46 @@ function MaintenanceStrip({
 
 function GarageCard({
   badge,
-  tone,
   name,
   rating,
   reviews,
   location,
   distance,
   price,
-  artwork,
   image,
-}: Omit<(typeof garages)[number], 'href'>) {
+}: Omit<Garage, 'href'>) {
+  // Map semantic badge to styling colors and gradients in the frontend design system
+  const getBadgeStyle = (badgeText: string) => {
+    switch (badgeText) {
+      case 'Top Rated':
+        return {
+          tone: 'green' as const,
+          artwork: 'from-[#0b121d] via-[#2a241f] to-[#5b3823]',
+        };
+      case 'Most Trusted':
+        return {
+          tone: 'orange' as const,
+          artwork: 'from-[#16181f] via-[#362219] to-[#5d2b20]',
+        };
+      case 'Best Value':
+        return {
+          tone: 'blue' as const,
+          artwork: 'from-[#2f2419] via-[#3c3127] to-[#1a1d25]',
+        };
+      default:
+        return {
+          tone: 'blue' as const,
+          artwork: 'from-[#151a22] via-[#324150] to-[#12161f]',
+        };
+    }
+  };
+
+  const { tone, artwork } = getBadgeStyle(badge || '');
+
   return (
     <Card className="overflow-hidden rounded-[16px] shadow-[0_12px_26px_rgba(20,44,112,0.08)]">
       <div className={cn('relative h-[86px] bg-gradient-to-r', artwork)}>
-        {image && <img src={image} alt={name} className="absolute inset-0 h-full w-full object-cover" />}
+        {image && <Image src={image} alt={name} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(5,8,17,0.3))]" />
         <div className="absolute inset-x-3 top-3 flex items-start justify-between">
           {badge ? <Badge tone={tone}>{badge}</Badge> : <div />}
@@ -518,8 +564,14 @@ function GarageCard({
         <h3 className="text-[13.5px] font-bold tracking-[-0.03em] text-[#17307a]">{name}</h3>
         <div className="mt-1 flex items-center gap-1.5 text-[11px] font-normal text-[#17307a]">
           <Star className="h-3.5 w-3.5 fill-[#ff9f1a] text-[#ff9f1a]" />
-          <span className="font-semibold text-[#f28c28]">{rating}</span>
-          <span>({reviews})</span>
+          {Number(rating) > 0 ? (
+            <>
+              <span className="font-semibold text-[#f28c28]">{Number(rating).toFixed(1)}</span>
+              <span>({reviews})</span>
+            </>
+          ) : (
+            <span className="text-gray-400">No reviews yet</span>
+          )}
         </div>
         <div className="mt-1.5 space-y-1 text-[11px] font-normal text-[#17307a]">
           <div className="flex items-center gap-1.5 truncate">
@@ -529,9 +581,9 @@ function GarageCard({
           <div className="flex items-center justify-between gap-2 pt-0.5">
             <div className="flex items-center gap-1.5 shrink-0">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-[#17307a]" />
-              <span>{distance}</span>
+              <span>{distance || '2.5 km'}</span>
             </div>
-            <span className="font-bold text-[#16a34a]">{price}</span>
+            {price && <span className="font-bold text-[#16a34a]">{price}</span>}
           </div>
         </div>
       </div>
@@ -563,7 +615,7 @@ function scrollRow(container: HTMLDivElement | null, amount: number) {
 function FeaturedGarages({
   garagesList,
 }: {
-  garagesList: typeof garages;
+  garagesList: Garage[];
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -665,10 +717,37 @@ function FeaturedGarages({
   );
 }
 
+interface Deal {
+  title: string;
+  subtitle: string;
+  price: string;
+  strikePrice: string;
+  discount: string;
+  icon: React.ComponentType<{ className?: string }> | null;
+  textColor: string;
+  bgColor: string;
+  fadeColor: string;
+  image?: string;
+}
+
+interface PromoItem {
+  isCombo: boolean;
+  badge?: string;
+  title: string;
+  displayPrice: string;
+  strikePrice: string;
+  discountLabel: string;
+  icon: string;
+  accent?: string;
+  bgColor?: string;
+  cardTint?: string;
+  image?: string;
+}
+
 function SeasonalDeals({
   deals,
 }: {
-  deals: typeof seasonalDeals;
+  deals: Deal[];
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeft, setShowLeft] = useState(false);
@@ -734,10 +813,12 @@ function SeasonalDeals({
                   >
                     {deal.image ? (
                       <>
-                        <img
+                        <Image
                            src={deal.image}
                            alt={deal.title}
-                           className="h-full w-full object-cover object-center"
+                           fill
+                           sizes="(max-width: 768px) 100vw, 15vw"
+                           className="object-cover object-center"
                         />
                         <div 
                           className="absolute inset-y-0 left-0 w-10 pointer-events-none"
@@ -824,7 +905,7 @@ function CareTips({
               <div className="relative h-full overflow-hidden">
                 {image ? (
                   <>
-                    <img src={image} alt={title} className="absolute inset-0 h-full w-full object-cover" />
+                    <Image src={image} alt={title} fill sizes="(max-width: 768px) 100vw, 10vw" className="object-cover" />
                     <div
                       className="absolute inset-y-0 left-0 w-10 pointer-events-none"
                       style={{
@@ -882,6 +963,8 @@ function CareTips({
 export function MainContent() {
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [garagesList, setGaragesList] = useState<Garage[]>([]);
+  const [dealsList, setDealsList] = useState<Deal[]>([]);
 
   useEffect(() => {
     const handleSearch = (event: Event) => {
@@ -891,6 +974,65 @@ export function MainContent() {
 
     window.addEventListener('dashboard-search', handleSearch);
     return () => window.removeEventListener('dashboard-search', handleSearch);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get<Garage[]>('/garages/search')
+      .then((data) => {
+        if (active && data && data.length > 0) {
+          setGaragesList(data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch garages:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get<PromoItem[]>('/promos')
+      .then((data) => {
+        if (active && data && data.length > 0) {
+          const getIconComponent = (iconName: string) => {
+            switch (iconName) {
+              case 'Sun': return Sun;
+              case 'CloudRain': return CloudRain;
+              case 'Snowflake': return Snowflake;
+              case 'Sparkles': return Sparkles;
+              case 'Settings': return SettingsIcon;
+              default: return Snowflake;
+            }
+          };
+
+          const comboDeals = data
+            .filter((p: PromoItem) => p.isCombo)
+            .map((p: PromoItem) => ({
+              title: p.badge || p.title,
+              subtitle: p.title,
+              price: p.displayPrice,
+              strikePrice: p.strikePrice,
+              discount: p.discountLabel,
+              icon: getIconComponent(p.icon),
+              textColor: p.accent || 'text-[#1a56db]',
+              bgColor: p.bgColor || '#eff6ff',
+              fadeColor: p.cardTint || 'from-[#eff6ff]',
+              image: p.image,
+            }));
+          if (comboDeals.length > 0) {
+            setDealsList(comboDeals);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch combo deals:', err);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -918,25 +1060,25 @@ export function MainContent() {
   const filteredGarages = useMemo(
     () =>
       normalizedSearch
-        ? garages.filter(
+        ? garagesList.filter(
             (item) =>
               item.name.toLowerCase().includes(normalizedSearch) ||
               item.location.toLowerCase().includes(normalizedSearch)
           )
-        : garages,
-    [normalizedSearch]
+        : garagesList,
+    [normalizedSearch, garagesList]
   );
 
   const filteredDeals = useMemo(
     () =>
       normalizedSearch
-        ? seasonalDeals.filter(
+        ? dealsList.filter(
             (item) =>
               item.title.toLowerCase().includes(normalizedSearch) ||
               item.subtitle.toLowerCase().includes(normalizedSearch)
           )
-        : seasonalDeals,
-    [normalizedSearch]
+        : dealsList,
+    [normalizedSearch, dealsList]
   );
 
   const filteredTips = useMemo(

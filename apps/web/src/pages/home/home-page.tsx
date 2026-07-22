@@ -1,15 +1,11 @@
 'use client';
 
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
+
 import { DashboardShell } from '@/components/home/dashboard-shell';
 import {
   careTips,
   categoryItems,
-  garages,
   maintenanceItems,
-  promoItems,
-  seasonalDeals,
 } from '@/components/home/data';
 import { MainContent } from '@/components/home/main-content';
 import { RightPanel } from '@/components/home/right-panel';
@@ -34,16 +30,15 @@ const modalCategoryImages = [
   '/assets/subscription.png',
 ];
 
+// garages, seasonalDeals, promoItems images are no longer preloaded here
+// as they are fetched dynamically from the API at runtime
 const dashboardImageSources = Array.from(
   new Set(
     [
       ...heroBannerImages,
       ...categoryItems.map((item) => item.image).filter(Boolean),
       ...maintenanceItems.map((item) => item.image).filter(Boolean),
-      ...garages.map((item) => item.image).filter(Boolean),
-      ...seasonalDeals.map((item) => item.image).filter(Boolean),
       ...careTips.map((item) => item.image).filter(Boolean),
-      ...promoItems.map((item) => item.image).filter(Boolean),
       ...modalCategoryImages,
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
     ].filter((src): src is string => Boolean(src))

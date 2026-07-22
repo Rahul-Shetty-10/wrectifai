@@ -82,7 +82,7 @@ export const issueCategories: IssueCategoryConfig[] = [
         match: 88,
         risks: ['Engine wear', 'Overheating', 'Internal damage'],
         estimatedCost: 'Rs. 1,500 - Rs. 4,000',
-        imageSrc: '/assets/engine_oil.png',
+        imageSrc: '/assets/Engine_oil.png',
       },
       {
         id: 'belt-tensioner',
@@ -93,7 +93,7 @@ export const issueCategories: IssueCategoryConfig[] = [
         match: 71,
         risks: ['Accessory failure', 'Battery not charging', 'Breakdown risk'],
         estimatedCost: 'Rs. 2,000 - Rs. 6,500',
-        imageSrc: '/assets/alternator.png',
+        imageSrc: '/assets/Electrical.png',
       },
       {
         id: 'timing-component',
@@ -492,54 +492,6 @@ export const issueCategories: IssueCategoryConfig[] = [
   },
 ];
 
-export const fallbackCategoryQuestion: IssueQuestion = {
-  id: 'fallback_category',
-  label: 'Affected area',
-  question: 'Which of these best matches the issue you typed?',
-  options: issueCategories.map((category) => category.label),
-};
-
-const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-
-export function scoreIssueAgainstCategory(issueText: string, category: IssueCategoryConfig) {
-  const normalizedIssue = normalize(issueText);
-  if (!normalizedIssue) {
-    return 0;
-  }
-
-  return category.keywords.reduce((score, keyword) => {
-    const normalizedKeyword = normalize(keyword);
-
-    if (!normalizedKeyword) {
-      return score;
-    }
-
-    if (normalizedIssue.includes(normalizedKeyword)) {
-      return score + Math.max(3, normalizedKeyword.split(' ').length);
-    }
-
-    const keywordTokens = normalizedKeyword.split(' ');
-    const matchedTokens = keywordTokens.filter((token) => normalizedIssue.includes(token)).length;
-
-    return score + matchedTokens;
-  }, 0);
-}
-
-export function rankIssueCategories(issueText: string) {
-  return issueCategories
-    .map((category) => ({
-      category,
-      score: scoreIssueAgainstCategory(issueText, category),
-    }))
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score);
-}
-
 export function getCategoryById(categoryId: string) {
   return issueCategories.find((category) => category.id === categoryId);
-}
-
-export function getCategoryByLabel(label: string) {
-  const normalizedLabel = normalize(label);
-  return issueCategories.find((category) => normalize(category.label) === normalizedLabel);
 }

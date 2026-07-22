@@ -59,6 +59,7 @@ Constraint:
 | `vin` | String | No | Candidate unique | Optional |
 | `mileage` | Number | No | - | |
 | `warranty` | Object | No | - | provider, policyNo, expiry |
+| `isActive` | Boolean | Yes | Indexed | Soft delete flag (default: true) |
 | `createdAt` | Date | Yes | Indexed | |
 | `updatedAt` | Date | Yes | - | |
 

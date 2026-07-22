@@ -1,0 +1,974 @@
+{
+  "info": {
+    "name": "Wrectifai API",
+    "description": "Comprehensive Postman collection reflecting the implemented endpoints in the Wrectifai codebase.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "System & Config",
+      "item": [
+        {
+          "name": "System Health Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Returns simple uptime health statistics of the API."
+          },
+          "response": []
+        },
+        {
+          "name": "List Promos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/promos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "promos"
+              ]
+            },
+            "description": "Returns the promotional offers and deals ordered by relevance."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Auth Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "status"
+              ]
+            },
+            "description": "Returns the current status of the authentication module."
+          },
+          "response": []
+        },
+        {
+          "name": "Register (Phone OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"9876543210\",\n  \"name\": \"Demo User\",\n  \"otp\": \"123456\",\n  \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Register a new user or update name with phone OTP (Hardcoded phone OTP: 123456, valid for 9876543210 or 1234567890)."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Phone OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"9876543210\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticate user using OTP."
+          },
+          "response": []
+        },
+        {
+          "name": "Google OAuth Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credential\": \"GOOGLE_ID_TOKEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/google",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "google"
+              ]
+            },
+            "description": "Authenticate using Google OAuth ID token."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Exchange a refresh token for a new access token and refresh token."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Invalidates the refresh token."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "Returns a list of registered users (requires authorization)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "List Vehicles (Global / Unscoped)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vehicles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vehicles"
+              ]
+            },
+            "description": "Lists all active vehicles globally (Currently unscoped in the API layer)."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Vehicle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Tesla\",\n  \"model\": \"Model Y\",\n  \"year\": 2023,\n  \"vin\": \"5YJ3E1EBXLF123456\",\n  \"mileage\": 15000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/vehicles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vehicles"
+              ]
+            },
+            "description": "Adds a new vehicle associated with the authenticated customer."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vehicle Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vehicles/:vehicleId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vehicles",
+                ":vehicleId"
+              ],
+              "variable": [
+                {
+                  "key": "vehicleId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Retrieves details of a specific vehicle."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Vehicle",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mileage\": 16500\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/vehicles/:vehicleId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vehicles",
+                ":vehicleId"
+              ],
+              "variable": [
+                {
+                  "key": "vehicleId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Updates details of a vehicle."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Vehicle (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vehicles/:vehicleId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vehicles",
+                ":vehicleId"
+              ],
+              "variable": [
+                {
+                  "key": "vehicleId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Soft deletes a vehicle by marking it inactive."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Garages",
+      "item": [
+        {
+          "name": "Search Garages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/garages/search",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "garages",
+                "search"
+              ]
+            },
+            "description": "Searches and lists approved garages."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Garage by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/garages/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "garages",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Retrieves the details of a single garage."
+          },
+          "response": []
+        },
+        {
+          "name": "Garage Onboarding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Super Tuning Garage\",\n  \"address\": \"789 Performance Way\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/garages/onboarding",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "garages",
+                "onboarding"
+              ]
+            },
+            "description": "Submits garage onboarding details."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Quotes",
+      "item": [
+        {
+          "name": "List Quotes (Global / Unscoped)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/quotes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "quotes"
+              ]
+            },
+            "description": "List all active quotes globally."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Quote Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"VEHICLE_ID_HERE\",\n  \"issueSummary\": \"Squeaking noise from front brake pads during deceleration.\",\n  \"preferredDate\": \"2026-07-20\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/quotes/requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "quotes",
+                "requests"
+              ]
+            },
+            "description": "Create a new quote request. Will auto-generate 3 mock quotes from garages."
+          },
+          "response": []
+        },
+        {
+          "name": "List Quote Requests (Scoped)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/quotes/requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "quotes",
+                "requests"
+              ]
+            },
+            "description": "List all quote requests scoped to the authenticated customer."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Quote Request Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/quotes/requests/:requestId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "quotes",
+                "requests",
+                ":requestId"
+              ],
+              "variable": [
+                {
+                  "key": "requestId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Get a specific quote request."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Quote Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/quotes/:quoteId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "quotes",
+                ":quoteId"
+              ],
+              "variable": [
+                {
+                  "key": "quoteId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Get details of a single quote."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "List Bookings (Global / Unscoped)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bookings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bookings"
+              ]
+            },
+            "description": "Lists all bookings globally (Unscoped in current API version)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Standard Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"garageId\": \"GARAGE_ID_HERE\",\n  \"vehicleId\": \"VEHICLE_ID_HERE\",\n  \"scheduledAt\": \"2026-07-15T10:00:00.000Z\",\n  \"totalAmount\": 350.00,\n  \"bookingType\": \"quoteBased\",\n  \"quoteId\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bookings"
+              ]
+            },
+            "description": "Create a new booking."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Instant Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"garageId\": \"GARAGE_ID_HERE\",\n  \"vehicleId\": \"VEHICLE_ID_HERE\",\n  \"scheduledAt\": \"2026-07-15T10:00:00.000Z\",\n  \"totalAmount\": 300.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookings/instant",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                "instant"
+              ]
+            },
+            "description": "Create an instant booking."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Booking from Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"VEHICLE_ID_HERE\",\n  \"scheduledAt\": \"2026-07-15T10:00:00.000Z\",\n  \"totalAmount\": 3050.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookings/from-quote/:quoteId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                "from-quote",
+                ":quoteId"
+              ],
+              "variable": [
+                {
+                  "key": "quoteId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Create a booking based on an existing quote."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Booking Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bookings/:bookingId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                ":bookingId"
+              ],
+              "variable": [
+                {
+                  "key": "bookingId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Retrieves the details of a booking."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookings/:bookingId/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                ":bookingId",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "bookingId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Updates booking status ('pendingPayment', 'confirmed', 'inService', 'completed', 'cancelled')."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Diagnosis",
+      "item": [
+        {
+          "name": "Run/Generate Diagnosis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"VEHICLE_ID_HERE\",\n  \"symptomText\": \"Squeaking sound coming from the front wheels when braking\",\n  \"stage\": \"results\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/diagnosis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "diagnosis"
+              ]
+            },
+            "description": "Submit symptoms and get AI Diagnosis. Use stage='questions' to generate follow-up questions instead of final results."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Diagnosis by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/diagnosis/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "diagnosis",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Retrieves the details of a previous AI diagnosis."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Diagnosis Config (All)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/diagnose/config/all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "diagnose",
+                "config",
+                "all"
+              ]
+            },
+            "description": "Returns categories, result summaries, next steps, and trust items in one call."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Config Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/diagnose/config/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "diagnose",
+                "config",
+                "categories"
+              ]
+            },
+            "description": "Returns categories with their configured questions and potential issues."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "YOUR_JWT_ACCESS_TOKEN",
+      "type": "string"
+    }
+  ]
+}

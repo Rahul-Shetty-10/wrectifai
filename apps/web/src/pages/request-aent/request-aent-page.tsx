@@ -8,8 +8,42 @@ import { DashboardShell } from '@/components/home/dashboard-shell';
 import { TopNavbar } from '@/components/home/top-navbar';
 import { Card } from '@/components/common/card';
 import { resultIssues } from '@/components/ai-diagnose/diagnose-flow-shared';
-import { garages } from '@/components/home/data';
 import { cn } from '@/utils/cn';
+
+const garages = [
+  {
+    name: 'SpeedFix Auto Care',
+    image: '/assets/garage_1_1778071156220.png',
+    rating: 4.6,
+    reviews: 128,
+    distance: '2.2 km',
+    badge: 'Top Rated',
+  },
+  {
+    name: 'QuickPit Service Center',
+    image: '/assets/garage_2_1778071173295.png',
+    rating: 4.5,
+    reviews: 96,
+    distance: '3.1 km',
+    badge: 'Most Trusted',
+  },
+  {
+    name: 'AutoWorks Garage',
+    image: '/assets/garage_3_1778071191282.png',
+    rating: 4.4,
+    reviews: 110,
+    distance: '4.5 km',
+    badge: 'Best Value',
+  },
+  {
+    name: 'Five Star Automotive',
+    image: '/assets/garage_4_1778071611328.png',
+    rating: 4.3,
+    reviews: 78,
+    distance: '5.2 km',
+    badge: 'Trusted partner',
+  },
+];
 
 const BULLET = '\u2022';
 
@@ -104,11 +138,6 @@ function IssuePreview({
   const [currentSrc, setCurrentSrc] = useState(preferredSrc);
   const [showFallbackIcon, setShowFallbackIcon] = useState(false);
 
-  useEffect(() => {
-    setCurrentSrc(preferredSrc);
-    setShowFallbackIcon(false);
-  }, [preferredSrc]);
-
   if (showFallbackIcon) {
     return (
       <span className="flex h-[60px] w-[60px] items-center justify-center rounded-[14px] bg-[radial-gradient(circle_at_top,#f6f8ff_0%,#eef2ff_100%)] text-[#2451e5]">
@@ -153,17 +182,129 @@ function VehiclePreview() {
   );
 }
 
-export function RequestAentPage({ issues }: { issues?: string }) {
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  vin?: string;
+  mileage?: number;
+}
+
+import { getQuoteRequest } from '@/lib/quotes-api';
+import { getDiagnosis } from '@/lib/diagnosis-api';
+
+export function RequestAentPage({ issues, requestId }: { issues?: string; requestId?: string }) {
   const router = useRouter();
   const pageRootRef = useRef<HTMLDivElement>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [selectedIssues, setSelectedIssues] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const selectedIssueIds = (issues || 'wheel-balance,wheel-alignment')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const selectedIssues = resultIssues.filter((issue) =>
-    selectedIssueIds.includes(issue.id)
-  );
+  useEffect(() => {
+    async function loadData() {
+      try {
+        if (!requestId) {
+          const vehicleStr = typeof window !== 'undefined' ? localStorage.getItem('wrectifai_selected_vehicle') : null;
+          const parsedVehicle = vehicleStr ? JSON.parse(vehicleStr) : null;
+          setSelectedVehicle(parsedVehicle);
+          
+          const selectedIssueIds = (issues || 'wheel-balance,wheel-alignment')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean);
+
+          let allIssues = [...resultIssues];
+          if (typeof window !== 'undefined') {
+            const storedCustom = localStorage.getItem('wrectifai_custom_issues');
+            if (storedCustom) {
+              try {
+                const customIssues = JSON.parse(storedCustom);
+                allIssues = [...allIssues, ...customIssues];
+              } catch (e) {
+                console.error('Failed to parse custom issues:', e);
+              }
+            }
+          }
+          const filtered = allIssues.filter((issue) => selectedIssueIds.includes(issue.id));
+          setSelectedIssues(filtered);
+          return;
+        }
+
+        const qr = await getQuoteRequest(requestId);
+        if (qr) {
+          setSelectedVehicle(qr.vehicle ? { id: qr.vehicleId, ...qr.vehicle } : null);
+
+          if (qr.diagnosisRequestId) {
+            try {
+              const diag = await getDiagnosis(qr.diagnosisRequestId);
+              if (diag && diag.result && diag.result.issues) {
+                const getBadgeForIssue = (name: string, overallRisk?: string, index?: number) => {
+                  if (index === 0 && overallRisk) {
+                    if (overallRisk === 'low') return { badge: 'Low Risk', badgeClass: 'text-[#2e7d32] bg-[#edf7ed]' };
+                    if (overallRisk === 'medium') return { badge: 'Caution', badgeClass: 'text-[#e27622] bg-[#fdf5ed]' };
+                    return { badge: 'Critical', badgeClass: 'text-[#ea3838] bg-[#fef1f1]' };
+                  }
+                  const nameLower = name.toLowerCase();
+                  if (nameLower.includes('brake') || nameLower.includes('steering') || nameLower.includes('suspension') || nameLower.includes('airbag')) {
+                    return { badge: 'Critical', badgeClass: 'text-[#ea3838] bg-[#fef1f1]' };
+                  }
+                  if (nameLower.includes('filter') || nameLower.includes('wiper') || nameLower.includes('bulb')) {
+                    return { badge: 'Low Risk', badgeClass: 'text-[#2e7d32] bg-[#edf7ed]' };
+                  }
+                  return { badge: 'Caution', badgeClass: 'text-[#e27622] bg-[#fdf5ed]' };
+                };
+
+                const mapped = diag.result.issues.map((issue: any, index: number) => {
+                  const match = issue.confidence || 85;
+                  const { badge, badgeClass } = getBadgeForIssue(issue.name || issue.title, diag.result.riskLevel, index);
+                  return {
+                    id: `db_issue_${index}`,
+                    title: issue.name || issue.title,
+                    badge,
+                    badgeClass,
+                    description: `Diagnosed issue: ${issue.name || issue.title}. Requires parts: ${issue.requiredParts?.join(', ') || 'None specified'}.`,
+                    match,
+                    imageSrc: '/assets/mega car.png'
+                  };
+                });
+                setSelectedIssues(mapped);
+                return;
+              }
+            } catch (err) {
+              console.error('Failed to fetch linked diagnosis:', err);
+            }
+          }
+
+          if (qr.issueSummary) {
+            const summaryIssues = qr.issueSummary.split(',').map((name, index) => {
+              const found = resultIssues.find(r => r.title.toLowerCase() === name.trim().toLowerCase());
+              if (found) {
+                return found;
+              }
+              return {
+                id: `summary_issue_${index}`,
+                title: name.trim(),
+                badge: 'Caution',
+                badgeClass: 'text-[#e27622] bg-[#fdf5ed]',
+                description: `Requested issue: ${name.trim()}`,
+                match: 85,
+                imageSrc: '/assets/mega car.png'
+              };
+            });
+            setSelectedIssues(summaryIssues);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load quote request details:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, [requestId, issues]);
+
   const featuredGarages = garages.slice(0, 4);
 
   useEffect(() => {
@@ -235,8 +376,8 @@ export function RequestAentPage({ issues }: { issues?: string }) {
           </div>
         </Card>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.32fr)_minmax(0,0.68fr)]">
-          <div className="space-y-5">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.32fr)_minmax(0,0.68fr)] items-stretch">
+          <div className="flex flex-col gap-5">
             <Card className="rounded-[18px] border-[#e6ecfb] bg-white px-4 py-4 shadow-[0_8px_24px_rgba(37,73,153,0.04)]">
               <div className="flex items-center gap-3">
                 <h3 className={homeSectionHeadingClass}>Your Vehicle</h3>
@@ -250,7 +391,7 @@ export function RequestAentPage({ issues }: { issues?: string }) {
 
                   <div className="min-w-0">
                     <div className={homeCardHeadingClass}>
-                      Honda City (TS07 AB 1234)
+                      {selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model} ${selectedVehicle.vin ? `(${selectedVehicle.vin.slice(-6)})` : ''}` : 'Honda City (TS07 AB 1234)'}
                     </div>
                     <div className="mt-1 text-[12px] text-[#5f7099]">
                       Active vehicle linked to this garage request
@@ -262,7 +403,7 @@ export function RequestAentPage({ issues }: { issues?: string }) {
                           Fuel
                         </div>
                         <div className="mt-1 text-[13px] font-semibold text-[#17307a]">
-                          Petrol
+                          {selectedVehicle ? (selectedVehicle.vin ? 'VIN Verified' : 'Petrol') : 'Petrol'}
                         </div>
                       </div>
                       <div className="rounded-[12px] border border-[#e3ebff] bg-white px-3 py-2">
@@ -270,7 +411,7 @@ export function RequestAentPage({ issues }: { issues?: string }) {
                           Year
                         </div>
                         <div className="mt-1 text-[13px] font-semibold text-[#17307a]">
-                          2018
+                          {selectedVehicle ? selectedVehicle.year : '2018'}
                         </div>
                       </div>
                       <div className="rounded-[12px] border border-[#e3ebff] bg-white px-3 py-2">
@@ -278,7 +419,9 @@ export function RequestAentPage({ issues }: { issues?: string }) {
                           KM Driven
                         </div>
                         <div className="mt-1 text-[13px] font-semibold text-[#17307a]">
-                          58,320 km
+                          {selectedVehicle && selectedVehicle.mileage !== undefined && selectedVehicle.mileage !== null
+                            ? `${selectedVehicle.mileage.toLocaleString()} mi`
+                            : '58,320 km'}
                         </div>
                       </div>
                     </div>
@@ -287,7 +430,7 @@ export function RequestAentPage({ issues }: { issues?: string }) {
               </div>
             </Card>
 
-            <Card className="rounded-[18px] border-[#e6ecfb] bg-white px-4 py-4 shadow-[0_8px_24px_rgba(37,73,153,0.04)]">
+            <Card className="flex-1 rounded-[18px] border-[#e6ecfb] bg-white px-4 py-4 shadow-[0_8px_24px_rgba(37,73,153,0.04)]">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <h3 className={homeSectionHeadingClass}>
@@ -307,6 +450,7 @@ export function RequestAentPage({ issues }: { issues?: string }) {
                   >
                     <div className="flex justify-center md:justify-start">
                       <IssuePreview
+                        key={issue.id}
                         issueId={issue.id}
                         issueTitle={issue.title}
                         imageSrc={issue.imageSrc}
@@ -371,10 +515,12 @@ export function RequestAentPage({ issues }: { issues?: string }) {
                   )}
                 >
                   <div className="flex items-center justify-center md:justify-start">
-                    <img
+                    <Image
                       src={garage.image}
                       alt={garage.name}
-                      className="h-[56px] w-[96px] rounded-[10px] object-cover"
+                      width={96}
+                      height={56}
+                      className="rounded-[10px] object-cover"
                     />
                   </div>
 
@@ -402,9 +548,7 @@ export function RequestAentPage({ issues }: { issues?: string }) {
                         router.push(
                           `/garages?garage=${encodeURIComponent(
                             garage.name
-                          )}&source=request-aent&issues=${selectedIssueIds.join(
-                            ','
-                          )}`
+                          )}&source=request-aent&issues=${selectedIssues.map((i) => i.id).join(',')}`
                         )
                       }
                       className="ui-link inline-flex h-[34px] min-w-[84px] items-center justify-center rounded-[10px] border border-[#b9caff] px-3 transition-colors hover:bg-[#f7faff]"

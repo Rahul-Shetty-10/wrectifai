@@ -9,7 +9,20 @@
     "api": "nx serve api",
     "web": "nx dev web",
     "mobile": "nx start mobile",
-    "lint": "nx run-many -t lint --all"
+    "lint": "nx run-many -t lint --all",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "db:psql": "docker exec -it wrectifai_db psql -U postgres -d wrectifai",
+    "db:test-up": "docker compose up -d test-postgres",
+    "db:test-down": "docker compose stop test-postgres",
+    "db:test-reset": "docker compose down test-postgres -v && docker compose up -d test-postgres",
+    "db:test-psql": "docker exec -it wrectifai_test_db psql -U postgres -d wrectifai_test",
+    "db:migrate": "node db/migrate.js",
+    "test": "nx run-many -t test",
+    "test:api": "nx test api",
+    "test:api:unit": "nx test api unit",
+    "test:web": "nx test web"
   },
   "private": true,
   "devDependencies": {
@@ -31,8 +44,11 @@
     "@swc/cli": "~0.6.0",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
+    "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "~18.16.9",
+    "@types/pg": "^8.20.0",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
     "autoprefixer": "^10.4.27",
@@ -53,18 +69,24 @@
     "typescript-eslint": "^8.29.0"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.7",
     "@expo/metro-config": "~0.19.4",
     "@expo/metro-runtime": "~4.0.0",
     "@radix-ui/react-slot": "^1.2.4",
+    "ai": "^7.0.14",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cors": "^2.8.6",
     "expo": "~52.0.11",
     "expo-splash-screen": "~0.29.13",
     "expo-status-bar": "~2.0.0",
     "express": "^4.21.2",
+    "google-auth-library": "^10.9.0",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.8.0",
     "nativewind": "^4.2.3",
     "next": "~16.2.4",
+    "pg": "^8.22.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.76.3",
@@ -72,6 +94,7 @@
     "react-native-svg-transformer": "~1.5.0",
     "react-native-web": "~0.19.13",
     "tailwind-merge": "^3.5.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "zod": "^4.4.3"
   }
 }

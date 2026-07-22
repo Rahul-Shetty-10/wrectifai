@@ -1,9 +1,124 @@
-import { ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ChevronDown, CalendarDays, Package, FileText, Car } from 'lucide-react';
+import Image from 'next/image';
 import { Card } from '@/components/common/card';
-import { emergencyItems, overviewItems, promoItems } from '@/components/home/data';
+import { emergencyItems } from '@/components/home/data';
 import { cn } from '@/utils/cn';
+import { apiClient } from '@/lib/api-client';
+import { fetchBookings } from '@/lib/bookings-api';
+import { fetchQuotes } from '@/lib/quotes-api';
+import { getPromoTheme } from '@/utils/promo-theme';
 
 function OverviewPanel() {
+  const [bookingsCount, setBookingsCount] = useState<number>(0);
+  const [nextBooking, setNextBooking] = useState<string>('No upcoming bookings');
+  const [quotesCount, setQuotesCount] = useState<number>(0);
+  const [vehiclesCount, setVehiclesCount] = useState<number>(0);
+  const [vehicleDesc, setVehicleDesc] = useState<string>('No vehicles added');
+  const [ordersCount, setOrdersCount] = useState<number>(3);
+
+  useEffect(() => {
+    let active = true;
+
+    // Fetch Bookings
+    fetchBookings()
+      .then((data) => {
+        if (!active || !data) return;
+        const activeBookings = data.filter((b) => b.status === 'confirmed' || b.status === 'pendingPayment' || b.status === 'inService');
+        setBookingsCount(activeBookings.length);
+        
+        // Find next booking
+        const future = data
+          .filter((b) => (b.status === 'confirmed' || b.status === 'pendingPayment') && new Date(b.scheduledAt) >= new Date())
+          .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+        
+        if (future.length > 0) {
+          const nextDate = new Date(future[0].scheduledAt);
+          const formatted = nextDate.toLocaleDateString(undefined, {
+            day: 'numeric',
+            month: 'short',
+          }) + ', ' + nextDate.toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          setNextBooking(`Next: ${formatted}`);
+        } else {
+          setNextBooking('No upcoming bookings');
+        }
+      })
+      .catch((err) => console.error('Overview panel bookings fetch failed:', err));
+
+    // Fetch Quotes
+    fetchQuotes()
+      .then((data) => {
+        if (!active || !data) return;
+        setQuotesCount(data.length);
+      })
+      .catch((err) => console.error('Overview panel quotes fetch failed:', err));
+
+    // Fetch Vehicles
+    apiClient.get<any[]>('/vehicles')
+      .then((data) => {
+        if (!active || !data) return;
+        setVehiclesCount(data.length);
+        if (data.length > 0) {
+          setVehicleDesc(`${data[0].make} ${data[0].model} (Active)`);
+        }
+      })
+      .catch((err) => console.error('Overview panel vehicles fetch failed:', err));
+
+    // Fetch Orders
+    apiClient.get<any>('/marketplace/orders')
+      .then((data) => {
+        if (!active || !data) return;
+        setOrdersCount(data.count);
+      })
+      .catch((err) => console.error('Overview panel orders fetch failed:', err));
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const items = [
+    {
+      title: 'Upcoming Bookings',
+      value: String(bookingsCount),
+      description: nextBooking,
+      cta: 'View All',
+      href: '/bookings',
+      icon: CalendarDays,
+      colors: 'from-[#7c3aed] to-[#9f67ff]',
+    },
+    {
+      title: 'Part Orders',
+      value: String(ordersCount),
+      description: ordersCount === 1 ? '1 Order In Transit' : `${ordersCount} Orders`,
+      cta: 'View All',
+      href: '/offers',
+      icon: Package,
+      colors: 'from-[#f97316] to-[#f59e0b]',
+    },
+    {
+      title: 'Pending Quotes',
+      value: String(quotesCount),
+      description: quotesCount > 0 ? 'Action Required' : 'No active quotes',
+      cta: 'View All',
+      href: '/quotes',
+      icon: FileText,
+      colors: 'from-[#3b82f6] to-[#2563eb]',
+    },
+    {
+      title: 'Vehicles',
+      value: String(vehiclesCount),
+      description: vehicleDesc,
+      cta: 'View All',
+      href: '/vehicles',
+      icon: Car,
+      colors: 'from-[#10b981] to-[#059669]',
+    },
+  ];
+
   return (
     <Card id="overview" className="p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -17,7 +132,7 @@ function OverviewPanel() {
       </div>
 
       <div className="space-y-2">
-        {overviewItems.map(({ title, value, description, cta, icon: Icon, colors }) => (
+        {items.map(({ title, value, description, cta, href, icon: Icon, colors }) => (
           <div key={title} className="flex items-center gap-3 rounded-[14px] py-0">
             <div
               className={cn(
@@ -34,7 +149,7 @@ function OverviewPanel() {
               </div>
               <p className="mt-0.5 text-[11px] font-normal text-[#17307a]">{description}</p>
             </div>
-            <span className="self-center text-[11.5px] font-semibold text-[#1a56db] cursor-pointer hover:underline">{cta}</span>
+            <a href={href} className="self-center text-[11.5px] font-semibold text-[#1a56db] cursor-pointer hover:underline">{cta}</a>
           </div>
         ))}
       </div>
@@ -60,6 +175,7 @@ function EmergencyHelp() {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {emergencyItems.map(({ title, image, imageClass }) => {
           const isLarge = imageClass?.includes('h-10');
+          const size = isLarge ? 40 : 32;
           return (
             <div
               key={title}
@@ -71,10 +187,13 @@ function EmergencyHelp() {
                   isLarge ? "h-10 w-10" : "h-8 w-8"
                 )}
               >
-                <img 
+                <Image 
                   src={image} 
                   alt={title} 
-                  className="h-full w-full object-contain" 
+                  width={size}
+                  height={size}
+                  className="object-contain" 
+                  style={{ width: `${size}px`, height: `${size}px` }}
                 />
               </div>
               <span className="max-w-[72px] text-[10.5px] font-semibold leading-tight text-[#17307a]">
@@ -94,15 +213,24 @@ function OfferCard({
   price,
   strikePrice,
   discount,
-  accent,
-  fill,
+  themePreset,
   icon: Icon,
   image,
-}: Omit<(typeof promoItems)[number], 'href'>) {
-  const isGreen = accent.includes('238453');
-  const isRed = accent.includes('ff3b30');
-  const isPurple = accent.includes('805ad5');
-  const cardColor = fill.match(/from-\[(#[a-fA-F0-9]+)\]/)?.[1] || '#ffffff';
+}: {
+  eyebrow: string;
+  title: string;
+  price: string;
+  strikePrice?: string;
+  discount: string;
+  themePreset: string;
+  icon: any;
+  image?: string;
+}) {
+  const theme = getPromoTheme(themePreset);
+  const isGreen = themePreset === 'green';
+  const isRed = themePreset === 'red';
+  const isPurple = themePreset === 'purple';
+  const cardColor = theme.bgColor;
   
   return (
     <Card 
@@ -111,11 +239,11 @@ function OfferCard({
     >
       <div className="grid min-h-[138px] grid-cols-[1.18fr_0.82fr] items-center">
         <div className="p-4 pr-0">
-          <p className={cn('text-[11px] font-bold uppercase tracking-[0.02em]', accent)}>{eyebrow}</p>
+          <p className={cn('text-[11px] font-bold uppercase tracking-[0.02em]', theme.accentClass)}>{eyebrow}</p>
           <p className="mt-2 text-[12px] font-semibold leading-6 text-[#17307a]">{title}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className={cn('text-[11px] font-bold', accent)}>Starting</span>
-            <span className={cn('text-[14.5px] font-bold leading-none', accent)}>{price}</span>
+            <span className={cn('text-[11px] font-bold', theme.accentClass)}>Starting</span>
+            <span className={cn('text-[14.5px] font-bold leading-none', theme.accentClass)}>{price}</span>
             <span className="text-[10.5px] font-medium text-[#8a96b8] line-through">{strikePrice}</span>
           </div>
         </div>
@@ -125,10 +253,12 @@ function OfferCard({
         >
           {image ? (
             <>
-              <img 
+              <Image 
                 src={image} 
                 alt={title} 
-                className="h-full w-full object-cover object-center mix-blend-multiply" 
+                fill
+                sizes="(max-width: 768px) 100vw, 15vw"
+                className="object-cover object-center mix-blend-multiply" 
               />
               <div 
                 className="absolute inset-y-0 left-0 w-20 pointer-events-none"
@@ -159,6 +289,39 @@ function OfferCard({
 }
 
 function OffersPanel() {
+  const [promos, setPromos] = useState<any[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get<any[]>('/promos')
+      .then((data) => {
+        if (active && data) {
+          // Filter to only display non-combo/home promos (or just take the first 3)
+          const homePromos = data
+            .filter((p: any) => !p.isCombo)
+            .map((p: any) => ({
+              eyebrow: p.badge,
+              title: p.title,
+              price: `$${Number(p.numericPrice).toLocaleString('en-US')}`,
+              strikePrice: p.strikePrice ? `$${Number(p.strikePrice).toLocaleString('en-US')}` : undefined,
+              discount: p.discountPercent ? `${p.discountPercent}% OFF` : '',
+              themePreset: p.themePreset,
+              icon: p.icon,
+              image: p.image,
+            }));
+          if (homePromos.length > 0) {
+            setPromos(homePromos);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch promos:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <Card id="offers" className="p-4 border-[#f0f4ff] bg-white">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -170,7 +333,7 @@ function OffersPanel() {
         </span>
       </div>
       <div className="space-y-4">
-        {promoItems.map(({ href: _href, ...promo }) => (
+        {promos.map((promo: any) => (
           <OfferCard key={promo.eyebrow} {...promo} />
         ))}
       </div>

@@ -2,9 +2,11 @@
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
+import Link from 'next/link';
 import { Input } from '@/components/common/input';
 import { topNavIcons } from '@/components/home/data';
 import { cn } from '@/utils/cn';
+import { useAuth } from '@/lib/auth-context';
 
 const CITIES = [
   'Hyderabad',
@@ -26,6 +28,9 @@ export function TopNavbar() {
   const [citySearch, setCitySearch] = useState('');
   
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Authentication context
+  const { user, logout } = useAuth();
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -176,12 +181,39 @@ export function TopNavbar() {
           </div>
         ))}
 
-        <div className="ml-[5px] flex h-9 lg:h-10 shrink-0 items-center gap-2 rounded-full border border-[#dbe6ff] bg-white p-0.5 lg:py-1 lg:pl-1.5 lg:pr-3">
-          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Rahul" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full object-cover" />
-          <span className="hidden text-[13px] font-semibold text-[#17307a] lg:block">Hi, Rahul</span>
-          <ChevronDown className="hidden h-4 w-4 text-[#17307a] lg:block" />
-        </div>
+        {user ? (
+          <div className="relative group ml-[5px]">
+            <button className="flex h-9 lg:h-10 shrink-0 items-center gap-2 rounded-full border border-[#dbe6ff] bg-white p-0.5 lg:py-1 lg:pl-1.5 lg:pr-3 hover:bg-[#fcfdff] transition-all shadow-sm focus:outline-none">
+              <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full bg-[#1a56db] text-white font-bold text-sm">
+                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <span className="hidden text-[13px] font-semibold text-[#17307a] lg:block">Hi, {user.name}</span>
+              <ChevronDown className="hidden h-4 w-4 text-[#17307a] lg:block group-hover:rotate-180 transition-transform duration-200" />
+            </button>
+            <div className="absolute right-0 top-full pt-2 w-48 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
+              <div className="bg-white border border-[#e4ecff] rounded-xl shadow-lg p-1.5">
+                <div className="px-3 py-2 text-xs text-[#8ea0c7] border-b border-[#f2f6ff] mb-1">
+                  Role: <span className="font-semibold text-[#1a56db] capitalize">{user.roles.join(', ')}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Log Out
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <Link
+            href="/login"
+            className="ml-[5px] flex h-9 lg:h-10 shrink-0 items-center justify-center rounded-full border border-[#1a56db] bg-[#1a56db] px-4 text-[13px] font-semibold text-white shadow-sm hover:bg-[#1546b5] transition-all focus:outline-none"
+          >
+            Log In
+          </Link>
+        )}
       </div>
     </header>
   );
 }
+

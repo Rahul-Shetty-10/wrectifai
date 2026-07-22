@@ -21,18 +21,20 @@ import {
   Wrench,
   XCircle,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardShell } from '@/components/home/dashboard-shell';
 import { TopNavbar } from '@/components/home/top-navbar';
 import { Card } from '@/components/common/card';
 import { GarageMoreMenu } from '@/components/quotes/garage-more-menu';
 import {
   quoteContextDefaultIssueIds,
-  quotesList,
 } from '@/components/quotes/quotes-shared';
+import { fetchQuotes } from '@/lib/quotes-api';
+import type { QuoteItem } from '@/components/quotes/quotes-shared';
+import { resultIssues } from '@/components/ai-diagnose/diagnose-flow-shared';
 import { cn } from '@/utils/cn';
 
-const RUPEE = '\u20B9';
+const DOLLAR = '$';
 const BULLET = '\u2022';
 
 const homeSectionHeadingClass = 'ui-page-title';
@@ -63,176 +65,9 @@ type DetailRow = {
   quoteValues: Record<string, { value: string; state: DetailCellState }>;
 };
 
-const priceRows: PriceRow[] = [
-  {
-    label: 'Parts',
-    aiValue: `${RUPEE}1,600 \u2013 ${RUPEE}2,100`,
-    quoteValues: {
-      quickpit: `${RUPEE}1,650`,
-      autoworks: `${RUPEE}1,900`,
-      speedfix: `${RUPEE}1,700`,
-      fivestar: `${RUPEE}2,000`,
-      metro: `${RUPEE}1,780`,
-      prime: `${RUPEE}1,880`,
-      royal: `${RUPEE}1,760`,
-      pitstop: `${RUPEE}1,720`,
-    },
-  },
-  {
-    label: 'Labour',
-    aiValue: `${RUPEE}1,000 \u2013 ${RUPEE}1,300`,
-    quoteValues: {
-      quickpit: `${RUPEE}1,050`,
-      autoworks: `${RUPEE}1,250`,
-      speedfix: `${RUPEE}1,200`,
-      fivestar: `${RUPEE}1,300`,
-      metro: `${RUPEE}1,180`,
-      prime: `${RUPEE}1,240`,
-      royal: `${RUPEE}1,170`,
-      pitstop: `${RUPEE}1,160`,
-    },
-  },
-  {
-    label: 'Consumables',
-    aiValue: `${RUPEE}200 \u2013 ${RUPEE}300`,
-    quoteValues: {
-      quickpit: `${RUPEE}200`,
-      autoworks: `${RUPEE}250`,
-      speedfix: `${RUPEE}200`,
-      fivestar: `${RUPEE}200`,
-      metro: `${RUPEE}200`,
-      prime: `${RUPEE}220`,
-      royal: `${RUPEE}180`,
-      pitstop: `${RUPEE}200`,
-    },
-  },
-  {
-    label: 'GST',
-    aiValue: `${RUPEE}200 \u2013 ${RUPEE}300`,
-    quoteValues: {
-      quickpit: `${RUPEE}150`,
-      autoworks: `${RUPEE}200`,
-      speedfix: `${RUPEE}100`,
-      fivestar: `${RUPEE}100`,
-      metro: `${RUPEE}120`,
-      prime: `${RUPEE}180`,
-      royal: `${RUPEE}140`,
-      pitstop: `${RUPEE}100`,
-    },
-  },
-  {
-    label: 'Total Estimate',
-    aiValue: `${RUPEE}2,800 \u2013 ${RUPEE}3,600`,
-    quoteValues: {
-      quickpit: `${RUPEE}3,050`,
-      autoworks: `${RUPEE}3,450`,
-      speedfix: `${RUPEE}3,200`,
-      fivestar: `${RUPEE}3,600`,
-      metro: `${RUPEE}3,280`,
-      prime: `${RUPEE}3,520`,
-      royal: `${RUPEE}3,250`,
-      pitstop: `${RUPEE}3,180`,
-    },
-    emphasize: true,
-  },
-  {
-    label: `You Save (vs WrectifAI high)`,
-    aiValue: '\u2013',
-    quoteValues: {
-      quickpit: `${RUPEE}450 (12%)`,
-      autoworks: `${RUPEE}250 (7%)`,
-      speedfix: `${RUPEE}150 (4%)`,
-      fivestar: `${RUPEE}0 (0%)`,
-      metro: `${RUPEE}200 (6%)`,
-      prime: `${RUPEE}80 (2%)`,
-      royal: `${RUPEE}150 (4%)`,
-      pitstop: `${RUPEE}220 (6%)`,
-    },
-    savings: true,
-  },
-];
-
-const detailRows: DetailRow[] = [
-  {
-    label: 'Availability',
-    icon: CalendarClock,
-    aiValue: '\u2013',
-    quoteValues: {
-      quickpit: { value: 'Today, 6:00 PM', state: 'positive' as const },
-      autoworks: { value: 'Tomorrow, 10:00 AM', state: 'positive' as const },
-      speedfix: { value: 'Today, 7:30 PM', state: 'positive' as const },
-      fivestar: { value: 'Tomorrow, 1:00 PM', state: 'positive' as const },
-      metro: { value: 'Today, 5:30 PM', state: 'positive' as const },
-      prime: { value: 'Tomorrow, 11:30 AM', state: 'positive' as const },
-      royal: { value: 'Today, 8:00 PM', state: 'positive' as const },
-      pitstop: { value: 'Tomorrow, 9:30 AM', state: 'positive' as const },
-    },
-  },
-  {
-    label: 'Pickup & Drop',
-    icon: CarFront,
-    aiValue: '\u2013',
-    quoteValues: {
-      quickpit: { value: 'Available', state: 'positive' as const },
-      autoworks: { value: 'Not Available', state: 'negative' as const },
-      speedfix: { value: 'Available', state: 'positive' as const },
-      fivestar: { value: 'Available', state: 'positive' as const },
-      metro: { value: 'Available', state: 'positive' as const },
-      prime: { value: 'Available', state: 'positive' as const },
-      royal: { value: 'Available', state: 'positive' as const },
-      pitstop: { value: 'Not Available', state: 'negative' as const },
-    },
-  },
-  {
-    label: 'Warranty',
-    icon: ShieldCheck,
-    aiValue: '\u2013',
-    quoteValues: {
-      quickpit: { value: '6 Months / 10,000 km', state: 'neutral' as const },
-      autoworks: { value: '3 Months / 5,000 km', state: 'neutral' as const },
-      speedfix: { value: '2 Years / 20,000 km', state: 'neutral' as const },
-      fivestar: { value: '6 Months / 8,000 km', state: 'neutral' as const },
-      metro: { value: '1 Year / 15,000 km', state: 'neutral' as const },
-      prime: { value: '6 Months / 10,000 km', state: 'neutral' as const },
-      royal: { value: '3 Months / 7,500 km', state: 'neutral' as const },
-      pitstop: { value: '6 Months / 8,000 km', state: 'neutral' as const },
-    },
-  },
-  {
-    label: 'Rating (Reviews)',
-    icon: Star,
-    aiValue: '\u2013',
-    quoteValues: {
-      quickpit: { value: '4.6 (128)', state: 'rating' as const },
-      autoworks: { value: '4.4 (76)', state: 'rating' as const },
-      speedfix: { value: '4.5 (96)', state: 'rating' as const },
-      fivestar: { value: '4.3 (65)', state: 'rating' as const },
-      metro: { value: '4.7 (142)', state: 'rating' as const },
-      prime: { value: '4.6 (119)', state: 'rating' as const },
-      royal: { value: '4.2 (64)', state: 'rating' as const },
-      pitstop: { value: '4.1 (58)', state: 'rating' as const },
-    },
-  },
-  {
-    label: 'Experience',
-    icon: Wrench,
-    aiValue: '\u2013',
-    quoteValues: {
-      quickpit: { value: '8+ Years', state: 'neutral' as const },
-      autoworks: { value: '6+ Years', state: 'neutral' as const },
-      speedfix: { value: '10+ Years', state: 'neutral' as const },
-      fivestar: { value: '7+ Years', state: 'neutral' as const },
-      metro: { value: '9+ Years', state: 'neutral' as const },
-      prime: { value: '8+ Years', state: 'neutral' as const },
-      royal: { value: '5+ Years', state: 'neutral' as const },
-      pitstop: { value: '6+ Years', state: 'neutral' as const },
-    },
-  },
-];
-
 function garageTagTone(id: string) {
-  if (id === 'quickpit') return 'bg-[#f5eaff] text-[#b35ae8]';
-  if (id === 'autoworks') return 'bg-[#edf3ff] text-[#2a5bf5]';
+  if (id === 'quickpit' || id.endsWith('11')) return 'bg-[#f5eaff] text-[#b35ae8]';
+  if (id === 'autoworks' || id.endsWith('13')) return 'bg-[#edf3ff] text-[#2a5bf5]';
   return 'bg-[#e6f8ee] text-[#1ea15f]';
 }
 
@@ -249,9 +84,213 @@ function serviceIcon(state: DetailCellState) {
   return null;
 }
 
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  vin?: string;
+  mileage?: number;
+}
+
 export function CompareQuotesPage({ ids }: { ids?: string }) {
-  const router = useRouter();
   const pageRootRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const [quotes, setQuotes] = useState<QuoteItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedQuoteIds, setSelectedQuoteIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadQuotes() {
+      try {
+        const data = await fetchQuotes();
+        setQuotes(data);
+        if (ids) {
+          setSelectedQuoteIds(ids.split(',').map((item) => item.trim()).filter(Boolean).slice(0, 3));
+        } else if (data.length > 0) {
+          setSelectedQuoteIds(data.slice(0, 3).map((q) => q.id));
+        }
+      } catch (err) {
+        console.error('Failed to fetch quotes:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadQuotes();
+  }, [ids]);
+
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('wrectifai_selected_vehicle');
+      if (stored) {
+        try {
+          return JSON.parse(stored) as Vehicle;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return null;
+  });
+
+  const searchParams = useSearchParams();
+  const requestedIssues = useMemo(() => {
+    const issuesFromQuery = searchParams?.get('issues');
+    if (issuesFromQuery) {
+      const ids = issuesFromQuery.split(',').map((item) => item.trim()).filter(Boolean);
+      return resultIssues.filter((issue) => ids.includes(issue.id));
+    }
+    const dbSummary = quotes[0]?.requestIssueSummary;
+    if (dbSummary) {
+      return dbSummary.split(',').map((name, index) => {
+        const found = resultIssues.find((r) => r.title.toLowerCase() === name.trim().toLowerCase());
+        if (found) return found;
+        return {
+          id: `db_summary_${index}`,
+          title: name.trim(),
+          badge: 'Caution',
+          badgeClass: 'text-[#e27622] bg-[#fdf5ed]',
+          description: `Requested issue: ${name.trim()}`,
+          match: 85,
+          imageSrc: '/assets/mega car.png',
+        };
+      });
+    }
+    return resultIssues.filter((issue) => quoteContextDefaultIssueIds.includes(issue.id));
+  }, [searchParams, quotes]);
+
+  const activeVehicle = selectedVehicle || quotes[0]?.vehicle;
+
+  const priceRows = useMemo(() => {
+    const quoteValuesParts: Record<string, string> = {};
+    const quoteValuesLabour: Record<string, string> = {};
+    const quoteValuesConsumables: Record<string, string> = {};
+    const quoteValuesGst: Record<string, string> = {};
+    const quoteValuesTotal: Record<string, string> = {};
+    const quoteValuesSavings: Record<string, string> = {};
+
+    quotes.forEach((q) => {
+      const parts = q.details?.parts ?? 0;
+      const labour = q.details?.labour ?? 0;
+      const consumables = q.details?.consumables ?? 0;
+      const gst = q.details?.gst ?? 0;
+      const total = parts + labour + consumables + gst;
+      const savings = q.details?.savings ?? 0;
+      const savingsPercent = total > 0 ? Math.round((savings / 3600) * 100) : 0;
+
+      quoteValuesParts[q.id] = `${DOLLAR}${parts.toLocaleString('en-US')}`;
+      quoteValuesLabour[q.id] = `${DOLLAR}${labour.toLocaleString('en-US')}`;
+      quoteValuesConsumables[q.id] = `${DOLLAR}${consumables.toLocaleString('en-US')}`;
+      quoteValuesGst[q.id] = `${DOLLAR}${gst.toLocaleString('en-US')}`;
+      quoteValuesTotal[q.id] = `${q.price}`;
+      quoteValuesSavings[q.id] = `${q.savings} (${savingsPercent}%)`;
+    });
+
+    return [
+      {
+        label: 'Parts',
+        aiValue: `${DOLLAR}1,600 \u2013 ${DOLLAR}2,100`,
+        quoteValues: quoteValuesParts,
+      },
+      {
+        label: 'Labour',
+        aiValue: `${DOLLAR}1,000 \u2013 ${DOLLAR}1,300`,
+        quoteValues: quoteValuesLabour,
+      },
+      {
+        label: 'Consumables',
+        aiValue: `${DOLLAR}200 \u2013 ${DOLLAR}300`,
+        quoteValues: quoteValuesConsumables,
+      },
+      {
+        label: 'GST',
+        aiValue: `${DOLLAR}200 \u2013 ${DOLLAR}300`,
+        quoteValues: quoteValuesGst,
+      },
+      {
+        label: 'Total Estimate',
+        aiValue: `${DOLLAR}2,800 \u2013 ${DOLLAR}3,600`,
+        quoteValues: quoteValuesTotal,
+        emphasize: true,
+      },
+      {
+        label: `You Save (vs WrectifAI high)`,
+        aiValue: '\u2013',
+        quoteValues: quoteValuesSavings,
+        savings: true,
+      },
+    ];
+  }, [quotes]);
+
+  const detailRows = useMemo(() => {
+    const availabilityMap: Record<string, { value: string; state: DetailCellState }> = {};
+    const pickupDropMap: Record<string, { value: string; state: DetailCellState }> = {};
+    const warrantyMap: Record<string, { value: string; state: DetailCellState }> = {};
+    const ratingMap: Record<string, { value: string; state: DetailCellState }> = {};
+    const experienceMap: Record<string, { value: string; state: DetailCellState }> = {};
+
+    quotes.forEach((q) => {
+      availabilityMap[q.id] = { 
+        value: q.details?.availability || 'Today, 6:00 PM', 
+        state: 'positive' as const 
+      };
+      
+      const hasPickup = q.details?.pickupDrop === 'Available' || q.details?.pickupDrop === true;
+      pickupDropMap[q.id] = { 
+        value: hasPickup ? 'Available' : 'Not Available', 
+        state: hasPickup ? 'positive' : 'negative' as const 
+      };
+      
+      warrantyMap[q.id] = { 
+        value: q.details?.warranty || '6 Months warranty', 
+        state: 'neutral' as const 
+      };
+      
+      ratingMap[q.id] = { 
+        value: `${q.rating} (${q.reviews})`, 
+        state: 'rating' as const 
+      };
+      
+      experienceMap[q.id] = { 
+        value: q.details?.experience || '8+ Years', 
+        state: 'neutral' as const 
+      };
+    });
+
+    return [
+      {
+        label: 'Availability',
+        icon: CalendarClock,
+        aiValue: '\u2013',
+        quoteValues: availabilityMap,
+      },
+      {
+        label: 'Pickup & Drop',
+        icon: CarFront,
+        aiValue: '\u2013',
+        quoteValues: pickupDropMap,
+      },
+      {
+        label: 'Warranty',
+        icon: ShieldCheck,
+        aiValue: '\u2013',
+        quoteValues: warrantyMap,
+      },
+      {
+        label: 'Rating (Reviews)',
+        icon: Star,
+        aiValue: '\u2013',
+        quoteValues: ratingMap,
+      },
+      {
+        label: 'Experience',
+        icon: Wrench,
+        aiValue: '\u2013',
+        quoteValues: experienceMap,
+      },
+    ];
+  }, [quotes]);
 
   useEffect(() => {
     const pageScroller = (() => {
@@ -267,29 +306,17 @@ export function CompareQuotesPage({ ids }: { ids?: string }) {
     pageScroller?.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
 
-  const initialSelectedIds = useMemo(
-    () =>
-      (ids || 'quickpit,autoworks,speedfix')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .slice(0, 3),
-    [ids]
-  );
-
-  const [selectedQuoteIds, setSelectedQuoteIds] =
-    useState<string[]>(initialSelectedIds);
   const [showOnlyDifferences, setShowOnlyDifferences] = useState(false);
   const selectedQuotes = useMemo(() => {
-    const matches = quotesList.filter((quote) =>
+    const matches = quotes.filter((quote) =>
       selectedQuoteIds.includes(quote.id)
     );
     return selectedQuoteIds.length ? matches : [];
-  }, [selectedQuoteIds]);
+  }, [quotes, selectedQuoteIds]);
 
   const availableQuotes = useMemo(
-    () => quotesList.filter((quote) => !selectedQuoteIds.includes(quote.id)),
-    [selectedQuoteIds]
+    () => quotes.filter((quote) => !selectedQuoteIds.includes(quote.id)),
+    [quotes, selectedQuoteIds]
   );
 
   const selectedCount = selectedQuotes.length;
@@ -427,7 +454,7 @@ export function CompareQuotesPage({ ids }: { ids?: string }) {
                 </div>
 
                 <div className="mt-[54px] text-center text-[15.5px] font-semibold tracking-[-0.03em] text-[#17307a]">
-                  {RUPEE}2,800 - {RUPEE}3,600
+                  {DOLLAR}2,800 - {DOLLAR}3,600
                 </div>
 
                 <button
@@ -818,29 +845,45 @@ export function CompareQuotesPage({ ids }: { ids?: string }) {
                 <div>
                   <div className={homeBodyClass}>Vehicle</div>
                   <div className="mt-2.5 ui-card-title">
-                    Honda City (TS07 AB 1234)
+                    {activeVehicle ? `${activeVehicle.make} ${activeVehicle.model} ${activeVehicle.vin ? `(${activeVehicle.vin.slice(-6)})` : ''}` : 'Honda City (TS07 AB 1234)'}
                   </div>
                   <div className="mt-2.5 flex flex-wrap items-center gap-2.5 text-[12px] text-[#5f7099]">
-                    <span>Petrol</span>
+                    <span>{activeVehicle ? (activeVehicle.vin ? 'VIN Verified' : 'Petrol') : 'Petrol'}</span>
                     <span>{BULLET}</span>
-                    <span>2018</span>
+                    <span>{activeVehicle ? activeVehicle.year : '2018'}</span>
                     <span>{BULLET}</span>
-                    <span>58,320 km</span>
+                    <span>
+                      {activeVehicle && activeVehicle.mileage !== undefined && activeVehicle.mileage !== null
+                        ? `${activeVehicle.mileage.toLocaleString()} mi`
+                        : '58,320 km'}
+                    </span>
                   </div>
                 </div>
 
                 <div>
-                  <div className={homeBodyClass}>Issues Requested (2)</div>
+                  <div className={homeBodyClass}>Issues Requested ({requestedIssues.length})</div>
                   <div className="mt-3 space-y-2.5 text-[12px] text-[#17307a]">
-                    <div>{BULLET} &nbsp;Wheel Balancing Issue</div>
-                    <div>{BULLET} &nbsp;Wheel Alignment Issue</div>
+                    {requestedIssues.map((issue) => (
+                      <div key={issue.id}>
+                        {BULLET} &nbsp;{issue.title}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 <div className="border-t border-[#ebf0fb] pt-4">
                   <div className={homeBodyClass}>Request sent on</div>
                   <div className="mt-2.5 text-[12px] text-[#17307a]">
-                    20 May 2024, 10:30 AM
+                    {quotes[0]?.requestCreatedAt
+                      ? new Date(quotes[0].requestCreatedAt).toLocaleString('en-US', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true,
+                        })
+                      : '20 May 2024, 10:30 AM'}
                   </div>
                 </div>
               </div>

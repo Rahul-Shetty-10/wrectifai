@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, CarFront, Check } from 'lucide-react';
 import { DashboardShell } from '@/components/home/dashboard-shell';
@@ -11,27 +11,168 @@ import { Card } from '@/components/common/card';
 import { ResultTrustFooter, resultIssues } from '@/components/ai-diagnose/diagnose-flow-shared';
 import { cn } from '@/utils/cn';
 
-export function FindingQuotesPage({ issues }: { issues?: string }) {
+import { createQuoteRequest } from '@/lib/quotes-api';
+import { getDiagnosis } from '@/lib/diagnosis-api';
+
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  vin?: string;
+  mileage?: number;
+}
+
+export function FindingQuotesPage({ issues, diagnosisRequestId }: { issues?: string; diagnosisRequestId?: string }) {
   const pageRootRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
-
-  const selectedIssueIds = (issues || 'wheel-balance,wheel-alignment')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const chosenIssues = resultIssues.filter((issue) => selectedIssueIds.includes(issue.id));
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [customIssues, setCustomIssues] = useState<any[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    async function loadData() {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('wrectifai_selected_vehicle');
+        if (stored) {
+          try {
+            setSelectedVehicle(JSON.parse(stored) as Vehicle);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+
+      if (diagnosisRequestId) {
+        try {
+          const diag = await getDiagnosis(diagnosisRequestId);
+          if (diag && diag.result && diag.result.issues) {
+            const getBadgeForIssue = (name: string, overallRisk?: string, index?: number) => {
+              if (index === 0 && overallRisk) {
+                if (overallRisk === 'low') return { badge: 'Low Risk', badgeClass: 'text-[#2e7d32] bg-[#edf7ed]' };
+                if (overallRisk === 'medium') return { badge: 'Caution', badgeClass: 'text-[#e27622] bg-[#fdf5ed]' };
+                return { badge: 'Critical', badgeClass: 'text-[#ea3838] bg-[#fef1f1]' };
+              }
+              const nameLower = name.toLowerCase();
+              if (nameLower.includes('brake') || nameLower.includes('steering') || nameLower.includes('suspension') || nameLower.includes('airbag')) {
+                return { badge: 'Critical', badgeClass: 'text-[#ea3838] bg-[#fef1f1]' };
+              }
+              if (nameLower.includes('filter') || nameLower.includes('wiper') || nameLower.includes('bulb')) {
+                return { badge: 'Low Risk', badgeClass: 'text-[#2e7d32] bg-[#edf7ed]' };
+              }
+              return { badge: 'Caution', badgeClass: 'text-[#e27622] bg-[#fdf5ed]' };
+            };
+
+            const mapped = diag.result.issues.map((issue: any, index: number) => {
+              const match = issue.confidence || 85;
+              const { badge, badgeClass } = getBadgeForIssue(issue.name || issue.title, diag.result.riskLevel, index);
+              return {
+                id: `llm_issue_${index}`,
+                title: issue.name || issue.title,
+                badge,
+                badgeClass,
+                description: `Diagnosed issue: ${issue.name || issue.title}. Requires parts: ${issue.requiredParts?.join(', ') || 'None specified'}.`,
+                match,
+                imageSrc: '/assets/mega car.png'
+              };
+            });
+            setCustomIssues(mapped);
+            setIsMounted(true);
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to load diagnosis from DB, falling back to localStorage:', err);
+        }
+      }
+
+      if (typeof window !== 'undefined') {
+        const storedCustom = localStorage.getItem('wrectifai_custom_issues');
+        if (storedCustom) {
+          try {
+            setCustomIssues(JSON.parse(storedCustom) as any[]);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+      setIsMounted(true);
+    }
+
+    loadData();
+  }, [diagnosisRequestId]);
+
+  const selectedIssueIds = useMemo(() => {
+    return (issues || 'wheel-balance,wheel-alignment')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }, [issues]);
+
+  const chosenIssues = useMemo(() => {
+    const allIssues = [...resultIssues, ...customIssues];
+    return allIssues.filter((issue) => selectedIssueIds.includes(issue.id));
+  }, [selectedIssueIds, customIssues]);
+
+  const hasSubmitted = useRef(false);
+  const isUnmounted = useRef(false);
+
+  useEffect(() => {
+    isUnmounted.current = false;
+    return () => {
+      isUnmounted.current = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('[FindingQuotes] Mount effect ran. isMounted:', isMounted, 'hasSubmitted:', hasSubmitted.current);
+    if (!isMounted) return;
+    if (hasSubmitted.current) return;
+    async function submitRequest() {
+      try {
+        hasSubmitted.current = true;
+        const vehicleId = selectedVehicle?.id || 'v1';
+        const issueSummary = chosenIssues.map((i) => i.title).join(', ');
+        console.log('[FindingQuotes] Submitting quote request payload:', { vehicleId, issueSummary, diagnosisRequestId });
+        const response = await createQuoteRequest({
+          vehicleId,
+          issueSummary,
+          diagnosisRequestId,
+        });
+        console.log('[FindingQuotes] Received quote request response:', response);
+        if (!isUnmounted.current) {
+          console.log('[FindingQuotes] Setting requestId to:', response.id);
+          setRequestId(response.id);
+        } else {
+          console.log('[FindingQuotes] API completed but page was unmounted.');
+        }
+      } catch (err) {
+        console.error('[FindingQuotes] Failed to create quote request:', err);
+        hasSubmitted.current = false;
+      }
+    }
+    submitRequest();
+  }, [isMounted, selectedVehicle?.id, diagnosisRequestId, chosenIssues]);
+
+  useEffect(() => {
+    console.log('[FindingQuotes] Redirect check effect. currentStep:', currentStep, 'requestId:', requestId);
     if (currentStep < 4) {
       const timer = setTimeout(() => {
+        console.log('[FindingQuotes] Step incrementing from:', currentStep);
         setCurrentStep((prev) => prev + 1);
       }, 1000);
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('[FindingQuotes] Clearing step timer for step:', currentStep);
+        clearTimeout(timer);
+      };
+    } else if (requestId) {
+      console.log('[FindingQuotes] Redirect condition met! Pushing to request-aent with requestId:', requestId);
+      router.push(`/request-aent?requestId=${requestId}`);
     } else {
-      router.push(`/request-aent?issues=${selectedIssueIds.join(',')}`);
+      console.log('[FindingQuotes] Steps complete but requestId is null.');
     }
-  }, [currentStep, router, selectedIssueIds]);
+  }, [currentStep, router, requestId]);
 
   useEffect(() => {
     const pageScroller = (() => {
@@ -79,6 +220,7 @@ export function FindingQuotesPage({ issues }: { issues?: string }) {
                     height={80}
                     priority
                     className="object-contain"
+                    style={{ width: '80px', height: 'auto' }}
                   />
                 </div>
               </div>
@@ -90,6 +232,7 @@ export function FindingQuotesPage({ issues }: { issues?: string }) {
                   width={260}
                   height={110}
                   className="h-auto w-[250px] object-contain drop-shadow-[0_16px_24px_rgba(28,74,188,0.18)]"
+                  style={{ width: '250px', height: 'auto' }}
                 />
               </div>
               <div className="pointer-events-none absolute inset-0 hidden md:block">
@@ -157,13 +300,19 @@ export function FindingQuotesPage({ issues }: { issues?: string }) {
               <span className="flex h-[92px] w-[92px] items-center justify-center rounded-full bg-[radial-gradient(circle_at_top,#f5f8ff_0%,#edf2ff_100%)] text-[#244fe5] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                 <CarFront className="h-11 w-11" />
               </span>
-              <div className="mt-8 text-[15.5px] font-semibold tracking-[-0.03em] text-[#193daa]">Honda City (TS07 AB 1234)</div>
-              <div className="mt-5 flex items-center gap-4 text-[12px] text-[#6679a6]">
-                <span>Petrol</span>
-                <span className="h-1 w-1 rounded-full bg-[#8997bc]" />
-                <span>2018</span>
+              <div className="mt-8 text-[15.5px] font-semibold tracking-[-0.03em] text-[#193daa]">
+                {selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model} ${selectedVehicle.vin ? `(${selectedVehicle.vin.slice(-6)})` : ''}` : 'Honda City (TS07 AB 1234)'}
               </div>
-              <div className="mt-4 text-[12px] text-[#546a9f]">KM Driven: 58,320 km</div>
+              <div className="mt-5 flex items-center gap-4 text-[12px] text-[#6679a6]">
+                <span>{selectedVehicle ? (selectedVehicle.vin ? 'VIN Verified' : 'Petrol') : 'Petrol'}</span>
+                <span className="h-1 w-1 rounded-full bg-[#8997bc]" />
+                <span>{selectedVehicle ? selectedVehicle.year : '2018'}</span>
+              </div>
+              <div className="mt-4 text-[12px] text-[#546a9f]">
+                {selectedVehicle && selectedVehicle.mileage !== undefined && selectedVehicle.mileage !== null
+                  ? `Mileage: ${selectedVehicle.mileage.toLocaleString()} miles`
+                  : 'KM Driven: 58,320 km'}
+              </div>
             </div>
           </Card>
 
@@ -182,6 +331,7 @@ export function FindingQuotesPage({ issues }: { issues?: string }) {
                       width={72}
                       height={72}
                       className="h-[66px] w-[66px] object-contain"
+                      style={{ width: '66px', height: '66px' }}
                     />
                   </div>
                   <div>

@@ -17,14 +17,21 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/web",
-        "command": "next dev"
+        "command": "next dev -p 3001"
       }
     },
     "start": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/web",
-        "command": "next start"
+        "command": "next start -p 3001"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/web",
+        "command": "node -r @swc-node/register --test src/lib/api-client.test.ts"
       }
     }
   }

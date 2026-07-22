@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 import {
   BadgeCheck,
   ChevronDown,
@@ -23,10 +24,10 @@ import { Button } from '@/components/common/button';
 import { DashboardShell } from '@/components/home/dashboard-shell';
 import { TopNavbar } from '@/components/home/top-navbar';
 import { cn } from '@/utils/cn';
+import Image from 'next/image';
 import { PageLoader } from '@/components/common/page-loader';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  quotesList,
   aiEstimatedQuoteRange,
 } from '@/components/quotes/quotes-shared';
 import { resultIssues } from '@/components/ai-diagnose/diagnose-flow-shared';
@@ -44,6 +45,7 @@ type ViewMode = 'list' | 'map';
 type SortOption = 'best' | 'rating' | 'distance' | 'response';
 
 export type Garage = {
+  id?: string;
   badge: string;
   badgeTone: string;
   name: string;
@@ -117,243 +119,6 @@ const sortOptions: { value: SortOption; label: string }[] = [
   { value: 'response', label: 'Fastest Response' },
 ];
 
-const garages: Garage[] = [
-  {
-    badge: 'Best Value',
-    badgeTone: 'bg-[#1aa14a]',
-    name: 'QuickPit Service Center',
-    rating: 4.5,
-    reviews: 96,
-    location: 'Madhapur, Hyderabad',
-    distanceKm: 3.1,
-    responseMins: 40,
-    chips: [
-      '1 Month Warranty',
-      'Free Inspection',
-      'Free Pickup',
-      'Pay After Service',
-    ],
-    facade: 'QuickPit',
-    tone: 'from-[#0d1118] via-[#43301c] to-[#0b0f16]',
-    verified: true,
-    image: '/assets/garage_1_1778071156220.png',
-  },
-  {
-    badge: 'Most Trusted',
-    badgeTone: 'bg-[#ff8a1f]',
-    name: 'SpeedFix Auto Care',
-    rating: 4.6,
-    reviews: 128,
-    location: 'Kondapur, Hyderabad',
-    distanceKm: 2.2,
-    responseMins: 30,
-    chips: [
-      'Warranty Available',
-      'Free Pickup',
-      'Original Parts',
-      'Pay After Service',
-    ],
-    facade: 'SpeedFix',
-    tone: 'from-[#1b2734] via-[#2a3e49] to-[#101721]',
-    verified: true,
-    image: '/assets/garage_2_1778071173295.png',
-  },
-  {
-    badge: 'Top Rated',
-    badgeTone: 'bg-[#1a56db]',
-    name: 'AutoWorks Garage',
-    rating: 4.4,
-    reviews: 110,
-    location: 'Gachibowli, Hyderabad',
-    distanceKm: 4.2,
-    responseMins: 45,
-    chips: [
-      '1 Month Warranty',
-      'Free Inspection',
-      'Original Parts',
-      'Pay After Service',
-    ],
-    facade: 'AutoWorks',
-    tone: 'from-[#151820] via-[#32271c] to-[#11141c]',
-    verified: true,
-    image: '/assets/garage_3_1778071191282.png',
-  },
-  {
-    badge: '',
-    badgeTone: '',
-    name: 'Five Star Automotive',
-    rating: 4.3,
-    reviews: 78,
-    location: 'Banjara Hills, Hyderabad',
-    distanceKm: 5.2,
-    responseMins: 50,
-    chips: [
-      'Free Inspection',
-      'Pay After Service',
-      'Free Pickup',
-      '1 Month Warranty',
-    ],
-    facade: 'Five Star',
-    tone: 'from-[#161616] via-[#353535] to-[#12151c]',
-    verified: true,
-    image: '/assets/garage_4_1778071611328.png',
-  },
-  {
-    badge: '',
-    badgeTone: '',
-    name: 'Royal Motor Service',
-    rating: 4.2,
-    reviews: 64,
-    location: 'Jubilee Hills, Hyderabad',
-    distanceKm: 3.8,
-    responseMins: 35,
-    chips: [
-      '1 Month Warranty',
-      'AC Service Expert',
-      'Free Pickup',
-      'Quality Parts',
-    ],
-    facade: 'ROYAL MOTOR',
-    tone: 'from-[#20222a] via-[#4a3026] to-[#1b1d24]',
-    verified: true,
-    image: '/assets/garage_5_1778071628253.png',
-  },
-  {
-    badge: '',
-    badgeTone: '',
-    name: 'PitStop Car Care',
-    rating: 4.1,
-    reviews: 58,
-    location: 'Kukatpally, Hyderabad',
-    distanceKm: 4.9,
-    responseMins: 40,
-    chips: [
-      'Free Inspection',
-      'Quick Service',
-      'Pay After Service',
-      '1 Month Warranty',
-    ],
-    facade: 'PitStop',
-    tone: 'from-[#11141d] via-[#2f3640] to-[#0d1118]',
-    verified: true,
-    image: '/assets/garage_1_1778071156220.png',
-  },
-  {
-    badge: '',
-    badgeTone: '',
-    name: 'Galaxy Auto Garage',
-    rating: 4.3,
-    reviews: 92,
-    location: 'Miyapur, Hyderabad',
-    distanceKm: 3.6,
-    responseMins: 55,
-    chips: [
-      '1 Month Warranty',
-      'Pick & Drop',
-      'Genuine Parts',
-      'Free Inspection',
-    ],
-    facade: 'Galaxy Auto',
-    tone: 'from-[#1a2027] via-[#2d353d] to-[#0f131b]',
-    verified: true,
-    image: '/assets/garage_2_1778071173295.png',
-  },
-  {
-    badge: '',
-    badgeTone: '',
-    name: 'TorquePlus Service Hub',
-    rating: 4.2,
-    reviews: 71,
-    location: 'Ameerpet, Hyderabad',
-    distanceKm: 6.1,
-    responseMins: 60,
-    chips: [
-      'Warranty Available',
-      'Genuine Parts',
-      'Pick & Drop',
-      'Pay After Service',
-    ],
-    facade: 'TorquePlus',
-    tone: 'from-[#151922] via-[#25394a] to-[#10151d]',
-    verified: true,
-    image: '/assets/garage_3_1778071191282.png',
-  },
-  {
-    badge: 'Top Rated',
-    badgeTone: 'bg-[#1a56db]',
-    name: 'Metro Auto Bay',
-    rating: 4.7,
-    reviews: 142,
-    location: 'Hitech City, Hyderabad',
-    distanceKm: 2.8,
-    responseMins: 25,
-    chips: [
-      'Free Inspection',
-      'Warranty Available',
-      'Free Pickup',
-      'Quick Service',
-    ],
-    facade: 'Metro Auto',
-    tone: 'from-[#17202e] via-[#22415e] to-[#0c1220]',
-    verified: true,
-    image: '/assets/garage_4_1778071611328.png',
-  },
-  {
-    badge: '',
-    badgeTone: '',
-    name: 'Urban Garage Works',
-    rating: 4.0,
-    reviews: 53,
-    location: 'Begumpet, Hyderabad',
-    distanceKm: 5.8,
-    responseMins: 55,
-    chips: [
-      'Pay After Service',
-      'Free Pickup',
-      'Quality Parts',
-      'AC Service Expert',
-    ],
-    facade: 'Urban Works',
-    tone: 'from-[#211d20] via-[#3e3840] to-[#17161a]',
-    verified: false,
-    image: '/assets/garage_5_1778071628253.png',
-  },
-  {
-    badge: 'Most Trusted',
-    badgeTone: 'bg-[#ff8a1f]',
-    name: 'Prime Service Point',
-    rating: 4.6,
-    reviews: 119,
-    location: 'Secunderabad, Hyderabad',
-    distanceKm: 4.4,
-    responseMins: 35,
-    chips: [
-      'Original Parts',
-      'Pay After Service',
-      'Free Inspection',
-      'Pick & Drop',
-    ],
-    facade: 'Prime Service',
-    tone: 'from-[#20252a] via-[#3b3028] to-[#11161c]',
-    verified: true,
-    image: '/assets/garage_1_1778071156220.png',
-  },
-  {
-    badge: '',
-    badgeTone: '',
-    name: 'CarNest Workshop',
-    rating: 4.1,
-    reviews: 61,
-    location: 'Manikonda, Hyderabad',
-    distanceKm: 6.4,
-    responseMins: 48,
-    chips: ['1 Month Warranty', 'Free Pickup', 'Inspection', 'Genuine Parts'],
-    facade: 'CarNest',
-    tone: 'from-[#131922] via-[#253647] to-[#11161c]',
-    verified: false,
-    image: '/assets/garage_2_1778071173295.png',
-  },
-];
 
 function formatDistance(distanceKm: number) {
   return `${distanceKm.toFixed(1)} km away`;
@@ -467,10 +232,12 @@ function GarageCard({
         )}
       >
         {image && (
-          <img
+          <Image
             src={image}
             alt={name}
-            className="absolute inset-0 h-full w-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover"
           />
         )}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(5,8,17,0.4))]" />
@@ -564,6 +331,69 @@ function GarageCard({
   );
 }
 
+function getGarageTone(name: string) {
+  const gradients = [
+    'from-[#0d1118] via-[#43301c] to-[#0b0f16]',
+    'from-[#1b2734] via-[#2a3e49] to-[#101721]',
+    'from-[#151820] via-[#32271c] to-[#11141c]',
+    'from-[#161616] via-[#353535] to-[#12151c]',
+    'from-[#20222a] via-[#4a3026] to-[#1b1d24]',
+    'from-[#11141d] via-[#2f3640] to-[#0d1118]',
+    'from-[#1a2027] via-[#2d353d] to-[#0f131b]',
+    'from-[#151922] via-[#25394a] to-[#10151d]',
+    'from-[#17202e] via-[#22415e] to-[#0c1220]',
+    'from-[#211d20] via-[#3e3840] to-[#17161a]',
+    'from-[#20252a] via-[#3b3028] to-[#11161c]',
+    'from-[#131922] via-[#253647] to-[#11161c]',
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % gradients.length;
+  return gradients[index];
+}
+
+function getGarageBadgeTone(badge: string) {
+  if (badge === 'Best Value') return 'bg-[#1aa14a]';
+  if (badge === 'Most Trusted') return 'bg-[#ff8a1f]';
+  if (badge === 'Top Rated') return 'bg-[#1a56db]';
+  return '';
+}
+
+function parseDistanceKm(distance: any): number {
+  if (typeof distance === 'number') return distance;
+  if (!distance) return 3.0;
+  const num = parseFloat(String(distance).replace(/[^\d.]/g, ''));
+  return isNaN(num) ? 3.0 : num;
+}
+
+function mapBackendGarageToFrontend(g: any): Garage {
+  const name = g.name;
+  const badge = g.badge || '';
+  const chips = g.chips && g.chips.length > 0 ? g.chips : ['General Service'];
+  const image = g.image || '/assets/garage_1_1778071156220.png';
+  const distanceKm = parseDistanceKm(g.distance) || 3.0;
+  const responseMins = Number(g.responseMins) || 30;
+
+  return {
+    id: g.id,
+    badge,
+    badgeTone: getGarageBadgeTone(badge),
+    name,
+    rating: Number(g.rating) || 0.0,
+    reviews: Number(g.reviews) || 0,
+    location: g.location || '',
+    distanceKm,
+    responseMins,
+    chips,
+    facade: name.split(' ').slice(0, 2).join(' '),
+    tone: getGarageTone(name),
+    verified: g.verified !== undefined ? g.verified : false,
+    image,
+  };
+}
+
 function GaragesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -582,8 +412,37 @@ function GaragesContent() {
     moreFilters: 'all',
   });
 
+  const [garagesList, setGaragesList] = useState<Garage[]>([]);
+  const [quotes, setQuotes] = useState<any[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get<any[]>('/garages/search')
+      .then((data) => {
+        if (active && data && data.length > 0) {
+          const merged = data.map(mapBackendGarageToFrontend);
+          setGaragesList(merged);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch garages:', err);
+      });
+    apiClient.get<any[]>('/quotes')
+      .then((data) => {
+        if (active && data) {
+          setQuotes(data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch quotes:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const filteredGarages = useMemo(() => {
-    const filtered = garages.filter((garage) => {
+    const filtered = garagesList.filter((garage) => {
       if (filters.rating !== 'all' && garage.rating < Number(filters.rating)) {
         return false;
       }
@@ -668,7 +527,7 @@ function GaragesContent() {
         b.rating * 10 + b.reviews / 100 - (a.rating * 10 + a.reviews / 100)
       );
     });
-  }, [filters, sortBy]);
+  }, [filters, sortBy, garagesList]);
 
   const itemsPerPage = viewMode === 'map' ? 6 : 8;
   const totalPages = Math.max(
@@ -727,36 +586,71 @@ function GaragesContent() {
     (v) => v !== 'all'
   ).length;
 
-  const quoteContext = useMemo(() => {
-    const source = searchParams?.get('source');
-    const quoteId = searchParams?.get('quote');
+  const [quoteContext, setQuoteContext] = useState<any | null>(null);
+  const source = searchParams?.get('source');
+  const quoteId = searchParams?.get('quote');
 
+  useEffect(() => {
     if (source !== 'quotes' || !quoteId) {
-      return null;
+      Promise.resolve().then(() => {
+        setQuoteContext((prev: any) => (prev !== null ? null : prev));
+      });
+      return;
     }
 
-    const quote = quotesList.find((item) => item.id === quoteId);
-    const garageFromQuote = quote
-      ? garages.find((item) => item.name === quote.garage)
-      : null;
-    const issueIds = (searchParams?.get('issues') || '')
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
-    const issues = resultIssues.filter((issue) => issueIds.includes(issue.id));
+    let active = true;
+    apiClient.get<any>(`/quotes/${quoteId}`)
+      .then((quote) => {
+        if (!active || !quote) return;
+        const garageFromQuote = garagesList.find((item) => item.name === quote.garage);
+        const issueIds = (searchParams?.get('issues') || '')
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+        const issues = resultIssues.filter((issue) => issueIds.includes(issue.id));
 
-    if (!quote || !garageFromQuote) {
-      return null;
-    }
+        if (garageFromQuote) {
+          setQuoteContext({
+            garage: garageFromQuote,
+            quote,
+            issues,
+            issueIds,
+            aiEstimateRange: aiEstimatedQuoteRange,
+          });
+        } else {
+          const fallbackGarage: Garage = {
+            id: quote.garageId || '',
+            badge: 'Top Rated',
+            badgeTone: 'bg-[#1a56db]',
+            name: quote.garage,
+            rating: Number(quote.rating) || 4.5,
+            reviews: Number(quote.reviews) || 12,
+            location: 'Hyderabad',
+            distanceKm: parseFloat(quote.distance) || 3.0,
+            responseMins: 30,
+            chips: ['General Service'],
+            facade: quote.garage.split(' ').slice(0, 2).join(' '),
+            tone: getGarageTone(quote.garage),
+            verified: true,
+            image: quote.image
+          };
+          setQuoteContext({
+            garage: fallbackGarage,
+            quote,
+            issues,
+            issueIds,
+            aiEstimateRange: aiEstimatedQuoteRange,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch quote details dynamically:', err);
+      });
 
-    return {
-      garage: garageFromQuote,
-      quote,
-      issues,
-      issueIds,
-      aiEstimateRange: aiEstimatedQuoteRange,
+    return () => {
+      active = false;
     };
-  }, [searchParams]);
+  }, [source, quoteId, garagesList, searchParams]);
 
   const garageFromQuery = useMemo(() => {
     const garageName = searchParams?.get('garage');
@@ -765,8 +659,8 @@ function GaragesContent() {
       return null;
     }
 
-    return garages.find((garage) => garage.name === garageName) ?? null;
-  }, [searchParams]);
+    return garagesList.find((garage) => garage.name === garageName) || null;
+  }, [searchParams, garagesList]);
   const sourceFromQuery = searchParams?.get('source');
 
   if (quoteContext) {
@@ -1044,13 +938,13 @@ function GaragesContent() {
   );
 }
 
-const garagesImageSources = Array.from(
-  new Set(
-    garages
-      .map((item) => item.image)
-      .filter((src): src is string => Boolean(src))
-  )
-);
+const garagesImageSources = [
+  '/assets/garage_1_1778071156220.png',
+  '/assets/garage_2_1778071173295.png',
+  '/assets/garage_3_1778071191282.png',
+  '/assets/garage_4_1778071611328.png',
+  '/assets/garage_5_1778071628253.png',
+];
 
 export function GaragesPage() {
   return (

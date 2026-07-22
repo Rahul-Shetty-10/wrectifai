@@ -63,3 +63,13 @@ web-build/
 cache/
 
 images/
+.env
+.agents/
+.postman/
+Docs/Notes/
+apps/api/.env
+apps/api/.env.test
+postman/
+apps/web/tsconfig.tsbuildinfo
+uploads/
+.obsidian/

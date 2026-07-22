@@ -1,6 +1,6 @@
 'use client';
 
-import { BadgeCheck, Check, CircleAlert, Gauge, Info, Lock, PhoneCall, Send, Settings, Shield, ShieldCheck, Tag, Wrench } from 'lucide-react';
+import { Check, CircleAlert, Info, Lock, PhoneCall, Send, Settings, Shield, ShieldCheck, Tag, Wrench } from 'lucide-react';
 import { issueCategories } from '@/components/ai-diagnose/issue-intake-config';
 import { cn } from '@/utils/cn';
 
@@ -15,45 +15,6 @@ export type DiagnoseIssue = {
   estimatedCost: string;
   imageSrc: string;
 };
-
-const legacyResultIssues: DiagnoseIssue[] = [
-  {
-    id: 'wheel-balance',
-    title: 'Wheel Balancing Issue',
-    badge: 'High Match',
-    badgeClass: 'bg-[#ffe8ea] text-[#ff4f68]',
-    description:
-      'Unbalanced wheels can cause vibration in the steering wheel, especially at higher speeds.',
-    match: 85,
-    risks: ['Uneven tyre wear', 'Suspension damage'],
-    estimatedCost: '₹1,500 - ₹2,500',
-    imageSrc: '/assets/tyres_and_wheels.png',
-  },
-  {
-    id: 'wheel-alignment',
-    title: 'Wheel Alignment Issue',
-    badge: 'Medium Match',
-    badgeClass: 'bg-[#fff2df] text-[#f59a23]',
-    description:
-      'Improper alignment can cause vibrations and pulling to one side.',
-    match: 65,
-    risks: ['Uneven tyre wear', 'Handling issues'],
-    estimatedCost: '₹800 - ₹1,500',
-    imageSrc: '/assets/Tyre_rotataion.png',
-  },
-  {
-    id: 'brake-disc',
-    title: 'Brake Disc Warped',
-    badge: 'Low Match',
-    badgeClass: 'bg-[#edf2ff] text-[#4974ff]',
-    description:
-      'Warped brake discs can cause vibration in the steering wheel while braking.',
-    match: 40,
-    risks: ['Reduced braking performance', 'Safety risk'],
-    estimatedCost: '₹2,500 - ₹4,500',
-    imageSrc: '/assets/brake_rotor.png',
-  },
-];
 
 export const resultIssues: DiagnoseIssue[] = issueCategories.flatMap((category) => category.possibleIssues);
 

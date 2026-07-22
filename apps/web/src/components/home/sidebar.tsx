@@ -70,6 +70,7 @@ export function Sidebar({
                 height={1024}
                 priority
                 className="absolute left-0 top-[2px] h-[45px] w-[45px] object-contain"
+                style={{ width: '45px', height: '45px' }}
               />
             </div>
           ) : (
@@ -81,6 +82,7 @@ export function Sidebar({
                 height={1024}
                 priority
                 className="absolute left-0 top-[-38px] h-[150px] w-full object-contain object-center"
+                style={{ width: '100%', height: '150px' }}
               />
             </div>
           )}
@@ -180,7 +182,7 @@ export function Sidebar({
               width={32}
               height={32}
               priority
-              style={{ height: 'auto' }}
+              style={{ width: '32px', height: 'auto' }}
               className="w-[32px] h-auto object-contain"
             />
           </Link>
@@ -209,7 +211,7 @@ export function Sidebar({
                   width={56}
                   height={56}
                   priority
-                  style={{ height: 'auto' }}
+                  style={{ width: '56px', height: 'auto' }}
                   className="w-[56px] h-auto object-contain"
                 />
               </div>

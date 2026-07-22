@@ -1,96 +1,144 @@
-# 
+# WrectifAI — Handover Documentation
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Welcome to the **WrectifAI** workspace. This repository is structured as an **Nx Monorepo** containing the backend API, next-generation web portal, and Expo-based mobile app. 
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+This document serves as a comprehensive handover guide for the incoming senior developer, detailing the architecture, local setup, implementation status, and core platform guidelines.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+### Quick Links
+- 📘 **[Developer Guide](file:///c:/Users/vishn/PROJECT/wrectifai/DEVELOPER_GUIDE.md)**: Deep-dive into coding rules, Express modules structure, database queries, and test setups.
+- ⚙️ **[.env.example](file:///c:/Users/vishn/PROJECT/wrectifai/.env.example)**: Example environment configuration template.
 
-## Run tasks
 
-To run tasks with Nx use:
+---
 
-```sh
-npx nx <target> <project-name>
+## 🗺️ Project Structure & Tech Stack
+
+WrectifAI is organized into feature-centric layers managed by [Nx](https://nx.dev).
+
+```
+wrectifai/
+├── apps/
+│   ├── api/               # Node.js v22 (CommonJS bundled via Nx & esbuild) + Express + PostgreSQL
+│   ├── web/               # Next.js web portal
+│   └── mobile/            # Expo React Native mobile app
+├── db/
+│   └── migrations/        # Database migrations (Raw SQL)
+├── Docs/
+│   ├── solutions/         # Solution designs and architecture logs
+│   ├── ARCHITECTURE.md    # High-level system & component architecture
+│   ├── DATA_API.md        # API contracts & Role-Based Access Control (RBAC) matrix
+│   ├── schema.md          # Database schema design & constraints
+│   ├── SPRINT.md          # Full-stack integration roadmap and progress
+│   └── SPEC.md            # Product & engineering specification
+└── AGENTS.md              # Mandatory developer constraints and coding rules
 ```
 
-For example:
+### Core Technologies
+- **Monorepo Manager**: Nx (task caching, build optimization)
+- **Backend**: Node.js v22 (Express, TypeScript)
+- **Database**: PostgreSQL (raw query pool, no ORM)
+- **Frontend**: Next.js (Web), React Native / Expo (Mobile)
+- **Styling**: Vanilla CSS / Tailwind (where requested)
+- **AI/LLM**: Vercel AI SDK integration, Groq (Llama, Whisper), OpenAI (fallback)
 
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- **Node.js**: `v22.x` (or newer)
+- **Docker**: For running the PostgreSQL instance
+- **Package Manager**: `pnpm` (configured workspace)
+
+### 2. Environment Setup
+Clone the example configuration to your local environment file:
 ```sh
-npx nx build myproject
+cp .env.example .env
+```
+Ensure database credentials, `GROQ_API_KEY`, and optional `OPENAI_API_KEY` are configured.
+
+### 3. Running Database & Migrations
+Spawn the database container:
+```sh
+pnpm db:up
+```
+This launches a PostgreSQL container configured with auto-migration. If you need to reset the database and its seed data:
+```sh
+pnpm db:reset
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+### 4. Running the Applications
+Start the developer servers concurrently or individually using Nx:
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+* **Backend API**:
+  ```sh
+  pnpm api
+  # Runs: nx serve api
+  ```
+* **Web Portal**:
+  ```sh
+  pnpm web
+  # Runs: nx dev web
+  ```
+* **Mobile App**:
+  ```sh
+  pnpm mobile
+  # Runs: nx start mobile
+  ```
 
-## Add new projects
+### 5. Running Tests
+Execute test suites across the workspace:
+* **All Tests**: `pnpm test`
+* **API Unit Tests**: `pnpm test:api:unit`
+* **API Integration Tests**: `pnpm test:api`
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+---
 
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
-```
+## 📈 Implementation Status & Sprint Progress
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
+The roadmap is structured into vertical feature slices (from database schema, API integration to UI components). Refer to [Docs/SPRINT.md](file:///c:/Users/vishn/PROJECT/wrectifai/Docs/SPRINT.md) for detailed tasks.
 
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
+| Sprint | Description | Status | Key Deliverables |
+|---|---|---|---|
+| **Sprint 0** | Core API & DB Pool | **Completed** | Express framework setup, JWT utilities, pg-pool configuration, global error handling. |
+| **Sprint 0.5** | Frontend Foundation | **Completed** | API Client setup, global auth-guard/context, basic route skeleton. |
+| **Sprint 1** | Auth & RBAC Guarding | **Completed** | Auth middleware, standard response envelope helpers, role claims parsing. |
+| **Sprint 2** | Vehicle Management | **Completed** | Vehicle CRUD APIs, database schemas, frontend vehicle-selector component with auto-selection. |
+| **Sprint 3** | AI Diagnosis Engine | **Completed** | Multimodal intake flow (Image & Audio pre-processing), RAG grounding via PostgreSQL Full-Text Search (FTS), zero-match bypass, safety guardrail post-processor. |
+| **Sprint 4-9** | Bookings, Quotes, Marketplace | *Pending* | Payment Adapters (Stripe), Quotes flow, parts orders, review verification, notification service. |
 
-# Generate a library
-npx nx g @nx/react:lib some-lib
-```
+---
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+## 🧠 Highlighted Feature: AI Diagnosis Engine
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+The most complex system implemented is the **AI Diagnosis Engine**, a two-stage, RAG-grounded diagnostic pipeline.
 
-## Set up CI!
+1. **Stage 1 (Questions)**: Generates 3–5 targeted questions based on Postgres FTS matching against the `known_issues` database (returns early/bypasses LLM cost if zero matches are found).
+2. **Stage 2 (Final Diagnosis)**: Analyzes user intake answers, processes any attached images (via `llama-4-scout` on Groq Vision API), transcribes audio (via `whisper-large-v3-turbo` using raw node fetch to match OpenAI multi-part schemas), performs final LLM evaluation, applies safety guardrails, and commits request/result records to database transactionally.
 
-### Step 1
+For the detailed end-to-end design, flowcharts, schemas, and API responses, read [2026-07-06-ai-diagnosis-architecture.md](file:///c:/Users/vishn/PROJECT/wrectifai/Docs/solutions/2026-07-06-ai-diagnosis-architecture.md).
 
-To connect to Nx Cloud, run the following command:
+---
 
-```sh
-npx nx connect
-```
+## 🛠️ Mandatory Coding & Platform Rules (For Assistants/Devs)
 
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
+To maintain consistency and security, all modifications to the backend must strictly follow [AGENTS.md](file:///c:/Users/vishn/PROJECT/wrectifai/AGENTS.md):
 
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+* **Database Access**: Do **NOT** use ORMs (Prisma, Drizzle, etc.). All DB interaction must use raw SQL parameterized queries via the helper exported from [database.ts](file:///c:/Users/vishn/PROJECT/wrectifai/apps/api/src/config/database.ts).
+* **Security & RBAC**: Standardize authorization via the `authenticate` middleware. Check roles against the junction table `user_roles` using `requireRole(['user', 'garage', 'vendor', 'admin'])`.
+* **API Versioning**: Mount all HTTP routes under `/api/v1` in [routes/index.ts](file:///c:/Users/vishn/PROJECT/wrectifai/apps/api/src/routes/index.ts).
+* **Response Helpers**:
+  - Success responses must use: `success(res, data, statusCode, meta?)`
+  - Error responses must use: `error(res, message, errorCode, statusCode, details?)`
+* **UI Reusability**: All shared UI components and primitives (Buttons, Modals, Badges) must reside in `/components/common/` to prevent duplication.
 
-### Step 2
+---
 
-Use the following command to configure a CI workflow for your workspace:
+## 📬 Handover Notes for Next Steps
 
-```sh
-npx nx g ci-workflow
-```
+1. **Uncommitted/Staged Changes**: We are currently on branch `feat/api_integration`. There are staged changes enhancing auth role-mapping middleware, typed Express requests (`apps/api/src/types/express.d.ts`), and the web vehicle-selector. Review the changes with `git diff --staged` before checking them in.
+2. **Pending Sprint**: Prepare for **Sprint 4 (Garage Discovery & Onboarding)**. Setup the maps provider adapter and geocoding services.
+3. **Database Schema**: Verify indexes and tables listed under `Docs/schema.md` when proposing schema migrations. Always write matching down-migrations.
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+For deep-dive topics, please refer to the markdown files in the [Docs](file:///c:/Users/vishn/PROJECT/wrectifai/Docs) directory.
 
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)

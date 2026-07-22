@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Disc3,
   Gauge,
   Home,
   Percent,
@@ -21,14 +22,19 @@ import {
   Tag,
   Wrench,
   X,
+  Sparkles,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/common/button';
 import { Card } from '@/components/common/card';
 import { DashboardShell } from '@/components/home/dashboard-shell';
 import { TopNavbar } from '@/components/home/top-navbar';
+import { apiClient } from '@/lib/api-client';
 import { cn } from '@/utils/cn';
+import { getPromoTheme } from '@/utils/promo-theme';
 
 type DealCategory =
   | 'All Deals'
@@ -690,12 +696,14 @@ function DealCard({ deal }: { deal: DealItem }) {
         >
           {deal.image ? (
             <>
-              <img
+              <Image
                 src={deal.image}
                 alt={deal.title}
+                fill
+                sizes="(max-width: 768px) 100vw, 30vw"
                 className={cn(
-                  "h-full w-full object-center transition-transform duration-300 hover:scale-105",
-                  deal.imageClassName.includes('object-contain') ? 'object-contain p-1.5 max-h-[115px]' : 'object-cover'
+                  "transition-transform duration-300 hover:scale-105",
+                  deal.imageClassName.includes('object-contain') ? 'object-contain p-1.5' : 'object-cover'
                 )}
               />
               <div 
@@ -797,6 +805,72 @@ function DealsPageContent() {
   const sortRef = useRef<HTMLDivElement>(null);
   const moreFiltersRef = useRef<HTMLDivElement>(null);
 
+  const [dealsList, setDealsList] = useState<DealItem[]>(deals);
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get<any[]>('/promos')
+      .then((data) => {
+        if (active && data && data.length > 0) {
+          const mapped: DealItem[] = data.map((p: any) => {
+            const theme = getPromoTheme(p.themePreset);
+            const displayPrice = `$${Number(p.numericPrice).toLocaleString('en-US')}`;
+            const strikePrice = p.strikePrice ? `$${Number(p.strikePrice).toLocaleString('en-US')}` : undefined;
+            const discountLabel = p.discountPercent ? `${p.discountPercent}% OFF` : undefined;
+            const usedCount = p.usedCountValue >= 1000 ? `${(p.usedCountValue / 1000).toFixed(1)}K times` : `${p.usedCountValue} times`;
+            const imageClassName = p.isCombo ? 'h-[148px] w-[178px] object-contain' : 'h-12 w-12';
+
+            return {
+              id: p.id,
+              badge: p.badge,
+              badgeColor: theme.badgeColorClass,
+              icon: p.icon === 'Sun' ? Sun : p.icon === 'CloudRain' ? CloudRain : p.icon === 'Snowflake' ? Snowflake : p.icon === 'Sparkles' ? Sparkles : p.icon === 'Settings' ? Settings : p.icon === 'CarFront' ? CarFront : p.icon === 'Disc3' ? Disc3 : Tag,
+              title: p.title,
+              bullets: p.bullets || [],
+              displayPrice,
+              numericPrice: Number(p.numericPrice),
+              strikePrice,
+              strikePriceLineThrough: !!strikePrice,
+              discountLabel,
+              discountPercent: Number(p.discountPercent),
+              validTill: new Date(p.validTill).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+              usedCount,
+              usedCountValue: Number(p.usedCountValue),
+              image: p.image,
+              imageClassName,
+              cardTint: theme.cardTintClass,
+              bgColor: theme.bgColor,
+              imageGlow: theme.imageGlowClass,
+              accent: theme.accentClass,
+              categories: p.categories || [],
+              isCombo: p.isCombo,
+              relevance: Number(p.relevance)
+            };
+          });
+          const combined = [
+            ...mapped,
+            ...mapped.map((d, i) => ({
+              ...d,
+              id: `${d.id}-page2-${i}`,
+              relevance: d.relevance - 20,
+            })),
+            ...mapped.map((d, i) => ({
+              ...d,
+              id: `${d.id}-page3-${i}`,
+              relevance: d.relevance - 40,
+            })),
+          ];
+          setDealsList(combined);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch promos:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useEffect(() => {
     const handleSearch = (event: Event) => {
       const customEvent = event as CustomEvent<string>;
@@ -823,7 +897,7 @@ function DealsPageContent() {
   }, []);
 
   const filteredDeals = useMemo(() => {
-    let nextDeals = deals.filter((deal) => {
+    let nextDeals = dealsList.filter((deal) => {
       const matchesFilter =
         filters.category === 'all'
           ? true
@@ -865,33 +939,31 @@ function DealsPageContent() {
 
   const totalPages = Math.max(1, Math.ceil(filteredDeals.length / pageSize));
 
-  useEffect(() => {
-    setCurrentPage((page) => Math.min(page, totalPages));
-  }, [totalPages]);
+  const activePage = Math.min(currentPage, totalPages);
 
   const paginatedDeals = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
+    const startIndex = (activePage - 1) * pageSize;
     return filteredDeals.slice(startIndex, startIndex + pageSize);
-  }, [currentPage, filteredDeals]);
+  }, [activePage, filteredDeals]);
 
   const visiblePages = useMemo(() => {
     if (totalPages <= 5) {
       return Array.from({ length: totalPages }, (_, index) => index + 1);
     }
 
-    if (currentPage <= 3) {
+    if (activePage <= 3) {
       return [1, 2, 3, totalPages];
     }
 
-    if (currentPage >= totalPages - 2) {
+    if (activePage >= totalPages - 2) {
       return [1, totalPages - 2, totalPages - 1, totalPages];
     }
 
-    return [1, currentPage - 1, currentPage, currentPage + 1, totalPages];
-  }, [currentPage, totalPages]);
+    return [1, activePage - 1, activePage, activePage + 1, totalPages];
+  }, [activePage, totalPages]);
 
-  const fromDeal = filteredDeals.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const toDeal = Math.min(currentPage * pageSize, filteredDeals.length);
+  const fromDeal = filteredDeals.length === 0 ? 0 : (activePage - 1) * pageSize + 1;
+  const toDeal = Math.min(activePage * pageSize, filteredDeals.length);
 
   const clearFilters = () => {
     setFilters({
@@ -1106,7 +1178,7 @@ function DealsPageContent() {
           <button
             type="button"
             onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-            disabled={currentPage === 1}
+            disabled={activePage === 1}
             className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#dbe6ff] bg-white text-[#3d5afe] disabled:cursor-not-allowed disabled:opacity-45 shadow-sm"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -1124,7 +1196,7 @@ function DealsPageContent() {
                   onClick={() => setCurrentPage(page)}
                   className={cn(
                     'flex h-9 w-9 items-center justify-center rounded-[10px] border text-[12px] font-semibold shadow-sm',
-                    currentPage === page
+                    activePage === page
                       ? 'border-[#3d5afe] bg-[#eef3ff] font-bold text-[#3156f5]'
                       : 'border-[#dbe6ff] bg-white text-[#4d6295] hover:bg-[#f7faff]'
                   )}
@@ -1138,7 +1210,7 @@ function DealsPageContent() {
           <button
             type="button"
             onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-            disabled={currentPage === totalPages}
+            disabled={activePage === totalPages}
             className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#dbe6ff] bg-white text-[#3d5afe] disabled:cursor-not-allowed disabled:opacity-45 shadow-sm"
           >
             <ChevronRight className="h-4 w-4" />

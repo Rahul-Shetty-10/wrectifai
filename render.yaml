@@ -1,19 +1,77 @@
+databases:
+  - name: wrectifai-db
+    databaseName: wrectifai
+    plan: free
+    ipAllowList: []
+
 services:
   - type: web
     name: wrectifai-api
     runtime: node
     plan: free
-    buildCommand: npm install && npx nx build api
+    buildCommand: pnpm install --frozen-lockfile && npx nx build api && node db/migrate.js
     startCommand: node dist/api/main.js
     envVars:
       - key: NODE_VERSION
         value: 22.11.0
+
+      - key: NODE_ENV
+        value: production
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wrectifai-db
+          property: connectionString
+
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+
+      - key: WEB_ORIGINS
+        value: https://wrectifai-web.onrender.com
+
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+
+      - key: LLM_PROVIDER
+        value: groq
+
+      - key: LLM_MODEL
+        value: openai/gpt-oss-120b
+
+      - key: GROQ_API_KEY
+        sync: false
+
+      - key: IMAGE_LLM_PROVIDER
+        value: groq
+
+      - key: IMAGE_LLM_MODEL
+        value: meta-llama/llama-4-scout-17b-16e-instruct
+
+      - key: AUDIO_PROVIDER
+        value: groq
+
+      - key: AUDIO_MODEL
+        value: whisper-large-v3-turbo
+
   - type: web
     name: wrectifai-web
     runtime: node
     plan: free
-    buildCommand: pnpm install --frozen-lockfile && pnpm --dir apps/web build
-    startCommand: pnpm --dir apps/web start
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter web build
+    startCommand: pnpm --filter web start
+
     envVars:
       - key: NODE_VERSION
         value: 22.11.0
+
+      - key: NODE_ENV
+        value: production
+
+      - key: NEXT_PUBLIC_API_URL
+        value: https://wrectifai-api.onrender.com/api/v1
+
+      - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+        sync: false
