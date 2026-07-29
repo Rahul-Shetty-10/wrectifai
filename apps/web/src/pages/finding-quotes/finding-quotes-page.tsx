@@ -225,18 +225,6 @@ export function FindingQuotesPage({ issues, diagnosisRequestId }: { issues?: str
                   />
                 </div>
               </div>
-              <div className="absolute left-1/2 top-[92px] h-[95px] w-[320px] -translate-x-1/2 rounded-[999px] bg-[radial-gradient(ellipse_at_center,rgba(74,121,255,0.16)_0%,rgba(74,121,255,0)_72%)] blur-md" />
-              <div className="absolute left-1/2 top-[106px] -translate-x-1/2">
-                <Image
-                  src={getVehicleImage(selectedVehicle?.make, selectedVehicle?.model, selectedVehicle?.year)}
-                  alt="Car"
-                  width={260}
-                  height={110}
-                  className="h-auto w-[250px] object-contain drop-shadow-[0_16px_24px_rgba(28,74,188,0.18)]"
-                  style={{ width: '250px', height: 'auto' }}
-                  unoptimized={true}
-                />
-              </div>
               <div className="pointer-events-none absolute inset-0 hidden md:block">
                 <div className="absolute left-[20px] top-[86px] h-px w-[98px] bg-[#d7e3ff]" />
                 <div className="absolute right-[20px] top-[86px] h-px w-[98px] bg-[#d7e3ff]" />
